@@ -1,0 +1,6 @@
+int a;
+
+void main() {
+  a = len(2, 3);
+   // invalid use of len (len is not a function call!)
+}
