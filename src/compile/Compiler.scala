@@ -82,9 +82,11 @@ object Compiler {
       val scanner = new DecafScanner(new DataInputStream(inputStream))
       val parser = new DecafParser(scanner);
 
+      // added
+      parser.setASTNodeClass("compile.CommonASTWithLines")
       parser.setTrace(CLI.debug)
       parser.program()
-      val t = parser.getAST().asInstanceOf[CommonAST]
+      val t = parser.getAST().asInstanceOf[CommonASTWithLines]
       if (parser.getError()) {
         println("[ERROR] Parse failed")
         println(t.toStringList)
@@ -92,7 +94,9 @@ object Compiler {
       } else if (CLI.debug){
         print(t.toStringList())
       }
-      prettyPrint(Option(t))
+      val tree = ScalarAST.fromCommonAST(t)
+      tree.prettyPrint()
+      // tree
       t
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
@@ -102,19 +106,19 @@ object Compiler {
 
   def prettyPrint(tree: Option[AST], numSpaces: Int = 0): Unit = {
     // siblings, including tree
-    val siblings = ListBuffer[(AST, Int)]()
+    val siblings = ListBuffer[AST]()
 
     var siblingOpt = tree
     while (! siblingOpt.isEmpty) {
       val sibling = siblingOpt.get
-      siblings.append((sibling, numSpaces))
+      siblings.append(sibling)
       siblingOpt = Option(sibling.getNextSibling)
     }
 
     siblings foreach {
-      case (sibling, throwaway) => {
+      sibling => {
         val indent = Vector.range(0, numSpaces).map(_ => "  ").mkString("")
-        println(s"${indent}${sibling.toString}")
+        println(s"${indent}${sibling.toString} ${sibling.getLine} ${sibling.getColumn}")
 
         val childOpt = Option(sibling.getFirstChild)
         prettyPrint(childOpt, numSpaces + 1)
