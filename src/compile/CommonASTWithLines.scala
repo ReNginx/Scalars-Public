@@ -20,8 +20,15 @@ class CommonASTWithLines extends CommonAST {
   }
 
   override def getLine(): Int = line
+  
   override def getColumn(): Int = column
 
-  override def getFirstChild(): CommonASTWithLines = super.getFirstChild.asInstanceOf[CommonASTWithLines]
-  override def getNextSibling(): CommonASTWithLines = super.getNextSibling.asInstanceOf[CommonASTWithLines]
+  override def getFirstChild(): CommonASTWithLines = {
+    super.getFirstChild.asInstanceOf[CommonASTWithLines]
+  }
+
+  override def getNextSibling(): CommonASTWithLines = {
+    super.getNextSibling.asInstanceOf[CommonASTWithLines]
+  }
+
 }

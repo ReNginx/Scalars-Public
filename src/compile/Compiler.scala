@@ -67,7 +67,7 @@ object Compiler {
     }
   }
 
-  def parse(fileName: String): CommonAST  = {
+  def parse(fileName: String): ScalarAST  = {
     /**
     Parse the file specified by the filename. Eventually, this method
     may return a type specific to your compiler.
@@ -84,45 +84,22 @@ object Compiler {
 
       // added
       parser.setASTNodeClass("compile.CommonASTWithLines")
+
       parser.setTrace(CLI.debug)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonASTWithLines]
       if (parser.getError()) {
         println("[ERROR] Parse failed")
-        println(t.toStringList)
         return null
       } else if (CLI.debug){
-        print(t.toStringList())
+         print(t.toStringList())
       }
       val tree = ScalarAST.fromCommonAST(t)
       tree.prettyPrint()
-      // tree
-      t
+      tree
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
       null
-    }
-  }
-
-  def prettyPrint(tree: Option[AST], numSpaces: Int = 0): Unit = {
-    // siblings, including tree
-    val siblings = ListBuffer[AST]()
-
-    var siblingOpt = tree
-    while (! siblingOpt.isEmpty) {
-      val sibling = siblingOpt.get
-      siblings.append(sibling)
-      siblingOpt = Option(sibling.getNextSibling)
-    }
-
-    siblings foreach {
-      sibling => {
-        val indent = Vector.range(0, numSpaces).map(_ => "  ").mkString("")
-        println(s"${indent}${sibling.toString} ${sibling.getLine} ${sibling.getColumn}")
-
-        val childOpt = Option(sibling.getFirstChild)
-        prettyPrint(childOpt, numSpaces + 1)
-      }
     }
   }
 
