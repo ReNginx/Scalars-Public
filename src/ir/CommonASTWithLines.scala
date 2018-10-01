@@ -1,15 +1,14 @@
-package compile
+package ir
 
-import scala.collection.mutable.{StringBuilder, ListBuffer}
 import antlr.{CommonAST, Token}
-import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes, DecafScanner, DecafScannerTokenTypes }
 
-/** Hack found online to force CommonAST to remember line/col information.
+/** Hack found online to make CommonAST remember line/column information.
  *
- * Found at:
+ * Found at the following link:
  * https://puredanger.github.io/tech.puredanger.com/2007/02/01/recovering-line-and-column-numbers-in-your-antlr-ast/
  */
 class CommonASTWithLines extends CommonAST {
+
   private var line = 0;
   private var column = 0;
 
@@ -20,7 +19,6 @@ class CommonASTWithLines extends CommonAST {
   }
 
   override def getLine(): Int = line
-  
   override def getColumn(): Int = column
 
   override def getFirstChild(): CommonASTWithLines = {

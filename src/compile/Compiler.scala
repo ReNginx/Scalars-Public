@@ -1,18 +1,12 @@
 package compile
-import util.CLI
-//import scala.util.parsing.input.Reader
-//import scala.util.parsing.input.StreamReader
-import scala.collection.immutable.PagedSeq
+
 import java.io._
-import scala.io.Source
-import scala.collection.mutable.{StringBuilder, ListBuffer}
 import scala.Console
 
-// Begin parser/scanner imports
-import antlr.CommonAST
-import antlr.collections.AST
-import antlr.Token
-import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes, DecafScanner, DecafScannerTokenTypes }
+import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
+import ir.CommonASTWithLines
+import ir.ScalarAST
+import util.CLI
 
 object Compiler {
   val tokenMap = Map(
@@ -82,9 +76,8 @@ object Compiler {
       val scanner = new DecafScanner(new DataInputStream(inputStream))
       val parser = new DecafParser(scanner);
 
-      // added
-      parser.setASTNodeClass("compile.CommonASTWithLines")
-
+      // see ir.CommonASTWithLines for more info
+      parser.setASTNodeClass("ir.CommonASTWithLines")
       parser.setTrace(CLI.debug)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonASTWithLines]
