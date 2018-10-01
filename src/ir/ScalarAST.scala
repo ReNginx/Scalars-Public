@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 import antlr.CommonAST
 
-import edu.mit.compilers.grammar
+import edu.mit.compilers.grammar.DecafParserTokenTypes
 
 /** Immutable, recursive AST with simpler APIs than CommonAST.
  *
@@ -26,20 +26,25 @@ case class ScalarAST(token: Int, text: String, line: Int, column: Int, parent: O
    */
   def prettyPrint(indentLevel: Int = 0, numSpace: Int = 2): Unit = {
     // `indentLevel * numSpace` number of spaces
-    val leadingWS = (0 to indentLevel) map { _ => " "*numSpace } mkString ""
+    val leadingWS = " " * numSpace * indentLevel
 
     // if line & column are both 0, this token is virtual and doesn't actually exist in source code
     val location = if (line == 0 && column == 0) "" else s"  (${line}:${column})"
-    println(s"${leadingWS}${text}${location}")
+    println(s"${leadingWS}${token}:${text}${location}")
 
     // recurse
     children foreach { _.prettyPrint(indentLevel + 1) }
   }
   
+  /**
+  def printself(): Unit = {
+    println(this)
+  }
+
   def printChildren(): Unit = {
     children foreach {println(_)}
   }
-
+  */
 }
 
 object ScalarAST {
@@ -73,21 +78,23 @@ object ScalarAST {
    */
   def fromCommonAST(ast: CommonASTWithLines, parent: Option[ScalarAST] = None): ScalarAST = {
     var commonChildren = getChildren(ast)
+    val line = ast.getLine
     val column = ast.getColumn
     val token = ast.getType
     val text = ast.getText
-
+    
     if (commonChildren.size == 0) {
       new ScalarAST(token, text, line, column, parent)({ Vector() })
     } else {
-      lazy val thisAST: ScalarAST = new ScalarAST(text, line, column, parent)({ children })
+      lazy val thisAST: ScalarAST = new ScalarAST(token, text, line, column, parent)({ children })
 
       lazy val children = {
         val current = commonChildren map (child => fromCommonAST(child, Option(thisAST)))
-        if (text == "METHOD_CALL") {  // make sure args is present, even if empty
+        if (token == DecafParserTokenTypes.METHOD_CALL) {  // make sure args is present, even if empty
+          val token = DecafParserTokenTypes.ARGS
           val name = "ARGS"
           val args = current map { _.text } filter { _ == name }
-          val emptyArgs = new ScalarAST(name, 0, 0, Option(thisAST))({ Vector() })
+          val emptyArgs = new ScalarAST(token, name, 0, 0, Option(thisAST))({ Vector() })
           current ++ {
             if (args.size == 0) Vector(emptyArgs) else Vector()
           }
