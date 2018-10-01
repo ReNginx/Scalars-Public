@@ -25,6 +25,8 @@ tokens
   FIELD_LIST;
   TERNARY;
   CONDITION;
+  IF_YES;
+  IF_NO;
   FOR_START;
   FOR_UPDATE;
   HEX;
@@ -246,11 +248,10 @@ protected integer: (
   { #integer = #(#[INT, "INT"], #integer); }
 );
 
-expr: (
-  expr_left
-  ( options{greedy=true;}: expr_right )*
-);
-expr_left: (  // stand-alone left hand side of expression
+
+// shows hierarchy of precedence, where
+// expr towards the bottom have higher precedence
+stand_alone_expr: (  // stand-alone expression
     ( location )
   | ( method_call )
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
@@ -259,18 +260,39 @@ expr_left: (  // stand-alone left hand side of expression
   | ( EXCLAMATION^ expr )
   | ( L_PARENTH! expr R_PARENTH! )
 );
-expr_right: (  // right hand side of expression
-    ( ternary )
-  | (
-    (
-      MINUS^ | PLUS^ | MULTIPLY^ | DIVIDE^ | MOD^ |
-      LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^ |
-      NEQUALS^ | EQUALS^ | AND^ | OR^
-    )
-    expr
-  )
+mul_op_expr: (
+  stand_alone_expr
+  ( options{greedy=true;}: (MULTIPLY^ | DIVIDE^ | MOD^) mul_op_expr )?
 );
-ternary: (
-  QUESTION^ expr COLON! expr
-  { #ternary = #(#[TERNARY, "TERNARY"], #ternary); }
+add_op_expr: (
+  mul_op_expr
+  ( options{greedy=true;}: (PLUS^ | MINUS^) add_op_expr )?
+);
+comparison_expr: (
+  add_op_expr
+  (
+    options{greedy=true;}:
+    (LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^)
+    comparison_expr
+  )?
+);
+equality_expr: (
+  comparison_expr
+  ( options{greedy=true;}: (NEQUALS^ | EQUALS^) equality_expr )?
+);
+logical_operator: (
+  equality_expr
+  ( options{greedy=true;}: (AND^ | OR^) logical_operator )?
+);
+expr: (
+  logical_operator
+  ( options{greedy=true;}: QUESTION^ if_yes COLON! if_no )?
+);
+protected if_yes: (
+  expr
+  { #if_yes = #(#[IF_YES, "IF_YES"], #if_yes); }
+);
+protected if_no: (
+  expr
+  { #if_no = #(#[IF_NO, "IF_NO"], #if_no); }
 );
