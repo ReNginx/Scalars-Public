@@ -33,22 +33,10 @@ case class VariableDescriptor(
   value: String
 ) extends Descriptor
 
-class MethodDescriptor(
-  methodName: String,
-  lineNumber: Int,
-  columnNumber: Int,
+case class MethodDescriptor(
+  name: String,
+  line: Int,
+  column: Int,
   types: HashMap[Vector[ParameterDescriptor], String],
   codes: HashMap[Vector[ParameterDescriptor], ScalarAST]
-) extends Descriptor {
-
-  def line = lineNumber
-  def column = columnNumber
-  def name = methodName
-
-  // get the reutrn type corresponding to the given parameters
-  def returnType(params: Vector[ParameterDescriptor]): String = throw new Exception()
-
-  // get the ScalarAST corresponding to the given parameters
-  def code(params: Vector[ParameterDescriptor]): ScalarAST = throw new Exception()
-
-}
+) extends Descriptor
