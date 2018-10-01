@@ -21,16 +21,17 @@ tokens
   ARGS;
   ARRAY;
   BLOCK;
+  CONDITION;
   FIELD_DECLARATION;
   FIELD_LIST;
-  TERNARY;
-  CONDITION;
-  IF_YES;
-  IF_NO;
+  IF_BLOCK;
+  ELSE_BLOCK;
   FOR_START;
   FOR_UPDATE;
   HEX;
   ID;
+  IF_NO;
+  IF_YES;
   IMPORT;
   INDEX;
   INT;
@@ -131,12 +132,8 @@ protected param_list: (
   {#param_list = #(#[PARAM_LIST, "PARAM_LIST"], #param_list);}
 );
 protected parameter: (
-  type param_name
+  type id
   {#parameter = #(#[PARAMETER, "PARAMETER"], #parameter);}
-);
-protected param_name: (
-  id
-  {#param_name = #(#[ID, "ID"], #param_name);}
 );
 
 block: (
@@ -174,16 +171,24 @@ statement: (
 );
 
 if_else: (
-  TK_if^ L_PARENTH! expr R_PARENTH!
-    block
-  ( TK_else block )?
+  TK_if^ L_PARENTH! condition R_PARENTH!
+    if_block
+  ( TK_else! else_block )?
+);
+if_block: (
+  block
+  { #if_block = #(#[IF_BLOCK, "IF_BLOCK"], #if_block); }
+);
+else_block: (
+  block
+  { #else_block = #(#[ELSE_BLOCK, "ELSE_BLOCK"], #else_block); }
 );
 
 for_loop: (
   TK_for^
     L_PARENTH!
       for_start SEMICOLON!
-      end_condition   SEMICOLON!
+      condition   SEMICOLON!
       for_update
     R_PARENTH!
   block
@@ -192,9 +197,9 @@ protected for_start: (
   id EQ expr
   { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
 );
-protected end_condition: (
+protected condition: (
   expr
-  { #end_condition = #(#[CONDITION, "CONDITION"], #end_condition); }
+  { #condition = #(#[CONDITION, "CONDITION"], #condition); }
 );
 protected for_update: (
   location
@@ -207,7 +212,7 @@ protected for_update: (
 
 while_loop: (
   TK_while^
-    L_PARENTH! end_condition R_PARENTH!
+    L_PARENTH! condition R_PARENTH!
   block
 );
 
