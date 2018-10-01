@@ -92,10 +92,34 @@ object Compiler {
       } else if (CLI.debug){
         print(t.toStringList())
       }
+      prettyPrint(Option(t))
       t
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
       null
     }
   }
+
+  def prettyPrint(tree: Option[AST], numSpaces: Int = 0): Unit = {
+    // siblings, including tree
+    val siblings = ListBuffer[(AST, Int)]()
+
+    var siblingOpt = tree
+    while (! siblingOpt.isEmpty) {
+      val sibling = siblingOpt.get
+      siblings.append((sibling, numSpaces))
+      siblingOpt = Option(sibling.getNextSibling)
+    }
+
+    siblings foreach {
+      case (sibling, throwaway) => {
+        val indent = Vector.range(0, numSpaces).map(_ => "  ").mkString("")
+        println(s"${indent}${sibling.toString}")
+
+        val childOpt = Option(sibling.getFirstChild)
+        prettyPrint(childOpt, numSpaces + 1)
+      }
+    }
+  }
+
 }

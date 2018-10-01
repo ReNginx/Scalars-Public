@@ -16,6 +16,29 @@ options
   buildAST = true;
 }
 
+tokens
+{
+  ARRAY;
+  BLOCK;
+  FIELD_DECLARATION;
+  FIELD_LIST;
+  FOR_END;
+  FOR_START;
+  FOR_UPDATE;
+  ID;
+  IMPORT;
+  INDEX;
+  METHOD_ARGS;
+  METHOD_CALL;
+  METHOD_DECLARATION;
+  PARAM_LIST;
+  PARAMETER;
+  PROGRAM;
+  STATEMENT;
+  TYPE;
+  VAR;
+}
+
 // Java glue code that makes error reporting easier.
 // You can insert arbitrary Java code into your parser/lexer this way.
 {
@@ -65,130 +88,174 @@ options
 // ORDER SHOWN BELOW MIRRORS THE ORDER ON SPEC SHEET
 
 program: (
-  ( import_decl )*
-  ( field_decl )*
-  ( method_decl )*
-  EOF
+  (import_decl)* (field_decl)* (method_decl)* EOF!
+  {#program = #(#[PROGRAM,"PROGRAM"], #program);}
 );
 
-import_decl: TK_import id SEMICOLON ;
+import_decl: TK_import! id SEMICOLON!
+  {#import_decl = #(#[IMPORT, "IMPORT"], #import_decl);};
 
-field_decl: type var_or_array ( COMMA var_or_array )* SEMICOLON ;
-protected var_or_array: id ( L_BRACKET int_literal R_BRACKET )? ;
+field_decl: type field_list ( COMMA! field_list )* SEMICOLON!
+  {#field_decl = #(#[FIELD_DECLARATION, "FIELD_DECLARATION"], #field_decl);};
+protected field_list : (var | array)
+  {#field_list = #(#[FIELD_LIST, "FIELD_LIST"], #field_list);};
+protected var: id
+  {#var = #(#[VAR, "VAR"], #var);};
+protected array: id L_BRACKET! index R_BRACKET!
+  {#array = #(#[ARRAY, "ARRAY"], #array);};
+protected index: (
+  (DECIMAL | HEX)
+  {#index = #(#[INDEX, "INDEX"], #index);}
+);
 
 method_decl: (
-  ( type | TK_void ) id
-  L_PARENTH
-    ( type id (COMMA type id)* )?
-  R_PARENTH
+  return_type
+  id
+  L_PARENTH!
+    ( param_list )?
+  R_PARENTH!
   block
+  {#method_decl = #(#[METHOD_DECLARATION, "METHOD_DECLARATION"], #method_decl);}
+);
+protected return_type: (
+  ( TK_int | TK_bool | TK_void )
+  {#return_type = #(#[TYPE, "TYPE"], #return_type);}
+);
+protected param_list: (
+  parameter (COMMA! parameter)*
+  {#param_list = #(#[PARAM_LIST, "PARAM_LIST"], #param_list);}
+);
+protected parameter: (
+  type param_name
+  {#parameter = #(#[PARAMETER, "PARAMETER"], #parameter);}
+);
+protected param_name: (
+  id
+  {#param_name = #(#[ID, "ID"], #param_name);}
 );
 
 block: (
-  L_CURLY
+  L_CURLY!
     ( field_decl )*
     ( statement )*
-  R_CURLY
+  R_CURLY!
+  {#block = #(#[BLOCK, "BLOCK"], #block);}
 );
 
-type: ( TK_int | TK_bool );
+type: ( TK_int | TK_bool )
+  {#type = #(#[TYPE, "TYPE"], #type);} ;
 
 statement: (
-    ( location assign_expr SEMICOLON )
-  | ( method_call SEMICOLON )
+    (
+      location
+      (
+        ( // assign operation
+          ( EQ^ | PLUS_EQ^ | MINUS_EQ^ )
+          expr
+        )
+        |
+        ( INCREMENT^ | DECREMENT^ )
+      )
+      SEMICOLON!
+    )
+  | ( method_call SEMICOLON! )
   | ( if_else )
   | ( for_loop )
   | ( while_loop )
-  | ( TK_return   (expr)? SEMICOLON )
-  | ( TK_break            SEMICOLON )
-  | ( TK_continue         SEMICOLON )
+  | ( TK_return^  (expr)? SEMICOLON! )
+  | ( TK_break            SEMICOLON! )
+  | ( TK_continue         SEMICOLON! )
+  { #statement = #(#[STATEMENT, "STATEMENT"], #statement); }
 );
 
 if_else: (
-  TK_if L_PARENTH expr R_PARENTH
+  TK_if^ L_PARENTH! expr R_PARENTH!
     block
   ( TK_else block )?
 );
 
 for_loop: (
-  TK_for
-    L_PARENTH
-      id EQ expr SEMICOLON
-      expr       SEMICOLON
-      location (
-          ( compount_assign_op expr )
-        | ( increment )
-      )
-    R_PARENTH
+  TK_for^
+    L_PARENTH!
+      for_start SEMICOLON!
+      for_end   SEMICOLON!
+      for_update
+    R_PARENTH!
   block
+);
+protected for_start: (
+  id EQ expr
+  { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
+);
+protected for_end: (
+  expr
+  { #for_end = #(#[FOR_END, "FOR_END"], #for_end); }
+);
+protected for_update: (
+  location
+  (
+      ( (PLUS_EQ^ | MINUS_EQ^) expr )
+    | ( INCREMENT^ | DECREMENT^ )
+  )
+  { #for_update = #(#[FOR_UPDATE, "FOR_UPDATE"], #for_update); }
 );
 
 while_loop: (
-  TK_while
-    L_PARENTH expr R_PARENTH
+  TK_while^
+    L_PARENTH! expr R_PARENTH!
   block
 );
 
-assign_expr: (
-    ( assign_op expr )
-  | ( increment )
-);
-
-assign_op: ( EQ | compount_assign_op );
-
-compount_assign_op: ( PLUS_EQ | MINUS_EQ );
-
-increment: ( INCREMENT | DECREMENT );
-
 method_call: (
-  method_name
-  L_PARENTH
-    ( method_param (COMMA method_param)* )?
-  R_PARENTH
+  id
+  L_PARENTH!
+    ( method_args )?
+  R_PARENTH!
+  { #method_call = #(#[METHOD_CALL, "METHOD_CALL"], #method_call); }
 );
-method_param : ( expr | string_literal ) ;
+method_args: (
+  method_arg (COMMA! method_arg)*
+  { #method_args = #(#[METHOD_ARGS, "METHOD_ARGS"], #method_args); }
+);
+method_arg : ( expr | STR_LITERAL );
 
-method_name: id ;
+protected id: (
+  IDENTIFIER
+  { #id = #(#[ID, "ID"], #id); }
+);
 
-location: id ( L_BRACKET expr R_BRACKET )? ;
+location: id | expr_array ;
+protected expr_array: (
+  id L_BRACKET! expr_index R_BRACKET!
+    {#expr_array = #(#[ARRAY, "ARRAY"], #expr_array);}
+);
+protected expr_index: (
+  expr
+  { #expr_index = #(#[INDEX, "INDEX"], #expr_index); }
+);
 
 expr: (
-  expr_left
-  ( options{greedy=true;} : expr_right )?
+  ( // stand-alone left hand side of expression
+      ( location )
+    | ( method_call )
+    | ( DECIMAL | HEX | CHAR_LITERAL | TK_true | TK_false )  // literal
+    | ( TK_len L_PARENTH! id R_PARENTH! )
+    | ( MINUS^ expr )
+    | ( EXCLAMATION^ expr )
+    | ( L_PARENTH! expr R_PARENTH! )
+  )
+  ( // right hand side of expression
+    options{greedy=true;} : (
+      ( QUESTION^ expr COLON! expr )
+      |
+      (
+        (  // operators
+          MINUS^ | PLUS^ | MULTIPLY^ | DIVIDE^ | MOD^ |
+          LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^ |
+          NEQUALS^ | EQUALS^ | AND^ | OR^
+        )
+        expr
+      )
+    )
+  )*
 );
-expr_left: (
-    ( location )
-  | ( method_call )
-  | ( literal )
-  | ( TK_len L_PARENTH id R_PARENTH )
-  | ( MINUS expr )
-  | ( EXCLAMATION expr )
-  | ( L_PARENTH expr R_PARENTH )
-);
-expr_right: (
-  expr_left_of_right
-  ( options{greedy=true;} : expr_right)?
-) ;
-expr_left_of_right: (
-    ( bin_op expr )
-  | ( QUESTION expr COLON expr )
-);
-
-bin_op: ( arith_op | rel_op | eq_op | cond_op );
-
-arith_op: ( MINUS | PLUS | MULTIPLY | DIVIDE | MOD );
-
-rel_op: ( LESS_THAN | LESS_THAN_OR_EQ | GREATER_THAN | GREATER_THAN_OR_EQ );
-
-eq_op: ( NEQUALS | EQUALS );
-
-cond_op: ( AND | OR );
-
-literal: ( int_literal | char_literal | bool_literal );
-id: IDENTIFIER ;
-int_literal: ( decimal_literal | hex_literal );
-decimal_literal: DECIMAL ;
-hex_literal: HEX ;
-bool_literal: ( TK_true | TK_false );
-char_literal: CHAR_LITERAL ;
-string_literal: STR_LITERAL ;
