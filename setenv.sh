@@ -1,9 +1,23 @@
 #!/bin/bash
 
+##
+#  Sets relevant environment variables in the current shell instance.
+#  e.g. For bash, use .[SPACE]setenv.sh
+#  Invoked by build.sh and run.sh
+#
+#  For MIT Athena, customize athena.environment
+#  For your local workspace, customize local.environment
+##
+
+ATHENA_ENV_FILE="athena.environment"
+LOCAL_ENV_FILE="local.environment"
+
 if [[ $(dnsdomainname) = mit.edu ]]; then
-  export SCALA_HOME=/mit/scala/scala/scala-2.11.2/
+  set -a
+  . ./${ATHENA_ENV_FILE}
+  set +a
 else
-  export JAVA_HOME="/usr/lib/jvm/java-8-jdk/"
-  export SCALA_HOME="/opt/scala/scala-2.11.2/"
-  export PATH="$SCALA_HOME/bin:$PATH"
+  set -a
+  . ./${LOCAL_ENV_FILE}
+  set +a
 fi

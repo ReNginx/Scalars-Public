@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## Run script for Scalars Decaf Compiler
+
 if [[ $(dnsdomainname) = mit.edu ]]; then
   eval $(attach -Padd -b -f scala)
 fi

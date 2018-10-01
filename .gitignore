@@ -8,3 +8,6 @@ mant.json
 parser/autogen
 parser/classes
 parser/dist
+
+# local environment
+local.environment
