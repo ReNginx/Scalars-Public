@@ -1,4 +1,11 @@
 #!/bin/bash
-eval $(attach -Padd -b -f scala)
-export SCALA_HOME=/mit/scala/scala/scala-2.11.2/
+
+if [[ $(dnsdomainname) = mit.edu ]]; then
+  eval $(attach -Padd -b -f scala)
+fi
+
+gitroot=$(git rev-parse --show-toplevel)
+. $gitroot/setenv.sh
+
 ant "$@"
+
