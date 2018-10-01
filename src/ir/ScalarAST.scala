@@ -4,6 +4,8 @@ import scala.collection.mutable.ListBuffer
 
 import antlr.CommonAST
 
+import edu.mit.compilers.grammar
+
 /** Immutable, recursive AST with simpler APIs than CommonAST.
  *
  * Don't use the constructor of this class directly.
@@ -14,7 +16,7 @@ import antlr.CommonAST
  *   2. pointer to the parent node
  *   3. pretty-printing
  */
-case class ScalarAST(text: String, line: Int, column: Int, parent: Option[ScalarAST])(lazyChildren: => Vector[ScalarAST]) {
+case class ScalarAST(token: Int, text: String, line: Int, column: Int, parent: Option[ScalarAST])(lazyChildren: => Vector[ScalarAST]) {
 
   def children = lazyChildren
 
@@ -32,6 +34,10 @@ case class ScalarAST(text: String, line: Int, column: Int, parent: Option[Scalar
 
     // recurse
     children foreach { _.prettyPrint(indentLevel + 1) }
+  }
+  
+  def printChildren(): Unit = {
+    children foreach {println(_)}
   }
 
 }
@@ -68,11 +74,11 @@ object ScalarAST {
   def fromCommonAST(ast: CommonASTWithLines, parent: Option[ScalarAST] = None): ScalarAST = {
     var commonChildren = getChildren(ast)
     val column = ast.getColumn
-    val line = ast.getLine
+    val token = ast.getType
     val text = ast.getText
 
     if (commonChildren.size == 0) {
-      new ScalarAST(text, line, column, parent)({ Vector() })
+      new ScalarAST(token, text, line, column, parent)({ Vector() })
     } else {
       lazy val thisAST: ScalarAST = new ScalarAST(text, line, column, parent)({ children })
 

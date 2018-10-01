@@ -89,6 +89,7 @@ object Compiler {
       }
       val tree = ScalarAST.fromCommonAST(t)
       tree.prettyPrint()
+      tree.printChildren()
       tree
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
