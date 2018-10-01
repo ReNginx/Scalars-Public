@@ -18,17 +18,20 @@ options
 
 tokens
 {
+  ARGS;
   ARRAY;
   BLOCK;
   FIELD_DECLARATION;
   FIELD_LIST;
-  FOR_END;
+  TERNARY;
+  CONDITION;
   FOR_START;
   FOR_UPDATE;
+  HEX;
   ID;
   IMPORT;
   INDEX;
-  METHOD_ARGS;
+  INT;
   METHOD_CALL;
   METHOD_DECLARATION;
   PARAM_LIST;
@@ -104,7 +107,7 @@ protected var: id
 protected array: id L_BRACKET! index R_BRACKET!
   {#array = #(#[ARRAY, "ARRAY"], #array);};
 protected index: (
-  (DECIMAL | HEX)
+  (integer | hex)
   {#index = #(#[INDEX, "INDEX"], #index);}
 );
 
@@ -178,7 +181,7 @@ for_loop: (
   TK_for^
     L_PARENTH!
       for_start SEMICOLON!
-      for_end   SEMICOLON!
+      end_condition   SEMICOLON!
       for_update
     R_PARENTH!
   block
@@ -187,9 +190,9 @@ protected for_start: (
   id EQ expr
   { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
 );
-protected for_end: (
+protected end_condition: (
   expr
-  { #for_end = #(#[FOR_END, "FOR_END"], #for_end); }
+  { #end_condition = #(#[CONDITION, "CONDITION"], #end_condition); }
 );
 protected for_update: (
   location
@@ -202,7 +205,7 @@ protected for_update: (
 
 while_loop: (
   TK_while^
-    L_PARENTH! expr R_PARENTH!
+    L_PARENTH! end_condition R_PARENTH!
   block
 );
 
@@ -215,7 +218,7 @@ method_call: (
 );
 method_args: (
   method_arg (COMMA! method_arg)*
-  { #method_args = #(#[METHOD_ARGS, "METHOD_ARGS"], #method_args); }
+  { #method_args = #(#[ARGS, "ARGS"], #method_args); }
 );
 method_arg : ( expr | STR_LITERAL );
 
@@ -234,28 +237,40 @@ protected expr_index: (
   { #expr_index = #(#[INDEX, "INDEX"], #expr_index); }
 );
 
+protected hex: (
+  HEXADECIMAL
+  { #hex = #(#[HEX, "HEX"], #hex); }
+);
+protected integer: (
+  DECIMAL
+  { #integer = #(#[INT, "INT"], #integer); }
+);
+
 expr: (
-  ( // stand-alone left hand side of expression
-      ( location )
-    | ( method_call )
-    | ( DECIMAL | HEX | CHAR_LITERAL | TK_true | TK_false )  // literal
-    | ( TK_len L_PARENTH! id R_PARENTH! )
-    | ( MINUS^ expr )
-    | ( EXCLAMATION^ expr )
-    | ( L_PARENTH! expr R_PARENTH! )
-  )
-  ( // right hand side of expression
-    options{greedy=true;} : (
-      ( QUESTION^ expr COLON! expr )
-      |
-      (
-        (  // operators
-          MINUS^ | PLUS^ | MULTIPLY^ | DIVIDE^ | MOD^ |
-          LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^ |
-          NEQUALS^ | EQUALS^ | AND^ | OR^
-        )
-        expr
-      )
+  expr_left
+  ( options{greedy=true;}: expr_right )*
+);
+expr_left: (  // stand-alone left hand side of expression
+    ( location )
+  | ( method_call )
+  | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
+  | ( TK_len L_PARENTH! id R_PARENTH! )
+  | ( MINUS^ expr )
+  | ( EXCLAMATION^ expr )
+  | ( L_PARENTH! expr R_PARENTH! )
+);
+expr_right: (  // right hand side of expression
+    ( ternary )
+  | (
+    (
+      MINUS^ | PLUS^ | MULTIPLY^ | DIVIDE^ | MOD^ |
+      LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^ |
+      NEQUALS^ | EQUALS^ | AND^ | OR^
     )
-  )*
+    expr
+  )
+);
+ternary: (
+  QUESTION^ expr COLON! expr
+  { #ternary = #(#[TERNARY, "TERNARY"], #ternary); }
 );

@@ -92,7 +92,7 @@ GREATER_THAN_OR_EQ: '>' '=' ;
 EXCLAMATION: '!' ;
 
 // PRIMITIVES
-HEX: '0' 'x' ( DIGIT | 'a'..'f' | 'A'..'F' )+ ;
+HEXADECIMAL: '0' 'x' ( DIGIT | 'a'..'f' | 'A'..'F' )+ ;
 DECIMAL: ( DIGIT )+ ;
 CHAR_LITERAL: '\'' CHAR '\'' ;
 STR_LITERAL: '\"' (CHAR)* '\"' ;
