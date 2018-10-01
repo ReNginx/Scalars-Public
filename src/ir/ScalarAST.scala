@@ -66,7 +66,7 @@ object ScalarAST {
    * @return a ScalarAST instance
    */
   def fromCommonAST(ast: CommonASTWithLines, parent: Option[ScalarAST] = None): ScalarAST = {
-    val commonChildren = getChildren(ast)
+    var commonChildren = getChildren(ast)
     val column = ast.getColumn
     val line = ast.getLine
     val text = ast.getText
@@ -75,7 +75,21 @@ object ScalarAST {
       new ScalarAST(text, line, column, parent)({ Vector() })
     } else {
       lazy val thisAST: ScalarAST = new ScalarAST(text, line, column, parent)({ children })
-      lazy val children = commonChildren map (child => fromCommonAST(child, Option(thisAST)))
+
+      lazy val children = {
+        val current = commonChildren map (child => fromCommonAST(child, Option(thisAST)))
+        if (text == "METHOD_CALL") {  // make sure args is present, even if empty
+          val name = "ARGS"
+          val args = current map { _.text } filter { _ == name }
+          val emptyArgs = new ScalarAST(name, 0, 0, Option(thisAST))({ Vector() })
+          current ++ {
+            if (args.size == 0) Vector(emptyArgs) else Vector()
+          }
+        } else {
+          current
+        }
+      }
+
       thisAST
     }
   }
