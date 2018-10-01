@@ -18,13 +18,13 @@ abstract class SymbolTable[T](parentTable: SymbolTable[Descriptor], symbols: Vec
    * Preserve the order in which the symbols show, for parameters and what not
    */
   private def createMap(symbols: Vector[T]): HashMap[String, T] = {
-    throw new RuntimeException
+    throw new Exception()
   }
 
   /**
    * Get the descriptor with this name
    */
-  def get(name: String): T = throw new RuntimeException()
+  def get(name: String): T = throw new Exception()
 
   /**
    * Check if name maps to any descriptor in this table or any of the parent tables

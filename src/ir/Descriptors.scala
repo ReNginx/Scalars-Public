@@ -35,20 +35,20 @@ case class VariableDescriptor(
 
 class MethodDescriptor(
   methodName: String,
-  line: Int,
-  column: Int,
+  lineNumber: Int,
+  columnNumber: Int,
   types: HashMap[Vector[ParameterDescriptor], String],
   codes: HashMap[Vector[ParameterDescriptor], ScalarAST]
 ) extends Descriptor {
 
-  private val _name = methodName
-
-  def name = _name
+  def line = lineNumber
+  def column = columnNumber
+  def name = methodName
 
   // get the reutrn type corresponding to the given parameters
-  def returnType(params: Vector[ParameterDescriptor]): String = throw RuntimeException()
+  def returnType(params: Vector[ParameterDescriptor]): String = throw new Exception()
 
   // get the ScalarAST corresponding to the given parameters
-  def code(params: Vector[ParameterDescriptor]): ScalarAST = throw RuntimeException()
+  def code(params: Vector[ParameterDescriptor]): ScalarAST = throw new Exception()
 
 }
