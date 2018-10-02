@@ -1,10 +1,11 @@
 package ir
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 
 /**
- * Abstract type `T` is is one of the subclasses of `Descriptor`
+ * Abstract type `D` is is one of the subclasses of `Descriptor`
+ * SymbolTable is mutable.
  */
 abstract class SymbolTable[D<:Descriptor](parentTable: Option[SymbolTable[D]], symbols: Vector[D]) {
   private val _parent = parentTable
@@ -12,6 +13,10 @@ abstract class SymbolTable[D<:Descriptor](parentTable: Option[SymbolTable[D]], s
 
   // parent
   def parent = _parent
+
+  def add(symbol: D): Unit = {
+    _map += (symbol.name -> symbol)
+  }
 
   /**
    * Get the descriptor with this name
