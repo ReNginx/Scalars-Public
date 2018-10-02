@@ -83,13 +83,13 @@ object Compiler {
 
       // see ir.CommonASTWithLines for more info
       parser.setASTNodeClass("ir.CommonASTWithLines")
-      parser.setTrace(CLI.debug)
+      parser.setTrace(debugSwitch)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonASTWithLines]
       if (parser.getError()) {
         println("[ERROR] Parse failed")
         return null
-      } else if (CLI.debug){
+      } else if (debugSwitch){
          print(t.toStringList())
          println()
       }
