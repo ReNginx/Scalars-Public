@@ -152,7 +152,7 @@ statement: (
       location
       (
         ( // assign operation
-          ( EQ^ | PLUS_EQ^ | MINUS_EQ^ )
+          ( ASSIGN^ | PLUS_ASSIGN^ | MINUS_ASSIGN^ )
           expr
         )
         |
@@ -194,7 +194,7 @@ for_loop: (
   block
 );
 protected for_start: (
-  id EQ expr
+  id ASSIGN expr
   { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
 );
 protected condition: (
@@ -204,7 +204,7 @@ protected condition: (
 protected for_update: (
   location
   (
-      ( (PLUS_EQ^ | MINUS_EQ^) expr )
+      ( (PLUS_ASSIGN^ | MINUS_ASSIGN^) expr )
     | ( INCREMENT^ | DECREMENT^ )
   )
   { #for_update = #(#[FOR_UPDATE, "FOR_UPDATE"], #for_update); }
@@ -230,7 +230,7 @@ method_args: (
 method_arg : ( expr | STR_LITERAL );
 
 protected id: (
-  IDENTIFIER
+  SC_ID
   { #id = #(#[ID, "ID"], #id); }
 );
 
@@ -262,7 +262,7 @@ stand_alone_expr: (  // stand-alone expression
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
   | ( TK_len L_PARENTH! id R_PARENTH! )
   | ( MINUS^ expr )
-  | ( EXCLAMATION^ expr )
+  | ( NOT^ expr )
   | ( L_PARENTH! expr R_PARENTH! )
 );
 mul_op_expr: (

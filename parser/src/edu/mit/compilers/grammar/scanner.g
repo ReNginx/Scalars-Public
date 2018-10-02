@@ -59,7 +59,7 @@ tokens
 
 ////////// ////////// ////////// ////////// //////////
 
-IDENTIFIER:
+SC_ID:
   ( options{greedy=true;} : ALPHABET )+
   (ALPHABET | DIGIT)* ;
 
@@ -89,7 +89,7 @@ LESS_THAN: '<' ;
 LESS_THAN_OR_EQ: '<' '=';
 GREATER_THAN: '>' ;
 GREATER_THAN_OR_EQ: '>' '=' ;
-EXCLAMATION: '!' ;
+NOT: '!' ;
 
 // PRIMITIVES
 HEXADECIMAL: '0' 'x' ( DIGIT | 'a'..'f' | 'A'..'F' )+ ;
@@ -98,9 +98,9 @@ CHAR_LITERAL: '\'' CHAR '\'' ;
 STR_LITERAL: '\"' (CHAR)* '\"' ;
 
 // ASSIGNMENT
-EQ: '=' ;
-PLUS_EQ: '+' '=' ;
-MINUS_EQ: '-' '=' ;
+ASSIGN: '=' ;
+PLUS_ASSIGN: '+' '=' ;
+MINUS_ASSIGN: '-' '=' ;
 
 // OTHER PUNCTUATIONS
 COLON: ':' ;
