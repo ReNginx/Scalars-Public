@@ -83,8 +83,8 @@ MOD: '%' ;
 // LOGICAL
 AND: '&' '&' ;
 OR: '|' '|' ;
-EQUALS: '=' '=';
-NEQUALS: '!' '=';
+EQUAL: '=' '=';
+NEQUAL: '!' '=';
 LESS_THAN: '<' ;
 LESS_THAN_OR_EQ: '<' '=';
 GREATER_THAN: '>' ;

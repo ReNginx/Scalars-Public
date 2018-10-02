@@ -283,7 +283,7 @@ comparison_expr: (
 );
 equality_expr: (
   comparison_expr
-  ( options{greedy=true;}: (NEQUALS^ | EQUALS^) equality_expr )?
+  ( options{greedy=true;}: (NEQUAL^ | EQUAL^) equality_expr )?
 );
 logical_operator: (
   equality_expr
