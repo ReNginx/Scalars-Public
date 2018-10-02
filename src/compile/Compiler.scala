@@ -31,14 +31,19 @@ object Compiler {
           System.exit(1)
         }
         System.exit(0)
+    } else if (CLI.target == CLI.Action.INTER) {
+        if(inter(CLI.infile) == null) {
+          System.exit(1)
+        }
+        System.exit(0)
     }
   }
 
-  def scan(fileName: String) {
+  def scan(fileName: String, debugSwitch: Boolean = CLI.debug) {
     try {
       val inputStream: FileInputStream = new java.io.FileInputStream(fileName)
       val scanner = new DecafScanner(new DataInputStream(inputStream))
-      scanner.setTrace(CLI.debug)
+      scanner.setTrace(debugSwitch)
       var done = false
       while (!done) {
         try {
@@ -61,7 +66,7 @@ object Compiler {
     }
   }
 
-  def parse(fileName: String): ScalarAST  = {
+  def parse(fileName: String, debugSwitch: Boolean = CLI.debug): ScalarAST = {
     /**
     Parse the file specified by the filename. Eventually, this method
     may return a type specific to your compiler.
@@ -86,16 +91,25 @@ object Compiler {
         return null
       } else if (CLI.debug){
          print(t.toStringList())
+         println()
       }
-      val tree = ScalarAST.fromCommonAST(t)
-      tree.prettyPrint()
-      // tree.printChildren()
-      // tree.printself()
-      tree
+      val ast = ScalarAST.fromCommonAST(t)
+      ast
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
       null
     }
+  }
+
+  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : ScalarAST = {
+    val ast = parse(fileName=fileName, debugSwitch=false)
+    if (ast != null)
+    {
+      if (debugSwitch) {
+        ast.prettyPrint()
+      }
+    }
+    ast
   }
 
 }
