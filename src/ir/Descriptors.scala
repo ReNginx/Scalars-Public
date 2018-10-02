@@ -24,7 +24,7 @@ case class MethodDescriptor(
   line: Int,
   column: Int,
   variables:   HashMap[Vector[ParameterDescriptor], SymbolTable[VariableDescriptor]],
-  returnTypes: HashMap[Vector[ParameterDescriptor], String],
+  returnTypes: HashMap[Vector[ParameterDescriptor], DecafParserTokenTypes],
   codes:       HashMap[Vector[ParameterDescriptor], ScalarAST]
 ) extends Descriptor
 
