@@ -194,7 +194,7 @@ for_loop: (
   block
 );
 protected for_start: (
-  id ASSIGN expr
+  id ASSIGN^ expr
   { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
 );
 protected condition: (

@@ -13,7 +13,7 @@ object Compiler {
     DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL",
     DecafScannerTokenTypes.DECIMAL -> "INTLITERAL",
     DecafScannerTokenTypes.HEXADECIMAL -> "INTLITERAL",
-    DecafScannerTokenTypes.IDENTIFIER -> "IDENTIFIER",
+    DecafScannerTokenTypes.SC_ID -> "IDENTIFIER",
     DecafScannerTokenTypes.STR_LITERAL -> "STRINGLITERAL",
     DecafScannerTokenTypes.TK_false -> "BOOLEANLITERAL",
     DecafScannerTokenTypes.TK_true -> "BOOLEANLITERAL"
@@ -94,6 +94,7 @@ object Compiler {
          println()
       }
       val ast = ScalarAST.fromCommonAST(t)
+      ast.prettyPrint()
       ast
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
