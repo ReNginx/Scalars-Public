@@ -11,3 +11,6 @@ parser/dist
 
 # local environment
 local.environment
+run.sh
+setenv.sh
+build.sh
