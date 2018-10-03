@@ -25,6 +25,16 @@ An advantage about the nested classes approach (as suggested in the handout) is 
 
 [WIP] (Convert AST to IRT, instantiate each node of the IRT from its corresponding AST node, using an appropriate class, etc.)
 
+- Go over `import`, create a `method descriptor` for each ID (might need to mark them as external function), and add them to global symbol table.
+- Do the same to `field_decl`.
+- Parse `method_decl` one by one. Do the following things in order.
+  - Create a `method descriptor` by its `return type`, `name`, `param_list`, add it to `env_stack`
+  - Parse the `BLK` part. store the result in `IrMethod.code`.
+- Parse `if, while for` pretty much the same way. 
+- For `IrContinue, IrBreak`, it need to be associated with its closest loop. (Could be solved by using a param in traversal function to keep track of cloest loop).
+- For `IrReturn` it need to associate with its function.
+- `IrExpr` contains a `type` variable, represents it's evaluated type.
+
 ### Scope Hierarchy
 
 All "traversal" mentioned in this section refers to preorder traversal (root, left, right).
@@ -99,3 +109,4 @@ Combining the previous two sections, we can see that it is convenient to extend 
 
 We check for this rule at the same time when building the stack. Whenever we see a usage for `name`, we perform `envstack.lookup(name)` and outputs a violation if the return is `none`.
 
+### 
