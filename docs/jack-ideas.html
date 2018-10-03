@@ -1097,45 +1097,59 @@ input::-webkit-inner-spin-button{margin:0;-webkit-appearance:none;appearance:non
 <a id="user-content-sketch-of-ir" class="anchor" href="#sketch-of-ir" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sketch of IR</h1>
 <div class="highlight highlight-source-scala"><pre><span class="pl-k">trait</span> <span class="pl-en">Program</span>
 ├── <span class="pl-k">trait</span> <span class="pl-en">Expression</span>
-│   ├── <span class="pl-k">trait</span> <span class="pl-en">BinaryOperation</span>(<span class="pl-v">operator</span>: <span class="pl-en">Operator</span>, <span class="pl-v">lhs</span>: <span class="pl-en">Expression</span>, <span class="pl-v">rhs</span>: <span class="pl-en">Expression</span>)
-│   ├── <span class="pl-k">trait</span> <span class="pl-en">Call</span>
-│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Callout</span>
-│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">MethodCall</span>(<span class="pl-v">method</span>: <span class="pl-en">MethodDeclaration</span>, <span class="pl-v">params</span>: <span class="pl-en">Vector</span>[<span class="pl-en">Expression</span>])
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Length</span>
+<span class="pl-k">|</span>   ├── <span class="pl-k">trait</span> <span class="pl-en">UnaryOperation</span>
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Increment</span>(<span class="pl-v">expression</span>: <span class="pl-en">Expression</span>)
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Decrement</span>(<span class="pl-v">expression</span>: <span class="pl-en">Expression</span>)
+<span class="pl-k">|</span>   <span class="pl-k">|</span>   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Not</span>(<span class="pl-v">expression</span>: <span class="pl-en">Expression</span>)
+│   ├── <span class="pl-k">trait</span> <span class="pl-en">BinaryOperation</span>
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">ArithmeticOperation</span>(<span class="pl-v">operator</span>: <span class="pl-en">ArithmeticOperator</span>, <span class="pl-v">lhs</span>: <span class="pl-en">Expression</span>, <span class="pl-v">rhs</span>: <span class="pl-en">Expression</span>)
+│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">LogicalOperation</span>(<span class="pl-v">operator</span>: <span class="pl-en">LogicalOperator</span>, <span class="pl-v">lhs</span>: <span class="pl-en">Expression</span>, <span class="pl-v">rhs</span>: <span class="pl-en">Expression</span>)
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">TernaryOperation</span>(<span class="pl-v">condition</span>: <span class="pl-en">LogicalOperation</span>, <span class="pl-v">ifTrue</span>: <span class="pl-en">Expression</span>, <span class="pl-v">ifFalse</span>: <span class="pl-en">Expression</span>)
+│   └── <span class="pl-k">trait</span> <span class="pl-en">Call</span>
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Callout</span>  <span class="pl-c"><span class="pl-c">//</span> TODO not sure yet</span>
+│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">MethodCall</span>(<span class="pl-v">method</span>: <span class="pl-en">MethodDeclaration</span>, <span class="pl-v">params</span>: <span class="pl-en">Vector</span>[<span class="pl-en">Expression</span>])
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Length</span>(<span class="pl-v">array</span>: <span class="pl-en">ArrayDeclaration</span>)
 │   ├── <span class="pl-k">trait</span> <span class="pl-en">Literal</span>
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">IntLiteral</span>(<span class="pl-v">value</span>: <span class="pl-k">Int</span>)
 │   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">BooleanLiteral</span>(<span class="pl-v">value</span>: <span class="pl-k">Boolean</span>)
-│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">IntLiteral</span>(<span class="pl-v">value</span>: <span class="pl-k">Int</span>)
-│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Location</span>(<span class="pl-v">id</span>: <span class="pl-en">FieldDeclaration</span>, <span class="pl-v">index</span>: <span class="pl-en">Expression</span>)
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">CharLiteral</span>(<span class="pl-v">char</span>: <span class="pl-k">Char</span>)
+│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">StringLiteral</span>(<span class="pl-v">string</span>: <span class="pl-k">String</span>)
+│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Location</span>(<span class="pl-v">field</span>: <span class="pl-en">FieldDeclaration</span>, <span class="pl-v">index</span>: <span class="pl-en">Expression</span>)
 ├── <span class="pl-k">trait</span> <span class="pl-en">MemberDeclaration</span>
-│   ├── <span class="pl-k">trait</span> <span class="pl-en">FieldDeclaration</span>(<span class="pl-v">id</span>: <span class="pl-k">String</span>)
-│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">VariableDeclaration</span>(<span class="pl-v">type</span>: <span class="pl-en">Type</span>)
-│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">ArrayDeclaration</span>(<span class="pl-v">type</span>: <span class="pl-en">Type</span>, <span class="pl-v">length</span>: <span class="pl-en">IntLiteral</span>)
-│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">MethodDeclaration</span>
+│   ├── <span class="pl-k">trait</span> <span class="pl-en">FieldDeclaration</span>
+│   │   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">VariableDeclaration</span>(<span class="pl-v">type</span>: <span class="pl-en">Type</span>, <span class="pl-v">name</span>: <span class="pl-k">String</span>)
+│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">ArrayDeclaration</span>(<span class="pl-v">type</span>: <span class="pl-en">Type</span>, <span class="pl-v">name</span>: <span class="pl-k">String</span>, <span class="pl-v">length</span>: <span class="pl-en">IntLiteral</span>)
+│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">MethodDeclaration</span>(<span class="pl-v">type</span>: <span class="pl-en">Type</span>, <span class="pl-v">name</span>: <span class="pl-k">String</span>, <span class="pl-v">params</span>: <span class="pl-en">Vector</span>[<span class="pl-en">FieldDeclaration</span>], <span class="pl-v">code</span>: <span class="pl-en">Program</span>)
 ├── <span class="pl-k">trait</span> <span class="pl-en">Statement</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">AssignStatement</span>(<span class="pl-v">location</span>: <span class="pl-en">Location</span>, <span class="pl-v">value</span>: <span class="pl-en">Expression</span>)
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Break</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">CompoundAssignStatement</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Continue</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">For</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">If</span>
-│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Import</span>
-│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">While</span>
+│   ├── <span class="pl-k">trait</span> <span class="pl-en">Assignment</span>
+│   <span class="pl-k">|</span>   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">AssignStatement</span>(<span class="pl-v">location</span>: <span class="pl-en">Location</span>, <span class="pl-v">value</span>: <span class="pl-en">Expression</span>)
+│   │   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">CompoundAssignStatement</span>(<span class="pl-v">location</span>: <span class="pl-en">Location</span>, <span class="pl-v">value</span>: <span class="pl-en">Expression</span>, <span class="pl-v">operator</span>: <span class="pl-en">ArithmeticOperator</span>)
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Break</span>(<span class="pl-v">loop</span>: <span class="pl-en">Loop</span>)
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Continue</span>(<span class="pl-v">loop</span>: <span class="pl-en">Loop</span>)
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Return</span>(<span class="pl-v">value</span>: <span class="pl-en">Expression</span>)
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">If</span>(<span class="pl-v">condition</span>: <span class="pl-en">LogicalOperation</span>, <span class="pl-v">jumpTo</span>: <span class="pl-en">Statement</span>)
+│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">Import</span>(<span class="pl-v">id</span>: <span class="pl-k">String</span>)
+├── <span class="pl-k">trait</span> <span class="pl-en">Loop</span>
+│   ├── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">For</span>(<span class="pl-v">start</span>: <span class="pl-en">AssignStatement</span>, <span class="pl-v">condition</span>: <span class="pl-en">LogicalOperation</span>, <span class="pl-v">update</span>: <span class="pl-en">Assignment</span>, <span class="pl-v">jumpFalse</span>: <span class="pl-en">Statement</span>)
+│   └── <span class="pl-k">case</span> <span class="pl-k">class</span> <span class="pl-en">While</span>(<span class="pl-v">condition</span>: <span class="pl-en">LogicalOperation</span>, <span class="pl-v">jumpFalse</span>: <span class="pl-en">Statement</span>)
 ├── <span class="pl-k">trait</span> <span class="pl-en">Type</span>
+│   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">IntArray</span>
 │   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Boolean</span>
 │   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">BooleanArray</span>
+│   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Char</span>
 │   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Int</span>
-│   └── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">IntArray</span>
-└── <span class="pl-k">trait</span> <span class="pl-en">Operator</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Add</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Subtract</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Multiply</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Divide</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Modulo</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Or</span>
+│   └── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">String</span>
+├── <span class="pl-k">trait</span> <span class="pl-en">ArithmeticOperator</span>
+<span class="pl-k">|</span>   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Add</span>
+<span class="pl-k">|</span>   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Subtract</span>
+<span class="pl-k">|</span>   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Multiply</span>
+<span class="pl-k">|</span>   ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Divide</span>
+│   └── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Modulo</span>
+└── <span class="pl-k">trait</span> <span class="pl-en">LogicalOperator</span>
+    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Or</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">And</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Equal</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">NotEqual</span>
-    ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">Not</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">GreaterThan</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">GreaterThanOrEqual</span>
     ├── <span class="pl-k">case</span> <span class="pl-k">object</span> <span class="pl-en">LessThan</span>
