@@ -1,7 +1,8 @@
 # Sketch of IR
-
+  for every case class, add line column
 ```scala
 trait Program
+├── case class Import(method: MethodDeclaration)  // returns int nay valid signature
 ├── trait Expression
 |   ├── trait UnaryOperation
 │   │   ├── case class Increment(expression: Expression)
@@ -13,7 +14,7 @@ trait Program
 │   ├── case class TernaryOperation(condition: LogicalOperation, ifTrue: Expression, ifFalse: Expression)
 │   ├── trait Call
 │   │   ├── case class Callout  // TODO not sure yet
-│   │   └── case class MethodCall(method: MethodDeclaration, params: Vector[Expression])
+│   │   └── case class MethodCall(method: MethodDeclaration, params: Vector[Expression])  // look into mutable field for method
 │   ├── case class Length(array: ArrayDeclaration)
 │   ├── trait Literal
 │   │   ├── case class IntLiteral(value: Int)
@@ -26,18 +27,21 @@ trait Program
 │   │   ├── case class VariableDeclaration(type: Type, name: String)
 │   │   └── case class ArrayDeclaration(type: Type, name: String, length: IntLiteral)
 │   └── case class MethodDeclaration(type: Type, name: String, params: Vector[FieldDeclaration], code: Program)
+├── case class Block(declarations: Vector[FieldDeclaration], statements: Vector[Statement])
 ├── trait Statement
 │   ├── trait Assignment
 │   |   ├── case class AssignStatement(location: Location, value: Expression)
 │   │   └── case class CompoundAssignStatement(location: Location, value: Expression, operator: ArithmeticOperator)
 │   ├── case class Break(loop: Loop)
+│   ├── trait Call
+│   │   ├── case class Callout  // TODO not sure yet
+│   │   └── case class MethodCall(method: MethodDeclaration, params: Vector[Expression])  // look into mutable field for method
 │   ├── case class Continue(loop: Loop)
 │   ├── case class Return(value: Expression)
 │   ├── case class If(condition: LogicalOperation, jumpTo: Statement)
-│   └── case class Import(id: String)
-├── trait Loop
-│   ├── case class For(start: AssignStatement, condition: LogicalOperation, update: Assignment, jumpFalse: Statement)
-│   └── case class While(condition: LogicalOperation, jumpFalse: Statement)
+|   └── trait Loop
+|       ├── case class For(start: AssignStatement, condition: LogicalOperation, update: Assignment, jumpFalse: Statement)
+|       └── case class While(condition: LogicalOperation, jumpFalse: Statement)
 ├── trait Type
 │   ├── case object IntArray
 │   ├── case object Boolean
@@ -61,3 +65,7 @@ trait Program
     ├── case object LessThan
     └── case object LessThanOrEqual
 ```
+
+
+<!-- add later -->
+<!-- │   ├── case class Import(id: String) -->
