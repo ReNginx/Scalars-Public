@@ -67,7 +67,7 @@ object ASTtoUntypedIR {
 
       case DecafParserTokenTypes.HEX => isVirtualNode
       case DecafParserTokenTypes.HEXADECIMAL => {
-        val hexAsInt = Integer.parseInt(name, 16)
+        val hexAsInt = java.lang.Long.parseLong(name, 16)
         IntLiteral(line, col, hexAsInt)
       }
 
