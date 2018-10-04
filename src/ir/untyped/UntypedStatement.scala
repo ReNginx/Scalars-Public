@@ -13,3 +13,7 @@ case class UntypedContinue(line: Int, col: Int) extends UntypedStatement {
 case class UntypedReturn(line: Int, col: Int, value: UntypedExpression) extends UntypedStatement {
   override def toString: String = s"return ${line}:${col}"
 }
+
+case class UntypedIf(line: Int, col: Int, condition: UntypedExpression, ifTrue: UntypedBlock, ifFalse: Option[UntypedBlock]) extends UntypedStatement {
+  override def toString: String = s"if ${line}:${col}"
+}

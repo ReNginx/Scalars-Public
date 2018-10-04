@@ -1,15 +1,15 @@
 package ir.untyped
 
 trait UntypedLoop extends UntypedStatement {
-  def condition: UntypedLogicalOperation
+  def condition: UntypedExpression
   def ifTrue: UntypedBlock
 }
 
-case class For(
+case class UntypedFor(
   line: Int,
   col: Int,
   start: UntypedAssignStatement,
-  condition: UntypedLogicalOperation,
+  condition: UntypedExpression,
   update: UntypedAssignment,
   ifTrue: UntypedBlock
 ) extends UntypedLoop {
@@ -18,10 +18,10 @@ case class For(
 
 }
 
-case class While(
+case class UntypedWhile(
   line: Int,
   col: Int,
-  condition: UntypedLogicalOperation,
+  condition: UntypedExpression,
   ifTrue: UntypedBlock
 ) extends UntypedLoop {
 

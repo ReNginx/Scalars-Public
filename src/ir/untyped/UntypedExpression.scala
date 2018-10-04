@@ -2,11 +2,10 @@ package ir.untyped
 
 import ir.typed.ArrayDeclaration
 import ir.typed.Literal
-import ir.typed.FieldDeclaration
 
 trait UntypedExpression extends UntypedIR
 
-case class UntypedLength(line: Int, col: Int, array: ArrayDeclaration) extends UntypedExpression {
+case class UntypedLength(line: Int, col: Int, location: UntypedLocation) extends UntypedExpression {
   override def toString: String = s"Length ${line}:${col}"
 }
 

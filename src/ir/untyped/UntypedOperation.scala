@@ -6,11 +6,11 @@ import ir.typed.LogicalOperation
 
 trait UntypedUnaryOperation extends UntypedExpression
 
-case class UntypedIncrement(line: Int, col: Int, location: UntypedLocation) extends UntypedUnaryOperation  {
+case class UntypedIncrement(line: Int, col: Int, location: UntypedLocation) extends UntypedUnaryOperation with UntypedAssignment {
   override def toString: String = s"Increment ${line}:${col}"
 }
 
-case class UntypedDecrement(line: Int, col: Int, location: UntypedLocation) extends UntypedUnaryOperation  {
+case class UntypedDecrement(line: Int, col: Int, location: UntypedLocation) extends UntypedUnaryOperation with UntypedAssignment {
   override def toString: String = s"Decrement ${line}:${col}"
 }
 

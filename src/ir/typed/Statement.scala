@@ -21,7 +21,7 @@ case class Return(line: Int, col: Int, _typ: Type, value: Expression) extends St
   override def toString: String = s"return ${typ} ${line}:${col}"
 }
 
-case class If(line: Int, col: Int, condition: LogicalOperation, ifTrue: Block, ifFalse: Option[Block]) extends Statement {
+case class If(line: Int, col: Int, condition: Expression, ifTrue: Block, ifFalse: Option[Block]) extends Statement {
   def typ: Type = VoidType
   override def toString: String = s"if ${line}:${col}"
 }

@@ -53,7 +53,7 @@ object ASTtoUntypedIR {
 
       case DecafParserTokenTypes.PROGRAM => {
         val imports = children(0).children map { ASTtoUntypedIR(_).asInstanceOf[UntypedImport] }
-        val fields  = children(1).children map { ASTtoUntypedIR(_).asInstanceOf[FieldDeclaration] }
+        val fields  = children(1).children map { ASTtoUntypedIR(_).asInstanceOf[FieldList] }
         val methods = children(2).children map { ASTtoUntypedIR(_).asInstanceOf[MethodDeclaration] }
         UntypedProgram(line, col, imports.toVector, fields.toVector, methods.toVector)
       }
@@ -63,6 +63,8 @@ object ASTtoUntypedIR {
 
       case DecafParserTokenTypes.INT =>   isVirtualNode
       case DecafParserTokenTypes.DECIMAL => IntLiteral(line, col, name.toInt)
+
+      case DecafParserTokenTypes.HEX => isVirtualNode
       case DecafParserTokenTypes.HEXADECIMAL => {
         val hexAsInt = Integer.parseInt(name, 16)
         IntLiteral(line, col, hexAsInt)
@@ -88,14 +90,21 @@ object ASTtoUntypedIR {
         val len = loc.index.asInstanceOf[IntLiteral]
         if (len.value > 0) ArrayDeclaration(line, col, name, typ, len) else VariableDeclaration(line, col, name, typ)
       }
-      // case DecafParserTokenTypes.FIELD_DECLARATION => {
-      //   val typ = lhs.asInstanceOf[Type]
-      //
-      //   val fieldDeclaration = children(1)
-      //   val typ = ASTtoUntypedIR(fieldDeclaration(0)).asInstanceOf[Type]
-      //   val fields = fieldDeclaration(1).children map { ASTtoUntypedIR(_).asInstanceOf[FieldDeclaration] }
-      // }
-      // case DecafParserTokenTypes.FIELD_LIST => throw new Exception
+      case DecafParserTokenTypes.FIELD_LIST => {
+        val typ = lhs.asInstanceOf[Type]
+
+        val fields = children.slice(1, children.size) map {
+          _.children(0)
+        } map {
+          ASTtoUntypedIR(_).asInstanceOf[UntypedLocation]
+        } map {
+          f => {
+            val len = f.index.asInstanceOf[IntLiteral]
+            if (len.value > 0) ArrayDeclaration(f.line, f.col, f.name, typ, len) else VariableDeclaration(f.line, f.col, f.name, typ)
+          }
+        }
+        FieldList(line, col, typ, fields.toVector)
+      }
 
       case DecafParserTokenTypes.INCREMENT => UntypedIncrement(line, col, lhs.asInstanceOf[UntypedLocation])
       case DecafParserTokenTypes.DECREMENT => UntypedDecrement(line, col, lhs.asInstanceOf[UntypedLocation])
@@ -120,41 +129,83 @@ object ASTtoUntypedIR {
         UntypedTernaryOperation(line, col, condition, ifTrue, ifFalse)
       }
 
-      // case DecafParserTokenTypes.BLOCK => {
-      //   val fields = children filter { _.token == DecafParserTokenTypes.FIELD_DECLARATION }
-      //   val fields = children filter { _.token != DecafParserTokenTypes.FIELD_DECLARATION }
-      // }
+      case DecafParserTokenTypes.BLOCK => {
+        val fields = children filter {
+          _.token == DecafParserTokenTypes.FIELD_LIST
+        } map {
+          ASTtoUntypedIR(_).asInstanceOf[FieldList]
+        }
+        val statements = children filter {
+          _.token != DecafParserTokenTypes.FIELD_LIST
+        } map {
+          ASTtoUntypedIR(_).asInstanceOf[Statement]
+        }
 
-      // case DecafParserTokenTypes.ASSIGN => throw new Exception
-      // case DecafParserTokenTypes.PLUS_ASSIGN => throw new Exception
-      // case DecafParserTokenTypes.MINUS_ASSIGN => throw new Exception
-      // case DecafParserTokenTypes.COLON => throw new Exception
-      // case DecafParserTokenTypes.COMMA => throw new Exception
+        Block(line, col, fields, statements)
+      }
 
+      case DecafParserTokenTypes.ASSIGN => {
+        val location = lhs.asInstanceOf[UntypedLocation]
+        UntypedAssignStatement(line, col, location, rhs)
+      }
+      case DecafParserTokenTypes.PLUS_ASSIGN => {
+        val location = lhs.asInstanceOf[UntypedLocation]
+        UntypedCompoundAssignStatement(line, col, location, rhs, Add)
+      }
+      case DecafParserTokenTypes.MINUS_ASSIGN => {
+        val location = lhs.asInstanceOf[UntypedLocation]
+        UntypedCompoundAssignStatement(line, col, location, rhs, Subtract)
+      }
 
-      // case DecafParserTokenTypes.CONDITION => throw new Exception
+      case DecafParserTokenTypes.CONDITION => isVirtualNode
+      case DecafParserTokenTypes.IF_BLOCK => isVirtualNode
+      case DecafParserTokenTypes.ELSE_BLOCK => isVirtualNode
+      case DecafParserTokenTypes.TK_if => {
+        val condition = lhs.asInstanceOf[UntypedExpression]
+        val ifTrue = rhs.asInstanceOf[UntypedBlock]
 
-      // case DecafParserTokenTypes.IF_BLOCK => throw new Exception
-      // case DecafParserTokenTypes.ELSE_BLOCK => throw new Exception
-      // case DecafParserTokenTypes.FOR_START => throw new Exception
-      // case DecafParserTokenTypes.FOR_UPDATE => throw new Exception
-      // case DecafParserTokenTypes.HEX => throw new Exception
-      // case DecafParserTokenTypes.IF_NO => throw new Exception
-      // case DecafParserTokenTypes.IF_YES => throw new Exception
-      // case DecafParserTokenTypes.IMPORT => throw new Exception
-      // case DecafParserTokenTypes.INT => throw new Exception
+        val ifFalse = {
+          if (children.size == 2) {
+            None
+          } else {
+            val block = ASTtoUntypedIR(children(2)).asInstanceOf[UntypedBlock]
+            Option(block)
+          }
+        }
 
-      // case DecafParserTokenTypes.TK_else => throw new Exception
+        UntypedIf(line, col, condition, ifTrue, ifFalse)
+      }
 
-      // case DecafParserTokenTypes.STATEMENT => throw new Exception
+      case DecafParserTokenTypes.FOR_START => isVirtualNode
+      case DecafParserTokenTypes.FOR_UPDATE => isVirtualNode
 
-      // case DecafParserTokenTypes.TK_if => throw new Exception
-      // case DecafParserTokenTypes.TK_for => throw new Exception
-      // case DecafParserTokenTypes.TK_import => throw new Exception
-      // case DecafParserTokenTypes.TK_len => throw new Exception
-      // case DecafParserTokenTypes.TK_return => throw new Exception
-      // case DecafParserTokenTypes.TK_while => throw new Exception
+      case DecafParserTokenTypes.IF_NO => isVirtualNode
+      case DecafParserTokenTypes.IF_YES => isVirtualNode
 
+      case DecafParserTokenTypes.IMPORT => {
+        val location = lhs.asInstanceOf[UntypedLocation]
+        UntypedImport(line, col, location)
+      }
+
+      case DecafParserTokenTypes.TK_while => {
+        val condition = lhs
+        val block = rhs.asInstanceOf[UntypedBlock]
+        UntypedWhile(line, col, lhs, block)
+      }
+      case DecafParserTokenTypes.TK_for => {
+        val start = lhs.asInstanceOf[UntypedAssignStatement]
+        val condition = rhs
+        val update = ASTtoUntypedIR(children(2)).asInstanceOf[UntypedAssignment]
+        val block  = ASTtoUntypedIR(children(3)).asInstanceOf[UntypedBlock]
+        UntypedFor(line, col, start, condition, update, block)
+      }
+
+      case DecafParserTokenTypes.TK_return => UntypedReturn(line, col, lhs)
+
+      case DecafParserTokenTypes.TK_len => {
+        val location = lhs.asInstanceOf[UntypedLocation]
+        UntypedLength(line, col, location)
+      }
 
       case _ => {
         throw new Exception

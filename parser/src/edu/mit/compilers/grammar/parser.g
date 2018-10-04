@@ -167,7 +167,6 @@ statement: (
   | ( TK_return^  (expr)? SEMICOLON! )
   | ( TK_break            SEMICOLON! )
   | ( TK_continue         SEMICOLON! )
-  { #statement = #(#[STATEMENT, "STATEMENT"], #statement); }
 );
 
 if_else: (
@@ -260,7 +259,7 @@ stand_alone_expr: (  // stand-alone expression
     ( location )
   | ( method_call )
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
-  | ( TK_len L_PARENTH! id R_PARENTH! )
+  | ( TK_len^ L_PARENTH! id R_PARENTH! )
   | ( MINUS^ expr )
   | ( NOT^ expr )
   | ( L_PARENTH! expr R_PARENTH! )

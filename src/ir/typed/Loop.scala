@@ -3,7 +3,7 @@ package ir.typed
 import ir.untyped.UntypedLoop
 
 trait Loop extends Statement {
-  def condition: LogicalOperation
+  def condition: Expression
   def ifTrue: Block
   def typ: Type = VoidType
 }
@@ -12,7 +12,7 @@ case class For(
   line: Int,
   col: Int,
   start: AssignStatement,
-  condition: LogicalOperation,
+  condition: Expression,
   update: Assignment,
   ifTrue: Block
 ) extends Loop {
@@ -24,7 +24,7 @@ case class For(
 case class While(
   line: Int,
   col: Int,
-  condition: LogicalOperation,
+  condition: Expression,
   ifTrue: Block
 ) extends Loop {
 

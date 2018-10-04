@@ -6,11 +6,11 @@ import ir.untyped.UntypedTernaryOperation
 
 trait UnaryOperation extends Expression
 
-case class Increment(line: Int, col: Int, typ: Type, location: Location) extends UnaryOperation  {
+case class Increment(line: Int, col: Int, typ: Type, location: Location) extends UnaryOperation with Assignment {
   override def toString: String = s"Increment ${typ} ${line}:${col}"
 }
 
-case class Decrement(line: Int, col: Int, typ: Type, location: Location) extends UnaryOperation  {
+case class Decrement(line: Int, col: Int, typ: Type, location: Location) extends UnaryOperation with Assignment {
   override def toString: String = s"Decrement ${typ} ${line}:${col}"
 }
 
