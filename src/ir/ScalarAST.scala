@@ -13,7 +13,7 @@ import edu.mit.compilers.grammar.DecafParserTokenTypes
  * This class differs from CommonAST in the following ways:
  *   1. each node contains children nodes as a collection
  *   2. each node contains pointer to the parent node
- *   3. has pretty-printing 
+ *   3. has pretty-printing
  */
 case class ScalarAST(
   token: Int,
@@ -42,15 +42,10 @@ case class ScalarAST(
     children foreach { _.prettyPrint(indentLevel + 1) }
   }
 
-  /**
-  def printself(): Unit = {
-    println(this)
-  }
+//  def toUntypedIR(): UntypedIR = {
+//    throw new Exception()
+//  }
 
-  def printChildren(): Unit = {
-    children foreach {println(_)}
-  }
-  */
 }
 
 object ScalarAST {
