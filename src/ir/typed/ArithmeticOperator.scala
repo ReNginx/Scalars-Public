@@ -4,18 +4,18 @@ trait ArithmeticOperator extends IR {
   def typ: Type = VoidType
 }
 
-case class Add(line: Int, col: Int) extends ArithmeticOperator {
-  override def toString: String = s"Add ${line}:${col}"
+case object Add extends ArithmeticOperator {
+  override def toString: String = s"Add"
 }
-case class Divide(line: Int, col: Int) extends ArithmeticOperator {
-  override def toString: String = s"Divide ${line}:${col}"
+case object Divide extends ArithmeticOperator {
+  override def toString: String = s"Divide"
 }
-case class Modulo(line: Int, col: Int) extends ArithmeticOperator {
-  override def toString: String = s"Modulo ${line}:${col}"
+case object Modulo extends ArithmeticOperator {
+  override def toString: String = s"Modulo"
 }
-case class Multiply(line: Int, col: Int) extends ArithmeticOperator {
-  override def toString: String = s"Multiply ${line}:${col}"
+case object Multiply extends ArithmeticOperator {
+  override def toString: String = s"Multiply"
 }
-case class Subtract(line: Int, col: Int) extends ArithmeticOperator {
-  override def toString: String = s"Subtract ${line}:${col}"
+case object Subtract extends ArithmeticOperator {
+  override def toString: String = s"Subtract"
 }

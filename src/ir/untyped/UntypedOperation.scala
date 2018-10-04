@@ -18,6 +18,10 @@ case class UntypedNot(line: Int, col: Int, expression: UntypedExpression) extend
   override def toString: String = s"line ${line}:${col}"
 }
 
+case class UntypedNegate(line: Int, col: Int, expression: UntypedExpression) extends UntypedUnaryOperation {
+  override def toString: String = s"line ${line}:${col}"
+}
+
 trait BinaryOperation extends UntypedExpression {
   def lhs: UntypedExpression
   def rhs: UntypedExpression

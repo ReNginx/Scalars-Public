@@ -94,17 +94,17 @@ tokens
 // ORDER SHOWN BELOW MIRRORS THE ORDER ON SPEC SHEET
 
 program: (
-  (import_decl)* (field_decl)* (method_decl)* EOF!
+  (import_decl)* (field_list)* (method_decl)* EOF!
   {#program = #(#[PROGRAM,"PROGRAM"], #program);}
 );
 
 import_decl: TK_import! id SEMICOLON!
   {#import_decl = #(#[IMPORT, "IMPORT"], #import_decl);};
 
-field_decl: type field_list ( COMMA! field_list )* SEMICOLON!
-  {#field_decl = #(#[FIELD_DECLARATION, "FIELD_DECLARATION"], #field_decl);};
-protected field_list : (var | array)
+field_list: type field_decl ( COMMA! field_decl )* SEMICOLON!
   {#field_list = #(#[FIELD_LIST, "FIELD_LIST"], #field_list);};
+protected field_decl : (var | array)
+  {#field_decl = #(#[FIELD_DECLARATION, "FIELD_DECLARATION"], #field_decl);};
 protected var: id
   {#var = #(#[VAR, "VAR"], #var);};
 protected array: id L_BRACKET! index R_BRACKET!
@@ -138,7 +138,7 @@ protected parameter: (
 
 block: (
   L_CURLY!
-    ( field_decl )*
+    ( field_list )*
     ( statement )*
   R_CURLY!
   {#block = #(#[BLOCK, "BLOCK"], #block);}

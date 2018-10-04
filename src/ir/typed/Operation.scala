@@ -18,6 +18,10 @@ case class Not(line: Int, col: Int, typ: Type, expression: Expression) extends U
   override def toString: String = s"line ${typ} ${line}:${col}"
 }
 
+case class Negate(line: Int, col: Int, typ: Type, expression: Expression) extends UnaryOperation {
+  override def toString: String = s"line ${typ} ${line}:${col}"
+}
+
 trait BinaryOperation extends Expression {
   def lhs: Expression
   def rhs: Expression

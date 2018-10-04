@@ -4,27 +4,27 @@ trait LogicalOperator extends IR {
   def typ: Type = VoidType
 }
 
-case class And(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"And ${line}:${col}"
+case object And extends LogicalOperator {
+  override def toString: String = s"And"
 }
-case class Or(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"Or ${line}:${col}"
+case object Or extends LogicalOperator {
+  override def toString: String = s"Or"
 }
-case class Equal(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"Equal ${line}:${col}"
+case object Equal extends LogicalOperator {
+  override def toString: String = s"Equal"
 }
-case class NotEqual(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"NotEqual ${line}:${col}"
+case object NotEqual extends LogicalOperator {
+  override def toString: String = s"NotEqual"
 }
-case class GreaterThan(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"GreaterThan ${line}:${col}"
+case object GreaterThan extends LogicalOperator {
+  override def toString: String = s"GreaterThan"
 }
-case class GreaterThanOrEqual(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"GreaterThanOrEqual ${line}:${col}"
+case object GreaterThanOrEqual extends LogicalOperator {
+  override def toString: String = s"GreaterThanOrEqual"
 }
-case class LessThan(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"LessThan ${line}:${col}"
+case object LessThan extends LogicalOperator {
+  override def toString: String = s"LessThan"
 }
-case class LessThanOrEqual(line: Int, col: Int) extends LogicalOperator {
-  override def toString: String = s"LessThanOrEqual ${line}:${col}"
+case object LessThanOrEqual extends LogicalOperator {
+  override def toString: String = s"LessThanOrEqual"
 }
