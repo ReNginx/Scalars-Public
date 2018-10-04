@@ -3,7 +3,7 @@ package ir.typed
 
 trait Literal extends Expression
 
-case class IntLiteral(line: Int, col: Int, value: Int) extends Literal {
+case class IntLiteral(line: Int, col: Int, value: Long) extends Literal {
   def typ: Type = IntType
   override def toString: String = s"IntLiteral ${value} ${line}:${col}"
 }
