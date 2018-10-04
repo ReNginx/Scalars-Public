@@ -10,6 +10,6 @@ case class Length(line: Int, col: Int, typ: Type, location: Location) extends Ex
   override def toString: String = s"Length ${line}:${col}"
 }
 
-case class Location(line: Int, col: Int, typ: Type, field: FieldList, index: Expression) extends Expression {
+case class Location(line: Int, col: Int, typ: Type, field: FieldDeclaration, index: Expression) extends Expression {
   override def toString: String = s"Location ${line}:${col}"
 }

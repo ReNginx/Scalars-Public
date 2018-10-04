@@ -53,8 +53,9 @@ object ASTtoUntypedIR {
 
       case DecafParserTokenTypes.PROGRAM => {
         val imports = children(0).children map { ASTtoUntypedIR(_).asInstanceOf[UntypedImport] }
-        val fields  = children(1).children map { ASTtoUntypedIR(_).asInstanceOf[FieldList] }
         val methods = children(2).children map { ASTtoUntypedIR(_).asInstanceOf[MethodDeclaration] }
+        val fields  = children(1).children flatMap { ASTtoUntypedIR(_).asInstanceOf[FieldList].declarations }
+
         UntypedProgram(line, col, imports.toVector, fields.toVector, methods.toVector)
       }
 
@@ -132,8 +133,8 @@ object ASTtoUntypedIR {
       case DecafParserTokenTypes.BLOCK => {
         val fields = children filter {
           _.token == DecafParserTokenTypes.FIELD_LIST
-        } map {
-          ASTtoUntypedIR(_).asInstanceOf[FieldList]
+        } flatMap {
+          ASTtoUntypedIR(_).asInstanceOf[FieldList].declarations
         }
         val statements = children filter {
           _.token != DecafParserTokenTypes.FIELD_LIST
