@@ -1,23 +1,34 @@
 package ir
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
+import ir.typed._
 
 /**
- * Abstract type `T` is is one of the subclasses of `Descriptor`
+ * Abstract type `D` is is one of the subclasses of `Descriptor`
+ * SymbolTable is mutable.
  */
-abstract class SymbolTable[D<:Descriptor](parentTable: Option[SymbolTable[D]], symbols: Vector[D]) {
+class SymbolTableNode(parentTable: Option[SymbolTableNode]) {
   private val _parent = parentTable
-  private val _map = HashMap(symbols map { s => (s.name, s) }: _*)
+  private val _map = HashMap[String, MemberDeclaration]()
 
   // parent
   def parent = _parent
+
+  def add(symbol: MemberDeclaration): Unit = {
+    if (_map contains  symbol.name) {
+      println(s"line ${}, col ${}, symbol ${symbol.name} has been declared")
+    }
+    else {
+      _map += (symbol.name -> symbol)
+    }
+  }
 
   /**
    * Get the descriptor with this name
    *
    */
-  def get(name: String): Option[Descriptor] = {
+  def get(name: String): Option[MemberDeclaration] = {
     if (_map contains name) {
       _map get name
     } else if (_parent.isEmpty) {
@@ -39,5 +50,30 @@ abstract class SymbolTable[D<:Descriptor](parentTable: Option[SymbolTable[D]], s
       _parent contains name
     }
   }
+}
 
+object SymbolTable {
+  var top = new SymbolTableNode(None)
+  def apply: Unit = {
+
+  }
+
+  def push: Unit = {
+    val newTop = new SymbolTableNode(Option(top))
+    top = newTop
+  }
+
+  def get(name: String): Option[MemberDeclaration] = {
+    top.get(name)
+  }
+
+  def add(symbol: MemberDeclaration): Unit = {
+    top.add(symbol)
+  }
+
+  def pop(): Unit = {
+    if (!top.parent.isEmpty) {
+      top = top.parent.get
+    }
+  }
 }
