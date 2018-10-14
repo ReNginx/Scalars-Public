@@ -8,16 +8,16 @@ import scala.collection.mutable
 object ASTtoIR {
   var noError = true
 
-  def apply(ast: ScalarAST): IR = {
+  def apply(ast: ScalarAST, sign: Int = 1): IR = {
     val children = ast.children
     val col = ast.column
     val line = ast.line
     val name = ast.text
     val token = ast.token
 
-    lazy val isVirtualNode = ASTtoIR(children(0))
-    lazy val lhs = ASTtoIR(children(0))
-    lazy val rhs = ASTtoIR(children(1))
+    lazy val isVirtualNode = ASTtoIR(children(0), sign)
+    lazy val lhs = ASTtoIR(children(0), sign)
+    lazy val rhs = ASTtoIR(children(1), sign)
     lazy val lhsExpr = lhs.asInstanceOf[Expression]
     lazy val rhsExpr = rhs.asInstanceOf[Expression]
     lazy val lhsLoc = lhs.asInstanceOf[Location]
@@ -27,9 +27,13 @@ object ASTtoIR {
     token match {
 
       case DecafParserTokenTypes.MINUS => {
-        if (children.size == 1) { // is a binary operation
-          Negate(line, col, lhsExpr)
-        } else { // is unary
+        if (children.size == 1) { // is a unary operation
+          val expr = ASTtoIR(children(0), -sign).asInstanceOf[Expression]
+          expr match {
+            case int: IntLiteral => int
+            case _ => Negate(line, col, expr)
+          }
+        } else { // is binary
           ArithmeticOperation(line, col, Subtract, lhsExpr, rhsExpr)
         }
       }
@@ -85,7 +89,8 @@ object ASTtoIR {
       case DecafParserTokenTypes.INT => isVirtualNode
       case DecafParserTokenTypes.DECIMAL => {
         try {
-          IntLiteral(line, col, name.toLong)
+          val num = if (sign == 1) name else "-" + name
+          IntLiteral(line, col, num.toLong)
         } catch {
           case e: java.lang.NumberFormatException => {
             println(s"line: $line, col: $col, IntLiteral Overflow")
@@ -98,7 +103,8 @@ object ASTtoIR {
       case DecafParserTokenTypes.HEX => isVirtualNode
       case DecafParserTokenTypes.HEXADECIMAL => {
         try {
-           val hexAsInt = java.lang.Long.parseLong(name.substring(2), 16)
+           val num = if (sign == 1) name else "-" + name
+           val hexAsInt = java.lang.Long.parseLong(num.replace("0x", ""), 16)
            IntLiteral(line, col, hexAsInt)
         }
         catch {
