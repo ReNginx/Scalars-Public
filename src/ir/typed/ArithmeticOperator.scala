@@ -1,8 +1,6 @@
 package ir.typed
 
-trait ArithmeticOperator extends IR {
-  def typ: Type = VoidType
-}
+trait ArithmeticOperator extends IR
 
 case object Add extends ArithmeticOperator {
   override def toString: String = s"Add"

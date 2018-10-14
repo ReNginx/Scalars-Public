@@ -94,17 +94,17 @@ tokens
 // ORDER SHOWN BELOW MIRRORS THE ORDER ON SPEC SHEET
 
 program: (
-  (import_decl)* (field_decl)* (method_decl)* EOF!
+  (import_decl)* (field_list)* (method_decl)* EOF!
   {#program = #(#[PROGRAM,"PROGRAM"], #program);}
 );
 
 import_decl: TK_import! id SEMICOLON!
   {#import_decl = #(#[IMPORT, "IMPORT"], #import_decl);};
 
-field_decl: type field_list ( COMMA! field_list )* SEMICOLON!
-  {#field_decl = #(#[FIELD_DECLARATION, "FIELD_DECLARATION"], #field_decl);};
-protected field_list : (var | array)
+field_list: type field_decl ( COMMA! field_decl )* SEMICOLON!
   {#field_list = #(#[FIELD_LIST, "FIELD_LIST"], #field_list);};
+protected field_decl : (var | array)
+  {#field_decl = #(#[FIELD_DECLARATION, "FIELD_DECLARATION"], #field_decl);};
 protected var: id
   {#var = #(#[VAR, "VAR"], #var);};
 protected array: id L_BRACKET! index R_BRACKET!
@@ -118,7 +118,7 @@ method_decl: (
   return_type
   id
   L_PARENTH!
-    ( param_list )?
+    param_list
   R_PARENTH!
   block
   {#method_decl = #(#[METHOD_DECLARATION, "METHOD_DECLARATION"], #method_decl);}
@@ -128,7 +128,7 @@ protected return_type: (
   {#return_type = #(#[TYPE, "TYPE"], #return_type);}
 );
 protected param_list: (
-  parameter (COMMA! parameter)*
+  (parameter (COMMA! parameter)*)?
   {#param_list = #(#[PARAM_LIST, "PARAM_LIST"], #param_list);}
 );
 protected parameter: (
@@ -138,7 +138,7 @@ protected parameter: (
 
 block: (
   L_CURLY!
-    ( field_decl )*
+    ( field_list )*
     ( statement )*
   R_CURLY!
   {#block = #(#[BLOCK, "BLOCK"], #block);}
@@ -152,7 +152,7 @@ statement: (
       location
       (
         ( // assign operation
-          ( EQ^ | PLUS_EQ^ | MINUS_EQ^ )
+          ( ASSIGN^ | PLUS_ASSIGN^ | MINUS_ASSIGN^ )
           expr
         )
         |
@@ -167,7 +167,6 @@ statement: (
   | ( TK_return^  (expr)? SEMICOLON! )
   | ( TK_break            SEMICOLON! )
   | ( TK_continue         SEMICOLON! )
-  { #statement = #(#[STATEMENT, "STATEMENT"], #statement); }
 );
 
 if_else: (
@@ -194,7 +193,7 @@ for_loop: (
   block
 );
 protected for_start: (
-  id EQ expr
+  id ASSIGN^ expr
   { #for_start = #(#[FOR_START, "FOR_START"], #for_start); }
 );
 protected condition: (
@@ -204,7 +203,7 @@ protected condition: (
 protected for_update: (
   location
   (
-      ( (PLUS_EQ^ | MINUS_EQ^) expr )
+      ( (PLUS_ASSIGN^ | MINUS_ASSIGN^) expr )
     | ( INCREMENT^ | DECREMENT^ )
   )
   { #for_update = #(#[FOR_UPDATE, "FOR_UPDATE"], #for_update); }
@@ -219,18 +218,18 @@ while_loop: (
 method_call: (
   id
   L_PARENTH!
-    ( method_args )?
+    method_args
   R_PARENTH!
   { #method_call = #(#[METHOD_CALL, "METHOD_CALL"], #method_call); }
 );
 method_args: (
-  method_arg (COMMA! method_arg)*
+  (method_arg (COMMA! method_arg)*)?
   { #method_args = #(#[ARGS, "ARGS"], #method_args); }
 );
 method_arg : ( expr | STR_LITERAL );
 
 protected id: (
-  IDENTIFIER
+  SC_ID
   { #id = #(#[ID, "ID"], #id); }
 );
 
@@ -260,9 +259,9 @@ stand_alone_expr: (  // stand-alone expression
     ( location )
   | ( method_call )
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
-  | ( TK_len L_PARENTH! id R_PARENTH! )
+  | ( TK_len^ L_PARENTH! id R_PARENTH! )
   | ( MINUS^ expr )
-  | ( EXCLAMATION^ expr )
+  | ( NOT^ expr )
   | ( L_PARENTH! expr R_PARENTH! )
 );
 mul_op_expr: (
@@ -283,7 +282,7 @@ comparison_expr: (
 );
 equality_expr: (
   comparison_expr
-  ( options{greedy=true;}: (NEQUALS^ | EQUALS^) equality_expr )?
+  ( options{greedy=true;}: (NEQUAL^ | EQUAL^) equality_expr )?
 );
 logical_operator: (
   equality_expr

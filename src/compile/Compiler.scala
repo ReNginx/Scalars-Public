@@ -1,11 +1,12 @@
 package compile
 
 import java.io._
-import scala.Console
 
-import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
-import ir.CommonASTWithLines
-import ir.ScalarAST
+import scala.Console
+import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
+import ir.typed.IR
+import ir.miscellaneousCheck
+import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeChecking}
 import util.CLI
 
 object Compiler {
@@ -13,7 +14,7 @@ object Compiler {
     DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL",
     DecafScannerTokenTypes.DECIMAL -> "INTLITERAL",
     DecafScannerTokenTypes.HEXADECIMAL -> "INTLITERAL",
-    DecafScannerTokenTypes.IDENTIFIER -> "IDENTIFIER",
+    DecafScannerTokenTypes.SC_ID -> "IDENTIFIER",
     DecafScannerTokenTypes.STR_LITERAL -> "STRINGLITERAL",
     DecafScannerTokenTypes.TK_false -> "BOOLEANLITERAL",
     DecafScannerTokenTypes.TK_true -> "BOOLEANLITERAL"
@@ -83,17 +84,18 @@ object Compiler {
 
       // see ir.CommonASTWithLines for more info
       parser.setASTNodeClass("ir.CommonASTWithLines")
-      parser.setTrace(CLI.debug)
+      parser.setTrace(debugSwitch)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonASTWithLines]
       if (parser.getError()) {
         println("[ERROR] Parse failed")
         return null
-      } else if (CLI.debug){
+      } else if (debugSwitch){
          print(t.toStringList())
          println()
       }
       val ast = ScalarAST.fromCommonAST(t)
+      ast.prettyPrint()
       ast
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
@@ -101,7 +103,7 @@ object Compiler {
     }
   }
 
-  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : ScalarAST = {
+  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : IR = {
     val ast = parse(fileName=fileName, debugSwitch=false)
     if (ast != null)
     {
@@ -109,7 +111,15 @@ object Compiler {
         ast.prettyPrint()
       }
     }
-    ast
+    val Ir = ASTtoIR(ast)
+    if (!ASTtoIR.noError)
+      System.exit(1)
+    TypeChecking(Ir)
+    if (!TypeChecking.noError)
+      System.exit(1)
+    miscellaneousCheck.apply
+    if (!miscellaneousCheck.noError)
+      System.exit(1)
+    Ir
   }
-
 }

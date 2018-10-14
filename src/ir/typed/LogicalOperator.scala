@@ -1,8 +1,6 @@
 package ir.typed
 
-trait LogicalOperator extends IR {
-  def typ: Type = VoidType
-}
+trait LogicalOperator extends IR
 
 case object And extends LogicalOperator {
   override def toString: String = s"And"

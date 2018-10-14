@@ -1,11 +1,9 @@
 package ir.typed
 
-import ir.untyped.UntypedLoop
 
 trait Loop extends Statement {
   def condition: Expression
   def ifTrue: Block
-  def typ: Type = VoidType
 }
 
 case class For(

@@ -15,12 +15,16 @@ class SymbolTableNode(parentTable: Option[SymbolTableNode]) {
   // parent
   def parent = _parent
 
-  def add(symbol: MemberDeclaration): Unit = {
-    if (_map contains  symbol.name) {
-      println(s"line ${}, col ${}, symbol ${symbol.name} has been declared")
+  def add(symbol: MemberDeclaration): Boolean = {
+    if (_map contains symbol.name) {
+      val prev = (_map get symbol.name).get
+      println(s"line ${symbol.line}, col ${symbol.col}, symbol ${symbol.name} has been declared at line ${prev.line}, col ${prev.col}")
+      false
     }
     else {
+      //println(symbol.name + " has been added")
       _map += (symbol.name -> symbol)
+      true
     }
   }
 
@@ -67,12 +71,12 @@ object SymbolTable {
     top.get(name)
   }
 
-  def add(symbol: MemberDeclaration): Unit = {
+  def add(symbol: MemberDeclaration): Boolean = {
     top.add(symbol)
   }
 
   def pop(): Unit = {
-    if (!top.parent.isEmpty) {
+    if (top.parent.isDefined) {
       top = top.parent.get
     }
   }

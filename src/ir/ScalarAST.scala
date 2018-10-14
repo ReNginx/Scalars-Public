@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 import antlr.CommonAST
 import edu.mit.compilers.grammar.DecafParserTokenTypes
-import ir.untyped._
+import ir.typed._
 
 /** Immutable, recursive ADT with simpler APIs than CommonAST.
  *
@@ -43,7 +43,7 @@ case class ScalarAST(
     children foreach { _.prettyPrint(indentLevel + 1) }
   }
 
-  def toUntypedIR(): UntypedIR = ASTtoUntypedIR(this)
+  def toIR(): IR = ASTtoIR(this)
 
 }
 
