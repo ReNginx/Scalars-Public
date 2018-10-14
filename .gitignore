@@ -11,3 +11,8 @@ parser/dist
 
 # local environment
 local.environment
+
+# sbt
+build.sbt
+project/
+target/
