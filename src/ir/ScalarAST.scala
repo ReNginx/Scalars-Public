@@ -91,7 +91,14 @@ object ScalarAST {
     lazy val thisNode: ScalarAST = new ScalarAST(token, text, line, column, parent)({ children })
     lazy val children = {
       val thisASTOpt = Option(thisNode)
-      val originalChildren = commonChildren map { fromCommonAST(_, thisASTOpt) }
+
+      val originalChildren = commonChildren filter {
+        // when '--' is used to negate expressions, they have no effect, so a DECREMENT
+        // token having 0 children implies that it serves no function, and is simply ignored
+        c => !(c.getType == DecafParserTokenTypes.DECREMENT && getChildren(c).size == 0)
+      } map {
+        fromCommonAST(_, thisASTOpt)
+      }
 
       // make sure method call has argument list, even if it is empty
       if (token == DecafParserTokenTypes.METHOD_CALL) {

@@ -261,6 +261,7 @@ stand_alone_expr: (  // stand-alone expression
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
   | ( TK_len^ L_PARENTH! id R_PARENTH! )
   | ( MINUS^ expr )
+  | ( (options{greedy=true;}: DECREMENT)+ expr )
   | ( NOT^ expr )
   | ( L_PARENTH! expr R_PARENTH! )
 );
