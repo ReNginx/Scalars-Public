@@ -1,58 +1,93 @@
 package ir
 
-import ir.typed._
+import scala.Console
 
-/**
-  * TypeChecking based on the following rules.
-  * - Before running type checking, make sure that there's no error in function name, and variable binding.
-  * - Literal are always valid.
-  * - Type of an operation depends on operator (Int for Arithmetic operators, Bool for Logical operators)
-  * - When an error occurs in operation, it will be reported but does not influence the type of operation.
-  */
+import ir.components._
+
+/** Type-check an IR.
+ *
+ * Before using this object, make sure that there is no error in function
+ * names and variable bindings.
+ *
+ * Type-checks using the following rules:
+ *   - Literals are always valid
+ *   - Type of an operation depends on the operator
+ *       i.e. arithmetic operators -> Int, logical operators -> Bool
+ *   - When an error occurs in an operation, it is reported but does not
+ *     influence the type of operation
+ */
 object TypeChecking {
-  var noError = true
 
-  def printErrMsg(str: String): Unit = {
-    println(str)
-    noError = false;
+  // true if an error has occurred
+  var error = false
+
+  /** Print the string to stderr, and memo that an error has occurred.
+   *
+   * @param string message to print to stderr
+   */
+  def stderr(string: String): Unit = {
+    Console.err.println(string)
+    error = true;
   }
 
-  def apply(Ir: IR,
-            mthd: Option[MethodsDeclaration] = None,
-            loop: Option[Loop] = None,
-            params: Option[Vector[FieldDeclaration]] = None): Unit = Ir match {
+  /** Type-check the given IR.
+   *
+   * Type-checks the given IR and modifies it with necessary information.
+   * If errors are encountered, error messages are printed to stderr.
+   *
+   * @param ir the IR to type-check
+   * @param method
+   * @param loop
+   * @param params
+   * @return the original ir, modified
+   */
+  def apply(
+      ir: IR,
+      method: Option[MethodsDeclaration]=None,
+      loop:   Option[Loop]=None,
+      params: Option[Vector[FieldDeclaration]]=None): Unit = ir match {
 
     case Program(_, _, imports, fields, methods) => {
-      imports.foreach(TypeChecking(_))
-      fields.foreach(TypeChecking(_))
-      methods.foreach(TypeChecking(_))
+      imports foreach { TypeChecking(_) }
+      fields  foreach { TypeChecking(_) }
+      methods foreach { TypeChecking(_) }
     }
 
-    case extMthd: ExtMethodDeclaration => {
-      noError &= SymbolTable.add(extMthd)
+    case externalMethod: ExtMethodDeclaration => {
+      error |= SymbolTable.add(externalMethod)
     }
 
     case variable: VariableDeclaration => {
-      noError &= SymbolTable.add(variable)
+      error |= SymbolTable.add(variable)
     }
 
     case array: ArrayDeclaration => {
-      if (array.length.value <= 0)
-        printErrMsg(s"line: ${array.length.line}, col: ${array.length.col}, bad array size")
-      noError &= SymbolTable.add(array)
+      val len = array.length
+      if (len.value <= 0) {
+        stderr(s"line: ${len.line}, col: ${len.col}, array length ${len.value} <= 0")
+      }
+
+      error |= SymbolTable.add(array)
     }
 
-    case locMthd: LocMethodDeclaration => {
-      noError &= SymbolTable.add(locMthd)
-      TypeChecking(locMthd.block, Option(locMthd), params = Option(locMthd.params))
+    case localMethod: LocMethodDeclaration => {
+      error |= SymbolTable.add(localMethod)
+      TypeChecking(
+        localMethod.block,
+        Option(localMethod),
+        params = Option(localMethod.params)
+      )
     }
 
     case Block(_, _, declarations, statements) => {
-      SymbolTable.push
-      if (params.isDefined) params.get.foreach(TypeChecking(_))
-      declarations.foreach(TypeChecking(_))
-      statements.foreach(TypeChecking(_, mthd, loop))
-      SymbolTable.pop
+      SymbolTable.push()
+      if (params.isDefined) {
+        params.get foreach { TypeChecking(_) }
+      }
+
+      declarations foreach { TypeChecking(_) }
+      statements foreach { TypeChecking(_, method, loop) }
+      SymbolTable.pop()
     }
 
     // Statement part
@@ -60,143 +95,129 @@ object TypeChecking {
     // "typ" here should be the expected return type of the function
     case ret: Return => {
       TypeChecking(ret.value)
-      assert(mthd.isDefined)
-      if (mthd.get.typ != ret.value.typ) {
-        printErrMsg(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${mthd.get.typ} expected, ${ret.value.typ} given")
+      assert(method.isDefined)
+      if (method.get.typ != ret.value.typ) {
+        stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.typ} given")
       }
     }
 
     case If(line, col, condition, ifTrue, ifFalse) => {
       TypeChecking(condition)
       if (condition.typ != Option(BoolType)) {
-        printErrMsg(s"line: ${line}, col: ${col}, if statement has a invalid condition, expect ${Option(BoolType)} found ${condition.typ}")
-
+        stderr(s"line: ${line}, col: ${col}, if statement has a invalid condition, expect ${Option(BoolType)} found ${condition.typ}")
       }
-      TypeChecking(ifTrue, mthd, loop)
-      if (ifFalse.isDefined)
-        TypeChecking(ifFalse.get, mthd, loop)
+
+      TypeChecking(ifTrue, method, loop)
+      if (ifFalse.isDefined) {
+        TypeChecking(ifFalse.get, method, loop)
+      }
     }
 
-    // there is no type checking for Continue and Break
-
-    //Assignment
     case AssignStatement(line, col, location, expression) => {
       TypeChecking(location)
       TypeChecking(expression)
-      val typeCheck = location.typ == expression.typ
-      if (!typeCheck) {
-        printErrMsg(s"line: $line, col: $col, cannot assign a(n) ${expression.typ} to ${location.typ}")
-
+      if (location.typ != expression.typ) {
+        stderr(s"line: $line, col: $col, cannot assign a(n) ${expression.typ} to ${location.typ}")
       }
     }
-
     case CompoundAssignStatement(line, col, location, expression, _) => {
       TypeChecking(location)
       TypeChecking(expression)
-      val typeCheck = location.typ == expression.typ && location.typ == Option(IntType)
-      if (!typeCheck) {
-        printErrMsg(s"line: $line, col: $col, both sides of compound assignment must be ${Option(IntType)}")
+      if (location.typ != expression.typ || location.typ != Option(IntType)) {
+        stderr(s"line: $line, col: $col, both sides of compound assignment must be ${Option(IntType)}")
       }
     }
 
-    //Call
-
     case call: MethodCall => {
-      call.params.foreach(TypeChecking(_))
-      val decl = SymbolTable.get(call.name)
+      call.params foreach { TypeChecking(_) }
 
-      if (decl.isEmpty) {
-        printErrMsg(s"line: ${call.line}, col: ${call.col}, function ${call.name} is not defined")
+      val methodDeclaration = SymbolTable.get(call.name)
+      if (methodDeclaration.isEmpty) {
+        stderr(s"line: ${call.line}, col: ${call.col}, function ${call.name} is not defined")
+        return
+      }
 
-      } else {
-        val method = decl.get
-        method match {
-          case x: FieldDeclaration => {
-            printErrMsg(s"line: ${call.line}, col: ${call.col}, ${x.name} is not a function")
-          }
-          case x: MethodsDeclaration => {
-            call.method = Option(x)
-            x match {
-              case y: LocMethodDeclaration =>
-                if (call.params.length != y.params.length) {
-                  printErrMsg(s"line: ${call.line}, col: ${call.col}, incorrect number of arguments")
+      methodDeclaration.get match {
+        case f: FieldDeclaration => {
+          stderr(s"line: ${call.line}, col: ${call.col}, ${f.name} is not a function")
+        }
+        case method: MethodsDeclaration => {
+          call.method = Option(method)
+          method match {
+            case local: LocMethodDeclaration => {
+              if (call.params.length != local.params.length) {
+                stderr(s"line: ${call.line}, col: ${call.col}, incorrect number of arguments")
+              } else {
+                (call.params zip local.params) filter {
+                  case (a, b) => a.typ != b.typ  // type mismatches
+                } foreach {
+                  case (a, b) => stderr(s"line: ${call.line}, parameter type ${b.typ} expected, ${a.typ} given")
                 }
-                else
-                  for ((a, b) <- call.params zip y.params) {
-                    if (a.typ != b.typ) {
-                      printErrMsg(s"line: ${call.line}, param type ${b.typ} expected, ${a.typ} given")
-
-                    }
-                  }
-              case _ =>
+              }
             }
+            case _ =>
           }
         }
       }
     }
 
-    //Loop
     case forLoop: For => {
       TypeChecking(forLoop.start)
       TypeChecking(forLoop.condition)
       if (forLoop.condition.typ != Option(BoolType)) {
-        printErrMsg(s"line: ${forLoop.line}, col: ${forLoop.col}, Loop condition is not bool")
+        stderr(s"line: ${forLoop.line}, col: ${forLoop.col}, Loop condition is not bool")
       }
       TypeChecking(forLoop.update)
-      TypeChecking(forLoop.ifTrue, mthd, Option(forLoop))
+      TypeChecking(forLoop.ifTrue, method, Option(forLoop))
     }
 
     case whileLoop: While => {
       TypeChecking(whileLoop.condition)
       if (whileLoop.condition.typ != Option(BoolType)) {
-        printErrMsg(s"line: ${whileLoop.line}, col: ${whileLoop.col}, Loop condition is not bool")
+        stderr(s"line: ${whileLoop.line}, col: ${whileLoop.col}, Loop condition is not bool")
       }
-      TypeChecking(whileLoop.ifTrue, mthd, Option(whileLoop))
+      TypeChecking(whileLoop.ifTrue, method, Option(whileLoop))
     }
 
     case con: Continue => {
       if (loop.isEmpty) {
-        printErrMsg(s"line: ${con.line}, col: ${con.col}, continue is not inside a loop body")
+        stderr(s"line: ${con.line}, col: ${con.col}, continue is not inside a loop body")
       }
       con.loop = loop
     }
 
     case brk: Break => {
       if (loop.isEmpty) {
-        printErrMsg(s"line: ${brk.line}, col: ${brk.col}, break is not inside a loop body")
+        stderr(s"line: ${brk.line}, col: ${brk.col}, break is not inside a loop body")
       }
       brk.loop = loop
     }
 
-    //Operation
     case Increment(line, col, location) => {
       TypeChecking(location)
-
       if (location.typ != Option(IntType)) {
-        printErrMsg(s"line: $line, col: $col, doing increment on type: ${location.typ.getOrElse(None)}")
+        stderr(s"line: $line, col: $col, doing increment on type: ${location.typ.getOrElse(None)}")
       }
     }
 
     case Decrement(line, col, location) => {
       TypeChecking(location)
-
       if (location.typ != Option(IntType)) {
-        printErrMsg(s"line: $line, col: $col, doing decrement on type: ${location.typ.getOrElse(None)}")
+        stderr(s"line: $line, col: $col, doing decrement on type: ${location.typ.getOrElse(None)}")
       }
     }
 
     case Not(line, col, expression) => {
       TypeChecking(expression)
-
       if (expression.typ != Option(BoolType)) {
-        printErrMsg(s"line: $line, col: $col, cannot apply NOT to ${expression.typ}")
+        stderr(s"line: $line, col: $col, cannot apply NOT to ${expression.typ}")
       }
     }
 
     case Negate(line, col, expression) => {
       TypeChecking(expression)
       if (expression.typ != Option(IntType)) {
-        printErrMsg(s"line: $line, col: $col, cannot apply Negation to ${expression.typ}")
+        stderr(s"line: $line, col: $col, cannot apply Negation to ${expression.typ}")
       }
     }
 
@@ -204,100 +225,97 @@ object TypeChecking {
       TypeChecking(lhs)
       TypeChecking(rhs)
       if (lhs.typ != Option(IntType) || rhs.typ != Option(IntType)) {
-        printErrMsg(s"line: $line, col: $col, $operator requires $IntType on both sides")
+        stderr(s"line: $line, col: $col, $operator requires $IntType on both sides")
       }
     }
 
     case LogicalOperation(line, col, operator, lhs, rhs) => {
       TypeChecking(lhs)
       TypeChecking(rhs)
-      val typeAgree = lhs.typ == rhs.typ
-      if (!typeAgree) {
-        printErrMsg(s"line: $line, col: $col, types of left-side and right-side expression do not agree")
+      if (lhs.typ != rhs.typ) {
+        stderr(s"line: $line, col: $col, types of left-side and right-side expression do not agree")
       } else if (lhs.typ == Option(IntType)) {
+        // can't use logical operators to ints
         operator match {
           case And | Or => {
-            printErrMsg(s"line: $line, col: $col, cannot apply operator $operator to ${lhs.typ}")
+            stderr(s"line: $line, col: $col, cannot apply operator $operator to ${lhs.typ}")
           }
           case _ =>
         }
-      }
-      else if (lhs.typ == Option(BoolType)) {
+      } else if (lhs.typ == Option(BoolType)) {
+        // can't use arithmetic operators to bools
         operator match {
           case LessThan | LessThanOrEqual | GreaterThan | GreaterThanOrEqual => {
-            printErrMsg(s"line: $line, col: $col, cannot apply operator $operator to ${lhs.typ}")
+            stderr(s"line: $line, col: $col, cannot apply operator $operator to ${lhs.typ}")
           }
           case _ =>
         }
-      }
-      else {
-        printErrMsg(s"line: $line, col: $col, unexpected type ${lhs.typ} for operator $operator")
+      } else {  // neither a int or bool
+        stderr(s"line: $line, col: $col, unexpected type ${lhs.typ} for operator $operator")
       }
     }
-
 
     case TernaryOperation(line, col, condition, ifTrue, ifFalse) => {
       TypeChecking(condition)
       TypeChecking(ifTrue)
       TypeChecking(ifFalse)
 
-      val typeAgree = ifTrue.typ == ifFalse.typ
-      val validCondition = condition.typ == Option(BoolType)
-
-      if (!validCondition) {
-        printErrMsg(s"line: $line, col: $col, condition is not a valid $BoolType expr")
+      if (condition.typ != Option(BoolType)) {
+        stderr(s"line: $line, col: $col, condition is not a valid $BoolType expr")
       }
-      if (!typeAgree) {
-        printErrMsg(s"line: $line, col: $col, branch types of ternary operator do not agree")
+      if (ifTrue.typ != ifFalse.typ) {
+        stderr(s"line: $line, col: $col, branch types of ternary operator do not agree")
       }
     }
 
-    // Expression
     case loc: Location => { //location only holds variables.
       if (loc.index.isDefined) {
         TypeChecking(loc.index.get)
         if (loc.index.get.typ != Option(IntType)) {
-          printErrMsg(s"line: ${loc.line}, col: ${loc.col}, ${loc.index.get.typ} cannot be index")
+          stderr(s"line: ${loc.line}, col: ${loc.col}, ${loc.index.get.typ} cannot be index")
         }
       }
+
       val decl = SymbolTable.get(loc.name)
       if (decl.isEmpty) {
-        printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} not defined")
+        stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} not defined")
+        return
       }
-      else {
-        decl.get match {
-          case x: VariableDeclaration => {
-            if (loc.index.isDefined)
-              printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not an array")
-            loc.field = Option(x)
-          }
 
-          case x: ArrayDeclaration => {
-            if (loc.index.isEmpty)
-              printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is an array")
-            loc.field = Option(x)
+      decl.get match {
+        case varDecl: VariableDeclaration => {
+          if (loc.index.isDefined) {
+            stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not an array")
           }
-          case _ => printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not a variable name")
+          loc.field = Option(varDecl)
         }
+
+        case arrayDecl: ArrayDeclaration => {
+          if (loc.index.isEmpty) {
+            stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is an array")
+          }
+          loc.field = Option(arrayDecl)
+        }
+
+        case _ => stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not a variable name")
       }
     }
 
     case Length(line, col, loc) => {
       val decl = SymbolTable.get(loc.name)
       if (decl.isEmpty) {
-        printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} not defined")
+        stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} not defined")
+        return
       }
-      else {
-        decl.get match {
-          case x: ArrayDeclaration => {
-            if (loc.index.isDefined) {
-              printErrMsg(s"line: ${loc.line}, col: ${loc.col}, len operator takes an array")
-            }
-            else
-              loc.field = Option(x)
+      decl.get match {
+        case arrayDecl: ArrayDeclaration => {
+          if (loc.index.isDefined) {
+            stderr(s"line: ${loc.line}, col: ${loc.col}, len operator takes an array")
+          } else {
+            loc.field = Option(arrayDecl)
           }
-          case _ => printErrMsg(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not an array")
         }
+        case _ => stderr(s"line: ${loc.line}, col: ${loc.col}, variable ${loc.name} is not an array")
       }
     }
 

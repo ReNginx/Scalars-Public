@@ -1,4 +1,4 @@
-package ir.typed
+package ir.components
 
 trait Statement extends IR
 
@@ -14,6 +14,12 @@ case class Return(line: Int, col: Int, value: Expression) extends Statement {
   override def toString: String = s"return ${line}:${col}"
 }
 
-case class If(line: Int, col: Int, condition: Expression, ifTrue: Block, ifFalse: Option[Block]) extends Statement {
+case class If(
+    line: Int,
+    col: Int,
+    condition: Expression,
+    ifTrue: Block,
+    ifFalse: Option[Block]) extends Statement {
+      
   override def toString: String = s"if ${line}:${col}"
 }

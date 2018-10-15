@@ -1,29 +1,29 @@
 package ir
 
-import ir.typed.{LocMethodDeclaration, VoidType}
+import ir.components.{LocMethodDeclaration, VoidType}
 
 object miscellaneousCheck {
-  var noError: Boolean = true
+  var error: Boolean = false
   def apply: Unit = {
     val _main = SymbolTable.get("main")
     _main match {
       case None => {
         println("Program does not have main function")
-        noError = false
+        error = true
       }
       case Some(x) => x match {
         case y: LocMethodDeclaration =>
           if (y.params.length > 0) {
             println("main should not take any input")
-            noError = false
+            error = true
           }
           if (y.typ != Option(VoidType)) {
             println("main must return void")
-            noError = false
+            error = true
           }
         case _ => {
           println("main must be a local method")
-          noError = false
+          error = true
         }
       }
     }

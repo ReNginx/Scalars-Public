@@ -1,4 +1,4 @@
-package ir.typed
+package ir.components
 
 trait Type extends IR {
   def line: Int = 0
@@ -39,5 +39,3 @@ case object VoidType extends Type {
   val typ: Option[Type] = Option(this)
   override def toString: String = s"VoidType"
 }
-
-

@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 import antlr.CommonAST
 import edu.mit.compilers.grammar.DecafParserTokenTypes
-import ir.typed._
+import ir.components._
 
 /** Immutable, recursive ADT with simpler APIs than CommonAST.
  *
@@ -17,14 +17,12 @@ import ir.typed._
  *   3. has pretty-printing
  */
 case class ScalarAST(
-  token: Int,
-  text: String,
-  line: Int,
-  column: Int,
-  parent: Option[ScalarAST]
-)(
-  lazyChildren: => Vector[ScalarAST]
-) {
+    token: Int,
+    text: String,
+    line: Int,
+    column: Int,
+    parent: Option[ScalarAST]
+  )(lazyChildren: => Vector[ScalarAST]) {
 
   def children = lazyChildren
 
@@ -43,7 +41,7 @@ case class ScalarAST(
     children foreach { _.prettyPrint(indentLevel + 1) }
   }
 
-  def toIR(): IR = ASTtoIR(this)
+  def toIR: IR = ASTtoIR(this)
 
 }
 
@@ -82,7 +80,7 @@ object ScalarAST {
     val text = ast.getText
     val token = ast.getType
 
-    // leaf node, so no children
+    // ast is a leaf node, so it doesn't have children
     if (commonChildren.size == 0) {
       return new ScalarAST(token, text, line, column, parent)({ Vector() })
     }
@@ -90,26 +88,26 @@ object ScalarAST {
     // lazy eval to create immutable double-link
     lazy val thisNode: ScalarAST = new ScalarAST(token, text, line, column, parent)({ children })
     lazy val children = {
+      // for children to have parent pointer to this ast
       val thisASTOpt = Option(thisNode)
-
-      val originalChildren = commonChildren filter {
-        // when '--' is used to negate expressions, they have no effect, so a DECREMENT
-        // token having 0 children implies that it serves no function, and is simply ignored
-        c => !(c.getType == DecafParserTokenTypes.DECREMENT && getChildren(c).size == 0)
+      val origChildren = commonChildren filter {
+        // when '--' is used to negate expressions, they have no effect
+        // so a DECREMENT token with 0 children is simply ignored
+        c => ! (c.getType == DecafParserTokenTypes.DECREMENT && getChildren(c).size == 0)
       } map {
         fromCommonAST(_, thisASTOpt)
-      }
+      } toVector
 
       // make sure method call has argument list, even if it is empty
       if (token == DecafParserTokenTypes.METHOD_CALL) {
         val name = "ARGS"
-        val args = originalChildren map { _.text } filter { _ == name }
+        val numArgs = origChildren map { _.text } filter { _ == name } size
 
-        // add empty args vector if there isn't currently one
+        // add empty args vector if this method call has no argument vector
         val emptyArgs = new ScalarAST(DecafParserTokenTypes.ARGS, name, 0, 0, thisASTOpt)({ Vector() })
-        originalChildren ++ { if (args.size == 0) Vector(emptyArgs) else Vector() }
+        origChildren ++ { if (numArgs == 0) Vector(emptyArgs) else Vector() }
       } else {
-        originalChildren
+        origChildren
       }
     }
 

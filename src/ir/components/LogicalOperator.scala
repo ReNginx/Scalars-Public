@@ -1,4 +1,4 @@
-package ir.typed
+package ir.components
 
 trait LogicalOperator extends IR
 
