@@ -1,0 +1,46 @@
+\section{Group Name}
+
+Our group name is \textit{Scalars}.
+
+\section{Group Members}
+
+The following members are listed in alphabetical order:
+\begin{enumerate}
+    \item Wonsuk (Jack) Choi \\ \texttt{jchoi5me@mit.edu}
+    \item Allen Mi \\ \texttt{allenmi@mit.edu}
+    \item Hanxiang Ren \\ \texttt{renh@mit.edu}
+\end{enumerate}
+
+\section{Intended Language}
+
+Our intended language, as our name suggests, is Scala.
+
+\section{Individual Results}
+
+\subsection*{Wonsuk (Jack) Choi}
+\begin{enumerate}
+    \item Language: Scala
+    \item Public test score: 100\%
+    \item Hidden test score: 100\%
+    \item Improvement since hidden tests were released: Approximately 7\%. Previously failed 2-3 hidden tests because EOF was a part of my grammar.
+\end{enumerate}
+
+\subsection*{Allen Mi}
+\begin{enumerate}
+    \item Language: Scala
+    \item Public test score: 100\%
+    \item Hidden test score: 100\%
+    \item Improvement since hidden tests were released: Program incomplete when hidden tests were released.
+\end{enumerate}
+
+\subsection*{Hanxiang Ren}
+\begin{enumerate}
+    \item Language: Scala
+    \item Public test score: 100\%
+    \item Hidden test score: 100\%
+    \item Improvement since hidden tests were released: Passed all hidden test without modification.
+\end{enumerate}
+
+\section{Plan}
+
+We plan to follow a modular paradigm by separating the task of building the IR tree from the scanner/parser codebase. Jack's parser will be used to generate a generic ANTLR parse tree. The tree is then passed to the semantic checker codebase, where an IR tree will be constructed accordingly. This approach utilizes standardized communication between the parser and the semantic checker, while preserving the integrity of the scanner/parser codebase. Hence we expect it to facilitate a more effective debugging towards the later stages of the project. Additionally, Hanxiang has completed a set of parser grammar that outputs structural information while the parse tree is generated. This information will be used for cross-verifying the correctness of our semantic checker.
