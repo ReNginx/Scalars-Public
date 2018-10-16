@@ -118,7 +118,7 @@ method_decl: (
   return_type
   id
   L_PARENTH!
-    ( param_list )?
+    param_list
   R_PARENTH!
   block
   {#method_decl = #(#[METHOD_DECLARATION, "METHOD_DECLARATION"], #method_decl);}
@@ -128,7 +128,7 @@ protected return_type: (
   {#return_type = #(#[TYPE, "TYPE"], #return_type);}
 );
 protected param_list: (
-  parameter (COMMA! parameter)*
+  (parameter (COMMA! parameter)*)?
   {#param_list = #(#[PARAM_LIST, "PARAM_LIST"], #param_list);}
 );
 protected parameter: (
@@ -218,12 +218,12 @@ while_loop: (
 method_call: (
   id
   L_PARENTH!
-    ( method_args )?
+    method_args
   R_PARENTH!
   { #method_call = #(#[METHOD_CALL, "METHOD_CALL"], #method_call); }
 );
 method_args: (
-  method_arg (COMMA! method_arg)*
+  (method_arg (COMMA! method_arg)*)?
   { #method_args = #(#[ARGS, "ARGS"], #method_args); }
 );
 method_arg : ( expr | STR_LITERAL );
@@ -261,6 +261,7 @@ stand_alone_expr: (  // stand-alone expression
   | ( integer | hex | CHAR_LITERAL | TK_true | TK_false )  // literal
   | ( TK_len^ L_PARENTH! id R_PARENTH! )
   | ( MINUS^ expr )
+  | ( (options{greedy=true;}: DECREMENT)+ expr )
   | ( NOT^ expr )
   | ( L_PARENTH! expr R_PARENTH! )
 );

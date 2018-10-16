@@ -3,9 +3,10 @@ package compile
 import java.io._
 import scala.Console
 
-import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
-import ir.CommonASTWithLines
-import ir.ScalarAST
+import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
+import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeChecking}
+import ir.miscellaneousCheck
+import ir.components.IR
 import util.CLI
 
 object Compiler {
@@ -18,25 +19,22 @@ object Compiler {
     DecafScannerTokenTypes.TK_false -> "BOOLEANLITERAL",
     DecafScannerTokenTypes.TK_true -> "BOOLEANLITERAL"
   )
-  var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
-    new java.io.FileOutputStream(CLI.outfile)))
+  val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array[String]());
+    CLI.parse(args, Array[String]())
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
-      System.exit(0)
     } else if (CLI.target == CLI.Action.PARSE) {
-        if(parse(CLI.infile) == null) {
-          System.exit(1)
-        }
-        System.exit(0)
+      if (parse(CLI.infile) == null) {
+        System.exit(1)
+      }
     } else if (CLI.target == CLI.Action.INTER) {
-        if(inter(CLI.infile) == null) {
-          System.exit(1)
-        }
-        System.exit(0)
+      if (inter(CLI.infile) == null) {
+        System.exit(1)
+      }
     }
+    System.exit(0)
   }
 
   def scan(fileName: String, debugSwitch: Boolean = CLI.debug) {
@@ -75,13 +73,17 @@ object Compiler {
     try {
       inputStream = new java.io.FileInputStream(fileName)
     } catch {
-      case f: FileNotFoundException => { Console.err.println("File " + fileName + " does not exist"); return null }
+      case f: FileNotFoundException => {
+        Console.err.println("File " + fileName + " does not exist")
+        return null
+      }
     }
+
     try {
       val scanner = new DecafScanner(new DataInputStream(inputStream))
       val parser = new DecafParser(scanner);
 
-      // see ir.CommonASTWithLines for more info
+      // convert to CommonASTWithLines: see ir.CommonASTWithLines for more info
       parser.setASTNodeClass("ir.CommonASTWithLines")
       parser.setTrace(debugSwitch)
       parser.program()
@@ -89,10 +91,12 @@ object Compiler {
       if (parser.getError()) {
         println("[ERROR] Parse failed")
         return null
-      } else if (debugSwitch){
-         print(t.toStringList())
-         println()
+      } else if (debugSwitch) {
+        println(t.toStringList)
+        println()
       }
+
+      // CommonASTWithLines to ScalarAST
       val ast = ScalarAST.fromCommonAST(t)
       ast.prettyPrint()
       ast
@@ -102,15 +106,35 @@ object Compiler {
     }
   }
 
-  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : ScalarAST = {
-    val ast = parse(fileName=fileName, debugSwitch=false)
-    if (ast != null)
-    {
-      if (debugSwitch) {
-        ast.prettyPrint()
-      }
-    }
-    ast
-  }
+  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : IR = {
+    val optAST = Option(parse(fileName, false))
 
+    // parsing failed
+    if (optAST.isEmpty) {
+      System.exit(1)
+    }
+
+    val ast = optAST.get
+    if (debugSwitch) {
+      ast.prettyPrint()
+    }
+
+    // change AST to IR
+    val ir = ASTtoIR(ast)
+    if (ASTtoIR.error) {
+      System.exit(1)
+    }
+
+    TypeChecking(ir)
+    if (TypeChecking.error) {
+      System.exit(1)
+    }
+
+    miscellaneousCheck.apply
+    if (miscellaneousCheck.error) {
+      System.exit(1)
+    }
+
+    ir
+  }
 }

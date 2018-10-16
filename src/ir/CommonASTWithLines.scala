@@ -2,9 +2,9 @@ package ir
 
 import antlr.{CommonAST, Token}
 
-/** Hack found online to make CommonAST remember line/column information.
+/** Hack found online to allow CommonAST to remember line/column information.
  *
- * Found at the following link:
+ * Found at the following url:
  * https://puredanger.github.io/tech.puredanger.com/2007/02/01/recovering-line-and-column-numbers-in-your-antlr-ast/
  */
 class CommonASTWithLines extends CommonAST {

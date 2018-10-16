@@ -1,4 +1,7 @@
-void main ( ) {
-  int i;
-  i = (true == true) ? 1 : 2;
+void main () {
+  a = -123;
+  a = --123;
+  a = ---123;
+  a = ----123;
+  a--;
 }
