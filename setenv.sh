@@ -9,15 +9,17 @@
 #  For your local workspace, customize local.environment
 ##
 
-ATHENA_ENV_FILE="athena.environment"
-LOCAL_ENV_FILE="local.environment"
+gitroot=$(git rev-parse --show-toplevel)
+
+ATHENA_ENV_FILE="${gitroot}/athena.environment"
+LOCAL_ENV_FILE="${gitroot}/local.environment"
 
 if [[ $(dnsdomainname) = mit.edu ]]; then
   set -a
-  . ./${ATHENA_ENV_FILE}
+  . ${ATHENA_ENV_FILE}
   set +a
 else
   set -a
-  . ./${LOCAL_ENV_FILE}
+  . ${LOCAL_ENV_FILE}
   set +a
 fi
