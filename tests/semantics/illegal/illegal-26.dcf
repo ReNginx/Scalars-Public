@@ -1,13 +1,6 @@
-int F(int a, int b) {
-    int y, x;
-    F(G(H(x, y), y), G(y, x));
-}
-int G(int a, int b) {
-    return a;
-}
-bool H(int x, int y) {
-    
-}
-int main() {
-
+int A[10];
+void main ( ) {
+  int b;
+  b[10] = 5;
+  // Semantic Error -- b is not an array
 }
