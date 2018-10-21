@@ -111,11 +111,7 @@ SEMICOLON: ';' ;
 // IGNORE
 SAME_LINE_COMMENT: '/' '/' ( ~('\r'|'\n') )* LINE_BREAK
   { _ttype = Token.SKIP; };
-MULTI_LINE_COMMENT:
-  '/' '*'
-    ( options{greedy=true;} : (.) )*
-  '*' '/'
-  { _ttype = Token.SKIP; };
+MULTI_LINE_COMMENT : "/*" (options {greedy=false;} : MULTI_LINE_COMMENT|WHITESPACE|.)* "*/" {_ttype = Token.SKIP; };
 WHITESPACE: (' ' | '\u0009' | LINE_BREAK )
   { _ttype = Token.SKIP; };
 
