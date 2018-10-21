@@ -1,4 +1,4 @@
-<project name="Compiler" default="jar" basedir=".">
+<project name="Scalars Decaf Parser" default="jar" basedir=".">
 
   <property environment="env" />
   <property name="phase" value="parser" />

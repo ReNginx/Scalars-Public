@@ -6,7 +6,7 @@
      Antrl, Java and Scala together.
 -->
  
-<project name="ProjectName" default="build" basedir=".">
+<project name="Scalars Decaf Compiler" default="build" basedir=".">
   <description>Project Build Script</description>
  
   <!-- targets -->
