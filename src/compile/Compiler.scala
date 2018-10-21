@@ -4,8 +4,7 @@ import java.io._
 import scala.Console
 
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
-import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeChecking}
-import ir.miscellaneousCheck
+import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck}
 import ir.components.IR
 import util.CLI
 
@@ -125,13 +124,13 @@ object Compiler {
       System.exit(1)
     }
 
-    TypeChecking(ir)
-    if (TypeChecking.error) {
+    TypeCheck(ir)
+    if (TypeCheck.error) {
       System.exit(1)
     }
 
-    miscellaneousCheck.apply
-    if (miscellaneousCheck.error) {
+    MiscCheck.apply
+    if (MiscCheck.error) {
       System.exit(1)
     }
 

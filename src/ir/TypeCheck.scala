@@ -16,7 +16,7 @@ import ir.components._
  *   - When an error occurs in an operation, it is reported but does not
  *     influence the type of operation
  */
-object TypeChecking {
+object TypeCheck {
 
   // true if an error has occurred
   var error = false
@@ -48,9 +48,9 @@ object TypeChecking {
       params: Option[Vector[FieldDeclaration]]=None): Unit = ir match {
 
     case Program(_, _, imports, fields, methods) => {
-      imports foreach { TypeChecking(_) }
-      fields  foreach { TypeChecking(_) }
-      methods foreach { TypeChecking(_) }
+      imports foreach { TypeCheck(_) }
+      fields  foreach { TypeCheck(_) }
+      methods foreach { TypeCheck(_) }
     }
 
     case externalMethod: ExtMethodDeclaration => {
@@ -72,7 +72,7 @@ object TypeChecking {
 
     case localMethod: LocMethodDeclaration => {
       error |= SymbolTable.add(localMethod)
-      TypeChecking(
+      TypeCheck(
         localMethod.block,
         Option(localMethod),
         params = Option(localMethod.params)
@@ -82,11 +82,11 @@ object TypeChecking {
     case Block(_, _, declarations, statements) => {
       SymbolTable.push()
       if (params.isDefined) {
-        params.get foreach { TypeChecking(_) }
+        params.get foreach { TypeCheck(_) }
       }
 
-      declarations foreach { TypeChecking(_) }
-      statements foreach { TypeChecking(_, method, loop) }
+      declarations foreach { TypeCheck(_) }
+      statements foreach { TypeCheck(_, method, loop) }
       SymbolTable.pop()
     }
 
@@ -94,7 +94,7 @@ object TypeChecking {
 
     // "typ" here should be the expected return type of the function
     case ret: Return => {
-      TypeChecking(ret.value)
+      TypeCheck(ret.value)
       assert(method.isDefined)
       if (method.get.typ != ret.value.typ) {
         stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.typ} given")
@@ -102,34 +102,34 @@ object TypeChecking {
     }
 
     case If(line, col, condition, ifTrue, ifFalse) => {
-      TypeChecking(condition)
+      TypeCheck(condition)
       if (condition.typ != Option(BoolType)) {
         stderr(s"line: ${line}, col: ${col}, if statement has a invalid condition, expect ${Option(BoolType)} found ${condition.typ}")
       }
 
-      TypeChecking(ifTrue, method, loop)
+      TypeCheck(ifTrue, method, loop)
       if (ifFalse.isDefined) {
-        TypeChecking(ifFalse.get, method, loop)
+        TypeCheck(ifFalse.get, method, loop)
       }
     }
 
     case AssignStatement(line, col, location, expression) => {
-      TypeChecking(location)
-      TypeChecking(expression)
+      TypeCheck(location)
+      TypeCheck(expression)
       if (location.typ != expression.typ) {
         stderr(s"line: $line, col: $col, cannot assign a(n) ${expression.typ} to ${location.typ}")
       }
     }
     case CompoundAssignStatement(line, col, location, expression, _) => {
-      TypeChecking(location)
-      TypeChecking(expression)
+      TypeCheck(location)
+      TypeCheck(expression)
       if (location.typ != expression.typ || location.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, both sides of compound assignment must be ${Option(IntType)}")
       }
     }
 
     case call: MethodCall => {
-      call.params foreach { TypeChecking(_) }
+      call.params foreach { TypeCheck(_) }
 
       val methodDeclaration = SymbolTable.get(call.name)
       if (methodDeclaration.isEmpty) {
@@ -162,21 +162,21 @@ object TypeChecking {
     }
 
     case forLoop: For => {
-      TypeChecking(forLoop.start)
-      TypeChecking(forLoop.condition)
+      TypeCheck(forLoop.start)
+      TypeCheck(forLoop.condition)
       if (forLoop.condition.typ != Option(BoolType)) {
         stderr(s"line: ${forLoop.line}, col: ${forLoop.col}, Loop condition is not bool")
       }
-      TypeChecking(forLoop.update)
-      TypeChecking(forLoop.ifTrue, method, Option(forLoop))
+      TypeCheck(forLoop.update)
+      TypeCheck(forLoop.ifTrue, method, Option(forLoop))
     }
 
     case whileLoop: While => {
-      TypeChecking(whileLoop.condition)
+      TypeCheck(whileLoop.condition)
       if (whileLoop.condition.typ != Option(BoolType)) {
         stderr(s"line: ${whileLoop.line}, col: ${whileLoop.col}, Loop condition is not bool")
       }
-      TypeChecking(whileLoop.ifTrue, method, Option(whileLoop))
+      TypeCheck(whileLoop.ifTrue, method, Option(whileLoop))
     }
 
     case con: Continue => {
@@ -194,44 +194,44 @@ object TypeChecking {
     }
 
     case Increment(line, col, location) => {
-      TypeChecking(location)
+      TypeCheck(location)
       if (location.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, doing increment on type: ${location.typ.getOrElse(None)}")
       }
     }
 
     case Decrement(line, col, location) => {
-      TypeChecking(location)
+      TypeCheck(location)
       if (location.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, doing decrement on type: ${location.typ.getOrElse(None)}")
       }
     }
 
     case Not(line, col, expression) => {
-      TypeChecking(expression)
+      TypeCheck(expression)
       if (expression.typ != Option(BoolType)) {
         stderr(s"line: $line, col: $col, cannot apply NOT to ${expression.typ}")
       }
     }
 
     case Negate(line, col, expression) => {
-      TypeChecking(expression)
+      TypeCheck(expression)
       if (expression.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, cannot apply Negation to ${expression.typ}")
       }
     }
 
     case ArithmeticOperation(line, col, operator, lhs, rhs) => {
-      TypeChecking(lhs)
-      TypeChecking(rhs)
+      TypeCheck(lhs)
+      TypeCheck(rhs)
       if (lhs.typ != Option(IntType) || rhs.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, $operator requires $IntType on both sides")
       }
     }
 
     case LogicalOperation(line, col, operator, lhs, rhs) => {
-      TypeChecking(lhs)
-      TypeChecking(rhs)
+      TypeCheck(lhs)
+      TypeCheck(rhs)
       if (lhs.typ != rhs.typ) {
         stderr(s"line: $line, col: $col, types of left-side and right-side expression do not agree")
       } else if (lhs.typ == Option(IntType)) {
@@ -256,9 +256,9 @@ object TypeChecking {
     }
 
     case TernaryOperation(line, col, condition, ifTrue, ifFalse) => {
-      TypeChecking(condition)
-      TypeChecking(ifTrue)
-      TypeChecking(ifFalse)
+      TypeCheck(condition)
+      TypeCheck(ifTrue)
+      TypeCheck(ifFalse)
 
       if (condition.typ != Option(BoolType)) {
         stderr(s"line: $line, col: $col, condition is not a valid $BoolType expr")
@@ -270,7 +270,7 @@ object TypeChecking {
 
     case loc: Location => { //location only holds variables.
       if (loc.index.isDefined) {
-        TypeChecking(loc.index.get)
+        TypeCheck(loc.index.get)
         if (loc.index.get.typ != Option(IntType)) {
           stderr(s"line: ${loc.line}, col: ${loc.col}, ${loc.index.get.typ} cannot be index")
         }

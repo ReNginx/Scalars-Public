@@ -2,7 +2,7 @@ package ir
 
 import ir.components.{LocMethodDeclaration, VoidType}
 
-object miscellaneousCheck {
+object MiscCheck {
   var error: Boolean = false
   def apply: Unit = {
     val _main = SymbolTable.get("main")
