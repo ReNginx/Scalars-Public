@@ -79,9 +79,9 @@ object ASTtoIR {
       case DecafParserTokenTypes.PROGRAM => {
         val irs = children map { ASTtoIR(_) }
 
-        val imports = irs collect { case r: ExtMethodDeclaration => r } toVector
-        val methods = irs collect { case l: LocMethodDeclaration => l } toVector
-        val fields  = irs collect { case f: FieldList => f } flatMap { _.declarations } toVector
+        val imports = irs collect { case r: ExtMethodDeclaration => r }
+        val methods = irs collect { case l: LocMethodDeclaration => l }
+        val fields  = irs collect { case f: FieldList => f } flatMap { _.declarations }
 
         Program(line, col, imports, fields, methods)
       }

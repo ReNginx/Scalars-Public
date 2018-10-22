@@ -96,16 +96,19 @@ object ScalarAST {
         c => ! (c.getType == DecafParserTokenTypes.DECREMENT && getChildren(c).size == 0)
       } map {
         fromCommonAST(_, thisASTOpt)
-      } toVector
+      }
 
       // make sure method call has argument list, even if it is empty
       if (token == DecafParserTokenTypes.METHOD_CALL) {
         val name = "ARGS"
-        val numArgs = origChildren map { _.text } filter { _ == name } size
+        val args = origChildren map { _.text } filter { _ == name }
 
         // add empty args vector if this method call has no argument vector
         val emptyArgs = new ScalarAST(DecafParserTokenTypes.ARGS, name, 0, 0, thisASTOpt)({ Vector() })
-        origChildren ++ { if (numArgs == 0) Vector(emptyArgs) else Vector() }
+        origChildren ++ {
+          if (args.size == 0) Vector(emptyArgs)
+          else Vector()
+        }
       } else {
         origChildren
       }
