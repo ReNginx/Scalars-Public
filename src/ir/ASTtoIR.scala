@@ -213,7 +213,7 @@ object ASTtoIR {
         Block(line, col, fieldDecls, statements)
       }
 
-      case DecafParserTokenTypes.ASSIGN       =>         AssignStatement(line, col, lhsLoc, rhsExpr)
+      case DecafParserTokenTypes.ASSIGN       => AssignStatement(line, col, lhsLoc, rhsExpr)
       case DecafParserTokenTypes.PLUS_ASSIGN  => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Add)
       case DecafParserTokenTypes.MINUS_ASSIGN => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Subtract)
 

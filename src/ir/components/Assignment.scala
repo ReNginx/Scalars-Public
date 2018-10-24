@@ -7,8 +7,10 @@ case class AssignStatement(
     col: Int,
     loc: Location,
     value: Expression) extends Assignment {
+    
+  def typ: Option[Type] = loc.typ
 
-  override def toString: String = s"[AssignStatement]  (${line}:${col})"
+  override def toString: String = s"[AssignStatement] ${typ.get}  (${line}:${col})"
 }
 
 case class CompoundAssignStatement(
