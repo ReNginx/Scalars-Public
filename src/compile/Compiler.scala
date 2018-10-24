@@ -4,7 +4,7 @@ import java.io._
 import scala.Console
 
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
-import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck}
+import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
 import ir.components.IR
 import util.CLI
 
@@ -41,6 +41,10 @@ object Compiler {
       val inputStream: FileInputStream = new java.io.FileInputStream(fileName)
       val scanner = new DecafScanner(new DataInputStream(inputStream))
       scanner.setTrace(debugSwitch)
+      if (debugSwitch) {
+        println("\nPrinting debug info for scanner:\n")
+        println("Scanner trace:")
+      }
       var done = false
       while (!done) {
         try {
@@ -84,20 +88,31 @@ object Compiler {
 
       // convert to CommonASTWithLines: see ir.CommonASTWithLines for more info
       parser.setASTNodeClass("ir.CommonASTWithLines")
+      if (debugSwitch) {
+        println("\nPrinting debug info for Parser:\n")
+        println("Parser trace:")
+      }
       parser.setTrace(debugSwitch)
       parser.program()
+      if (debugSwitch) {
+        println()
+      }
       val t = parser.getAST().asInstanceOf[CommonASTWithLines]
       if (parser.getError()) {
         println("[ERROR] Parse failed")
         return null
       } else if (debugSwitch) {
+        println("Parser inline view:")
         println(t.toStringList)
         println()
       }
 
       // CommonASTWithLines to ScalarAST
       val ast = ScalarAST.fromCommonAST(t)
-      ast.prettyPrint()
+      if (debugSwitch) {
+        println("Parser tree view:")
+        ast.prettyPrint()
+      }
       ast
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
@@ -114,9 +129,6 @@ object Compiler {
     }
 
     val ast = optAST.get
-    if (debugSwitch) {
-      ast.prettyPrint()
-    }
 
     // change AST to IR
     val ir = ASTtoIR(ast)
@@ -132,6 +144,12 @@ object Compiler {
     MiscCheck.apply
     if (MiscCheck.error) {
       System.exit(1)
+    }
+
+    if (debugSwitch) {
+      println("\nPrinting debug info for IR:\n")
+      println("IR tree view:")
+      PrettyPrint(ir)
     }
 
     ir

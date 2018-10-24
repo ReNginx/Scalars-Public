@@ -1,6 +1,6 @@
 package ir.components
 
-trait MethodsDeclaration extends MemberDeclaration {
+trait MethodDeclaration extends MemberDeclaration {
   val line: Int
   val col: Int
   val name: String
@@ -13,16 +13,16 @@ case class LocMethodDeclaration(
     name: String,
     typ: Option[Type],
     params: Vector[FieldDeclaration],
-    block: Block) extends MethodsDeclaration {
+    block: Block) extends MethodDeclaration {
 
-  override def toString: String = s"MethodDeclaration ${typ} ${name} ${line}:${col}"
+  override def toString: String = s"[MethodDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 
 case class ExtMethodDeclaration(
     line: Int,
     col: Int,
     name: String,
-    typ: Option[Type]=Option(IntType)) extends MethodsDeclaration {
+    typ: Option[Type]=Option(IntType)) extends MethodDeclaration {
       
-  override def toString: String = s"MethodDeclaration ${typ} ${name} ${line}:${col}"
+  override def toString: String = s"[MethodDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }

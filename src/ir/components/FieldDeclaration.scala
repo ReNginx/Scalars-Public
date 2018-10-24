@@ -12,7 +12,7 @@ case class FieldList(
     typ: Option[Type],
     declarations: Vector[FieldDeclaration]) extends IR {
 
-  override def toString: String = s"FieldList ${line}:${col}"
+  override def toString: String = s"[FieldList]  (${line}:${col})"
 }
 
 
@@ -26,7 +26,7 @@ case class VariableDeclaration(
     name: String,
     typ: Option[Type]) extends FieldDeclaration {
 
-  override def toString: String = s"VariableDeclaration ${typ} ${name} ${line}:${col}"
+  override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 
 case class ArrayDeclaration(
@@ -36,5 +36,5 @@ case class ArrayDeclaration(
     length: IntLiteral,
     typ: Option[Type]) extends FieldDeclaration {
 
-  override def toString: String = s"ArrayDeclaration ${typ} ${name} ${line}:${col}"
+  override def toString: String = s"[ArrayDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }

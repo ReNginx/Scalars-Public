@@ -14,7 +14,7 @@ case class For(
     update: Assignment,
     var ifTrue: Block) extends Loop {
 
-  override def toString: String = s"For ${line}:${col}"
+  override def toString: String = s"[For]  (${line}:${col})"
 }
 
 case class While(
@@ -23,5 +23,5 @@ case class While(
     condition: Expression,
     var ifTrue: Block) extends Loop {
 
-  override def toString: String = s"While ${line}:${col}"
+  override def toString: String = s"[While]  (${line}:${col})"
 }

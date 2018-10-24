@@ -43,7 +43,7 @@ object TypeCheck {
    */
   def apply(
       ir: IR,
-      method: Option[MethodsDeclaration]=None,
+      method: Option[MethodDeclaration]=None,
       loop:   Option[Loop]=None,
       params: Option[Vector[FieldDeclaration]]=None): Unit = ir match {
 
@@ -101,7 +101,7 @@ object TypeCheck {
         }
       }
       else {
-        TypeChecking(ret.value.get)
+        TypeCheck(ret.value.get)
         if (method.get.typ != ret.value.get.typ) {
           stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.get.typ} given")
         }
@@ -148,7 +148,7 @@ object TypeCheck {
         case f: FieldDeclaration => {
           stderr(s"line: ${call.line}, col: ${call.col}, ${f.name} is not a function")
         }
-        case method: MethodsDeclaration => {
+        case method: MethodDeclaration => {
           call.method = Option(method)
           method match {
             case local: LocMethodDeclaration => {

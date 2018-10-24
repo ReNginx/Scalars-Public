@@ -9,7 +9,7 @@ case class Program(
     fields: Vector[FieldDeclaration],
     methods: Vector[LocMethodDeclaration]) extends IR {
 
-  override def toString: String = s"Program ${line}:${col}"
+  override def toString: String = s"[Program]  (${line}:${col})"
 }
 
 case class Block(
@@ -18,5 +18,5 @@ case class Block(
     declarations: Vector[FieldDeclaration],
     statements: Vector[Statement]) extends IR {
       
-  override def toString: String = s"Block ${line}:${col}"
+  override def toString: String = s"[Block]  (${line}:${col})"
 }
