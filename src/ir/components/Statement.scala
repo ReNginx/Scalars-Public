@@ -10,7 +10,7 @@ case class Continue(line: Int, col: Int, var loop: Option[Loop] = None) extends 
   override def toString: String = s"continue ${line}:${col}"
 }
 
-case class Return(line: Int, col: Int, value: Expression) extends Statement {
+case class Return(line: Int, col: Int, value: Option[Expression] = None) extends Statement {
   override def toString: String = s"return ${line}:${col}"
 }
 
