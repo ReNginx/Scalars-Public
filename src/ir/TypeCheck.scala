@@ -94,10 +94,17 @@ object TypeCheck {
 
     // "typ" here should be the expected return type of the function
     case ret: Return => {
-      TypeCheck(ret.value)
       assert(method.isDefined)
-      if (method.get.typ != ret.value.typ) {
-        stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.typ} given")
+      if (method.get.typ == Option(VoidType)) {
+        if (ret.value != None) {
+          stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.get.typ} given")
+        }
+      }
+      else {
+        TypeChecking(ret.value.get)
+        if (method.get.typ != ret.value.get.typ) {
+          stderr(s"line: ${ret.line}, col: ${ret.col}, return type mismatch, ${method.get.typ} expected, ${ret.value.get.typ} given")
+        }
       }
     }
 
