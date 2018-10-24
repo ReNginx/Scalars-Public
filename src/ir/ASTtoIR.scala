@@ -269,7 +269,14 @@ object ASTtoIR {
       }
 
       case DecafParserTokenTypes.TK_len    => Length(line, col, lhsLoc)
-      case DecafParserTokenTypes.TK_return => Return(line, col, lhsExpr)
+      case DecafParserTokenTypes.TK_return => {
+        if (children.size == 0) {
+          Return(line, col)
+        }
+        else {
+          Return(line, col, Option(lhsExpr))
+        }
+      }
 
       case _ => {
         throw new Exception
