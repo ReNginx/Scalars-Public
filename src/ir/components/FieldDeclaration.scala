@@ -36,5 +36,5 @@ case class ArrayDeclaration(
     length: IntLiteral,
     typ: Option[Type]) extends FieldDeclaration {
 
-  override def toString: String = s"[ArrayDeclaration] ${typ.get} ${name}  (${line}:${col})"
+  override def toString: String = s"[ArrayDeclaration] ${typ.get} ${name}[${length}]  (${line}:${col})"
 }

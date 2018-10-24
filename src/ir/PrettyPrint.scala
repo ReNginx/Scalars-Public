@@ -37,12 +37,19 @@ object PrettyPrint {
         PrettyPrint(loc, indentLevel + 1)
       }
 
+      case Decrement(line, col, loc) => {
+        println(ir)
+        println(leadingWS + "- location")
+        PrettyPrint(loc, indentLevel + 1)
+      }
+
       // Call
 
       case MethodCall(line, col, name, params, method) => {
         println(ir)
         println(leadingWS + "- params")
         params foreach { PrettyPrint(_, indentLevel + 1) }
+        // Method declaration is not shown to prevent infinite loop
       }
 
       // Expression
@@ -59,10 +66,12 @@ object PrettyPrint {
           println(leadingWS + "- index")
           PrettyPrint(index.get, indentLevel + 1)
         }
+        /*
         if (!field.isEmpty) {
           println(leadingWS + "- field")
           PrettyPrint(field.get, indentLevel + 1)
         }
+        */
       }
 
       // FieldDeclaration
@@ -201,18 +210,22 @@ object PrettyPrint {
 
       case Break(line, col, loop) => {
         println(ir)
-        // if (!loop.isEmpty) {
-        //   println(leadingWS + "- loop")
-        //   PrettyPrint(loop.get, indentLevel + 1)
-        // }
+        /*
+        if (!loop.isEmpty) {
+          println(leadingWS + "- loop")
+          PrettyPrint(loop.get, indentLevel + 1)
+        }
+        */
       }
 
       case Continue(line, col, loop) => {
         println(ir)
-        // if (!loop.isEmpty) {
-        //   println(leadingWS + "- loop")
-        //   PrettyPrint(loop.get, indentLevel + 1)
-        // }
+        /*
+        if (!loop.isEmpty) {
+          println(leadingWS + "- loop")
+          PrettyPrint(loop.get, indentLevel + 1)
+        }
+        */
       }
 
       case Return(line, col, value) => {

@@ -37,5 +37,5 @@ case class Location(
     }
   }
 
-  override def toString: String = s"[Location]  (${line}:${col})"
+  override def toString: String = s"[Location] ${name}  (${line}:${col})"
 }
