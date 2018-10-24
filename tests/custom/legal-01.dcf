@@ -1,5 +1,6 @@
 int i;
 int j;
+int y;
 
 void main () {
     i = 1 + 1;

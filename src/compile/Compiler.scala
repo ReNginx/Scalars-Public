@@ -6,6 +6,7 @@ import scala.Console
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
 import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
 import ir.components.IR
+import codegen.{IRto3Addr}
 import util.CLI
 
 object Compiler {
@@ -30,6 +31,10 @@ object Compiler {
       }
     } else if (CLI.target == CLI.Action.INTER) {
       if (inter(CLI.infile) == null) {
+        System.exit(1)
+      }
+    } else if (CLI.target == CLI.Action.ASSEMBLY) {
+      if (assembly(CLI.infile) == null) {
         System.exit(1)
       }
     }
@@ -153,5 +158,25 @@ object Compiler {
     }
 
     ir
+  }
+
+  def assembly(fileName: String, debugSwitch: Boolean = CLI.debug) : IR = {
+    val optIR = Option(inter(fileName, false))
+    // parsing failed
+    if (optIR.isEmpty) {
+      System.exit(1)
+    }
+    
+    val ir = optIR.get
+    
+    val lowIR = IRto3Addr{ir}
+
+    if (debugSwitch) {
+      println("\nPrinting debug info for Assembly:\n")
+      println("Low-level IR tree view:")
+      PrettyPrint(lowIR)
+    }
+
+    lowIR
   }
 }
