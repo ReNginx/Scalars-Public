@@ -16,11 +16,13 @@ object ASTtoIR {
    *
    * @param ast the ScalarAST to convert
    * @param positive true if arithmetic value is positive, false otherwise
+   * @param parLine line number of the parent, which is used if parent is a virtual node
+   * @param parCol col number of the parent, which is used if parent is a virtual node 
    */
-  def apply(ast: ScalarAST, positive: Boolean=true): IR = {
+  def apply(ast: ScalarAST, positive: Boolean=true, parLine: Int=0, parCol: Int=0): IR = {
     val children = ast.children
-    val line = ast.line
-    val col = ast.column
+    val line = if (parLine > 0) parLine else ast.line
+    val col = if (parCol > 0) parCol else ast.column
     val name = ast.text
     val token = ast.token
 
