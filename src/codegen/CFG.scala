@@ -1,15 +1,13 @@
 package codegen
 
-import scala.collection.immutable.Set
+import scala.collection.mutable.{HashSet, Set}
 
 import ir.components._
 import ir.PrettyPrint
 
 /** Control Flow Graph, generalized.
  */
-trait CFG {
-  def parent: Set[CFG]
-}
+trait CFG {}
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
  *
@@ -41,7 +39,11 @@ case class CFGConditionalBlock(conditional: Vector[IR], parent: Set[CFG], ifTrue
  * @param params parameters of this method
  * @param parent the basic block where this method was declared
  */
-case class CFGMethod(params: Vector[IR], parent: Set[CFG]) extends CFG
+case class CFGMethod(params: Vector[IR], parent: CFG) extends CFG
+
+/** Basic Block in Control Flow Graph, which represents a program.
+ */
+case class CFGProgram(imports: Vector[IR], fields: Vector[IR], methods: Vector[IR]) extends CFG
 
 /** Convert an IR to CFG.
  */
@@ -53,7 +55,8 @@ object FlatIRToCFG {
     ir match {
 
       case Program(line, col, imports, fields, methods) => {
-        val methods = methods map { FlatIRToCFG(_) }
+        // lazy val thisCFG =
+        // val methodCFG = methods map { FlatIRToCFG(_, new HashSet[CFG]()) }
         // irModified = ir.asInstanceOf[Program].copy(
         //   imports = imports.map(IRto3Addr(_, iter)).asInstanceOf[Vector[ExtMethodDeclaration]],
         //   fields = fields.map(IRto3Addr(_, iter)).asInstanceOf[Vector[FieldDeclaration]],
