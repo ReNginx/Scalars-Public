@@ -18,7 +18,7 @@ trait CFG {
  */
 case class CFGBlock(
   statements: Vector[IR],
-  parent: Set[CFG],
+  var parent: Set[CFG],
   next: CFG) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statent.
@@ -29,7 +29,7 @@ case class CFGBlock(
  */
 case class CFGConditionalBlock(
   conditional: Vector[IR],
-  parent: Set[CFG],
+  var parent: Set[CFG],
   ifTrue: CFG,
   ifFalse: CFG) extends CFG
 
