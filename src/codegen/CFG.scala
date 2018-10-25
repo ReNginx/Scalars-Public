@@ -22,14 +22,14 @@ import ir.PrettyPrint
 trait CFG {
   def label: String
   def parents: Set[CFG]
-  def next: Option[CFG]
+  var next: Option[CFG]
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
  */
 case class VirtualCFG(
     label: String,
     parents: Set[CFG]=HashSet(),
-    var next: Option[CFG]=None) extends CFG
+    var next: Option[CFG] = None) extends CFG
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
  *
@@ -45,8 +45,8 @@ case class VirtualCFG(
 case class CFGBlock(
     label: String,
     statements: Vector[IR],
-    parents: Set[CFG]=HashSet(),
-    var next: Option[CFG]=None) extends CFG
+    var next: Option[CFG] = None,
+    parents: Set[CFG]=HashSet()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statent.
  *
@@ -64,7 +64,7 @@ case class CFGConditional(
     label: String,
     statements: Vector[IR],
     parents: Set[CFG]=HashSet(),
-    var next: Option[CFG]=None,  // implies condition was true
+    var next: Option[CFG] = None,
     var ifFalse: Option[CFG]=None) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
@@ -73,8 +73,14 @@ case class CFGConditional(
  * @param params parameters of this method
  * @param parents the basic block where this method was declared
  */
-case class CFGMethod(label: String, block: CFG, params: Vector[IR], parents: Set[CFG], next: Option[CFG]=None) extends CFG
+case class CFGMethod(label: String, block: CFG, params: Vector[IR], var next: Option[CFG] = None, parents: Set[CFG]) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
-case class CFGProgram(label: String, imports: Vector[IR], fields: CFGBlock, methods: Map[String, CFG])
+case class CFGProgram(
+  label: String,
+  imports: Vector[IR],
+  fields: CFGBlock,
+  methods: Map[String, CFG],
+  var next: Option[CFG] = None,
+  parents: Set[CFG] = Set()) extends CFG
