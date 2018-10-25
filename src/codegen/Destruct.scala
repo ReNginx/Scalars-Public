@@ -13,14 +13,19 @@ object Destruct {
     throw new NotImplementedError
   }
 
-  // set a.next to b, and b.parents to contain a
-  def link(a: CFG, b: CFG): Unit = {
-    a.next = Option(b)
-    b.parents += a
+  /** Link the two basic blocks of CFG.
+   *
+   * @param source such that source.sink will be set to Option(sink)
+   * @param sink such that one of its parents will be source
+   */
+  def link(source: CFG, sink: CFG): Unit = {
+    source.next = Option(sink)
+    sink.parents += source
   }
 
   /**
-   * @return the start and the end nodes of a block
+   * @param params identical to params of Block
+   * @return (start, end) nodes as a result of destructuring this block
    */
   private def destructBlock(
       line: Int,
@@ -28,43 +33,38 @@ object Destruct {
       declarations: Vector[IR],
       statements: Vector[IR]): Tuple2[VirtualCFG, VirtualCFG] = {
 
-    // (start, end) of every basic block within this Block
-    val blocks = declarations.map(Destruct(_)).to[ListBuffer]
+    // (start, end) of every basic block in this Block
+    val blocks: ListBuffer[Tuple2[VirtualCFG, VirtualCFG]] = ListBuffer()
 
-    // gets populated with statements that form a contiguous block
-    // cleared when conditionals are encountered
-    val contiguousBlock: ListBuffer[IR] = ListBuffer()
-
-    // form a CFGBlock with everything in contiguousBlock, clear contiguousBlock, push to blocks
+    // used to form contiguous series of commands from which to form a basic block
+    val contiguousBlock: ListBuffer[IR] = declarations.to[ListBuffer]
     def destructContiguousBlock(): Unit = {
-      val contiguous = contiguousBlock.map(x => x).toVector
+      val contiguous = contiguousBlock map { x => x }  // copy
       contiguousBlock.clear()
 
       val (start, end) = createStartEnd(line, col)
-      val block = CFGBlock(start.label, contiguous)
+      val block = CFGBlock(start.label, contiguous.toVector)
 
       link(start, block)
       link(block, end)
-
       blocks += Tuple2(start, end)
     }
 
     statements foreach {
-      s => s match {
+      statement => statement match {
         // encountered conditional, so destruct the contiguous block, then the conditional
         case _: If | _: For | _: While => {
           if (contiguousBlock.size == 0) {
             destructContiguousBlock()
           }
-          blocks += Destruct(s)
+          blocks += Destruct(statement)
         }
         case m: MethodCall => throw new NotImplementedError
-        case _ => contiguousBlock += s
+        case _ => contiguousBlock += statement
       }
     }
 
-    // link every adjacent basic blocks in blocks
-    // given [a, b, c, d], links the end of a to start of b, end of b to start of c, and etc
+    // link adjacent basic blocks in blocks
     (0 to blocks.size - 2) foreach {
       i => {
         val (start1, end1) = blocks(i)
@@ -85,9 +85,9 @@ object Destruct {
   }
 
   // parents is set to empty set initially
-  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: CFG): CFGConditional = {
+  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: Option[CFG]= None): CFGConditional = {
     val statements = block.declarations ++ block.statements
-    CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse))
+    CFGConditional(label, statements, Set(), Option(ifTrue), ifFalse)
   }
 
   /** Destruct an if/else statement.
@@ -109,30 +109,27 @@ object Destruct {
 
     // start and end of this if statement
     val (start, end) = createStartEnd(line, col)
-
     val (ifStart, ifEnd) = Destruct(ifTrue)
 
     var blockIfFalse: Option[CFG] = None
-    // an `else` block exists, so blockIfFalse points to the start node of the else block
-    if (ifFalse.isDefined) {
+    if (ifFalse.isDefined) {  // an `else` block exists
       val (elseStart, elseEnd) = Destruct(ifFalse.get)
-      link(ifEnd, elseStart)
-      link(elseStart, end)
       blockIfFalse = Option(elseStart)
-    } else { // `else` block does not exist, so blockIfFalse simply points to the end node
-      link(ifEnd, end)
+      link(elseEnd, end)
+    } else {  // `else` block does not exist, so blockIfFalse simply points to the end node
       blockIfFalse = Option(end)
+      link(ifEnd, end)
     }
 
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get)
-
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse)
     link(start, conditionalCFG)
+
     (start, end)
   }
 
   /** Destruct an for loop.
    *
-   * @param params identical to params of If
+   * @param params identical to params of For
    * @return (start, end) whose internal structure is the following:
    *   start - the start node, s.t. start.next points to CFGConditional
    *   end - the end node, s.t. exiting either if/else block leads to this node
@@ -149,13 +146,12 @@ object Destruct {
       update: Assignment,
       ifTrue: Block): Tuple2[VirtualCFG, VirtualCFG] = {
 
-    // start and end of this if statement
     val (start, end) = createStartEnd(line, col)
 
     val (initializeStart, initializeEnd) = Destruct(initialize)
     val (updateStart, updateEnd) = Destruct(update)
     val (blockStart, blockEnd) = Destruct(ifTrue)
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, Option(end))
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
@@ -163,6 +159,17 @@ object Destruct {
     link(blockEnd, updateStart)
     (start, end)
   }
+
+  /** Destruct an while loop.
+   *
+   * @param params identical to params of While
+   * @return (start, end) whose internal structure is the following:
+   *   start - the start node, s.t. start.next points to CFGConditional
+   *   end - the end node, s.t. exiting either if/else block leads to this node
+   *   CFGConditional - has two blocks:
+   *       blockIfTrue - one of its parents is this conditional block
+   *       blockIfFalse - one of its parents is this conditional block
+   */
   private def destructWhile(
       line: Int,
       col: Int,
@@ -170,17 +177,14 @@ object Destruct {
       conditionBlock: Option[Block],
       ifTrue: Block): Tuple2[VirtualCFG, VirtualCFG] = {
 
-    throw new NotImplementedError
-    // // start and end of this if statement
-    // val (start, end) = createStartEnd(line, col)
-    //
-    // val (initialStart, initialEnd) = Destruct(initial)
-    // val (blockStart, blockEnd) = Destruct(ifTrue)
-    // val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
-    //
-    // link(start, initialStart)
-    // link(initialEnd, conditionalCFG)
-    // (start, end)
+    val (start, end) = createStartEnd(line, col)
+
+    val (blockStart, blockEnd) = Destruct(ifTrue)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, Option(end))
+
+    link(start, conditionalCFG)
+    link(blockEnd, conditionalCFG)
+    (start, end)
   }
 
   /**
