@@ -10,7 +10,7 @@ object Destruct {
 
   // returns start, end
   def conditional(block: Block): Tuple2[VirtualCFG, VirtualCFG] = {
-    throw new Exception
+    throw new NotImplementedError
   }
 
   /** Destructure a given IR and return its start and end nodes.
@@ -18,38 +18,45 @@ object Destruct {
    */
   def apply(ir: IR): Tuple2[VirtualCFG, VirtualCFG] = {
 
-    def createLabel(line: Int, col: Int) = s"l${line}c${col}"
+    def createStartEnd(line: Int, col: Int): Tuple2[VirtualCFG, VirtualCFG] = {
+      val label = s"l${line}c${col}"
+      val start = VirtualCFG(s"${label}_start")
+      val end = VirtualCFG(s"${label}_end")
+      (start, end)
+    }
 
     val middle: Tuple2[VirtualCFG, VirtualCFG] = ir match {
       case Block(line, col, declarations, statements) => {
-        val label = createLabel(line, col)
-        val start = VirtualCFG(s"${label}start")
-        val end = VirtualCFG(s"${label}end")
+        val (start, end) = createStartEnd(line, col)
+
         // list of (start, end) of basic blocks
         val allStartEnd = declarations.map(Destruct(_)).to[ListBuffer]
 
         // find basic blocks
         val contiguousBlock: ListBuffer[IR] = ListBuffer()
         statements foreach {
-          statement => statement match {
-            case m: MethodCall => throw new Exception
+          s => s match {
+            case m: MethodCall => throw new NotImplementedError
             case _:If | _:For | _:While => {
               if (contiguousBlock.size > 0) {  // gather them into a basic CFG
                 val contiguous = contiguousBlock.map(x => x).toVector
                 contiguousBlock.clear()
 
-                val start = VirtualCFG("")
-                val end = VirtualCFG("")
-                val block = CFGBlock(s"l${line}c${col}", contiguous)
+                val (start, end) = createStartEnd(line, col)
+
+                val block = CFGBlock(start.label, contiguous)
+
                 start.next = Option(block)
                 end.parents += block
+
                 block.parents += start
                 block.next = Option(end)
+
                 allStartEnd += Tuple2(start, end)
               }
-              allStartEnd += Destruct(statement)
+              allStartEnd += Destruct(s)
             }
-            case _ => contiguousBlock += statement
+            case _ => contiguousBlock += s
           }
         }
 
@@ -77,10 +84,8 @@ object Destruct {
       }
 
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => {
-        val label = createLabel(line, col)
+        val (start, end) = createStartEnd(line, col)
 
-        val start = VirtualCFG(s"${label}start")
-        val end = VirtualCFG(s"${label}end")
         // val (conditionalStart, conditionalEnd) = Destruct.conditional(conditionBlock.get)
         val (ifStart, ifEnd) = Destruct(ifTrue)
         val statements = conditionBlock.get.declarations ++ conditionBlock.get.statements
@@ -112,18 +117,18 @@ object Destruct {
           blockIfFalse = Option(end)
         }
 
-        val conditionalCFG = CFGConditional(label, statements, parents, blockIfTrue, blockIfFalse)
-        throw new Exception
+        val conditionalCFG = CFGConditional(start.label, statements, parents, blockIfTrue, blockIfFalse)
+        throw new NotImplementedError
       }
 
-      case For(line, col, start, condition, conditionBlock, update, ifTrue) => throw new Exception
-      case While(line, col, condition, conditionBlock, ifTrue) => throw new Exception
+      case For(line, col, start, condition, conditionBlock, update, ifTrue) => throw new NotImplementedError
+      case While(line, col, condition, conditionBlock, ifTrue) => throw new NotImplementedError
 
-      case Program(line, col, imports, fields, methods) => throw new Exception
-      case LocMethodDeclaration(line, col, name, typ, params, block) => throw new Exception
-      case ExtMethodDeclaration(line, col, name, typ) => throw new Exception
-      case MethodCall(line, col, name, params, paramBlocks, method) => throw new Exception
-      case _ => throw new Exception
+      case Program(line, col, imports, fields, methods) => throw new NotImplementedError
+      case LocMethodDeclaration(line, col, name, typ, params, block) => throw new NotImplementedError
+      case ExtMethodDeclaration(line, col, name, typ) => throw new NotImplementedError
+      case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
+      case _ => throw new NotImplementedError
     }
 
     throw new NotImplementedError

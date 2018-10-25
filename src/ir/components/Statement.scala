@@ -1,6 +1,9 @@
 package ir.components
 
-trait Statement extends IR
+trait Statement extends IR {
+  def line: Int
+  def col: Int
+}
 
 case class Break(
   line: Int,
@@ -31,6 +34,6 @@ case class If(
     conditionBlock: Option[Block],
     ifTrue: Block,
     ifFalse: Option[Block]) extends Statement {
-      
+
   override def toString: String = s"[If]  (${line}:${col})"
 }
