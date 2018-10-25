@@ -128,14 +128,6 @@ object Destruct {
   }
 
   /** Destruct an for loop.
-   *
-   * @param params identical to params of For
-   * @return (start, end) whose internal structure is the following:
-   *   start - the start node, s.t. start.next points to CFGConditional
-   *   end - the end node, s.t. exiting either if/else block leads to this node
-   *   CFGConditional - has two blocks:
-   *       blockIfTrue - one of its parents is this conditional block
-   *       blockIfFalse - one of its parents is this conditional block
    */
   private def destructFor(
       line: Int,
@@ -161,14 +153,6 @@ object Destruct {
   }
 
   /** Destruct an while loop.
-   *
-   * @param params identical to params of While
-   * @return (start, end) whose internal structure is the following:
-   *   start - the start node, s.t. start.next points to CFGConditional
-   *   end - the end node, s.t. exiting either if/else block leads to this node
-   *   CFGConditional - has two blocks:
-   *       blockIfTrue - one of its parents is this conditional block
-   *       blockIfFalse - one of its parents is this conditional block
    */
   private def destructWhile(
       line: Int,
@@ -185,6 +169,45 @@ object Destruct {
     link(start, conditionalCFG)
     link(blockEnd, conditionalCFG)
     (start, end)
+  }
+
+  private def destructMethodDeclaration(
+      line: Int,
+      col: Int,
+      name: String,
+      typ: Option[Type],
+      params: Vector[FieldDeclaration],
+      block: Block): Tuple2[VirtualCFG, VirtualCFG] = {
+
+    val (start, end) = createStartEnd(line, col)
+    val (blockStart, blockEnd) = Destruct(block)
+
+    // hmm, what to do with blockEnd
+    val methodCFG = CFGMethod(start.label, blockStart, params)
+    link(start, methodCFG)
+    link(methodCFG, end)
+
+    (start, end)
+  }
+
+  private def destructImport(
+      line: Int,
+      col: Int,
+      name: String,
+      typ: Option[Type]): Tuple2[VirtualCFG, VirtualCFG] = {
+
+    val emptyBlock = Block(line, col, Vector(), Vector())
+    destructMethodDeclaration(line, col, name, typ, Vector(), emptyBlock)
+  }
+
+  private def destructProgram(
+      line: Int,
+      col: Int,
+      imports: Vector[ExtMethodDeclaration],
+      fields: Vector[FieldDeclaration],
+      methods: Vector[LocMethodDeclaration]) : Tuple2[VirtualCFG, VirtualCFG] = {
+
+    throw new NotImplementedError
   }
 
   /**
@@ -207,19 +230,20 @@ object Destruct {
   def apply(ir: IR): Tuple2[VirtualCFG, VirtualCFG] = {
 
     val middle: Tuple2[VirtualCFG, VirtualCFG] = ir match {
-      case Block(line, col, declarations, statements) => destructBlock(line, col, declarations, statements)
-      case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse)
+      case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements)
+      case If(line, col, condition, conditionBlock, ifTrue, ifFalse) =>        destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse)
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => destructFor(line, col, start, condition, conditionBlock, update, ifTrue)
-      case While(line, col, condition, conditionBlock, ifTrue) => destructWhile(line, col, condition, conditionBlock, ifTrue)
+      case While(line, col, condition, conditionBlock, ifTrue) =>              destructWhile(line, col, condition, conditionBlock, ifTrue)
+      case LocMethodDeclaration(line, col, name, typ, params, block) =>        destructMethodDeclaration(line, col, name, typ, params, block)
+      case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ)
+      case Program(line, col, imports, fields, methods) =>                     destructProgram(line, col, imports, fields, methods)
 
-      case Program(line, col, imports, fields, methods) => throw new NotImplementedError
-      case LocMethodDeclaration(line, col, name, typ, params, block) => throw new NotImplementedError
-      case ExtMethodDeclaration(line, col, name, typ) => throw new NotImplementedError
-      case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
-      case AssignStatement(line, col, loc, value, valueBlock) => throw new NotImplementedError
-      case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => throw new NotImplementedError
-      case Increment(line, col, loc) => throw new NotImplementedError
-      case Decrement(line, col, loc) => throw new NotImplementedError
+      // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
+      // FIXME don't know what to do with assignments because they are not yet flattened
+      // case AssignStatement(line, col, loc, value, valueBlock) => throw new NotImplementedError
+      // case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => throw new NotImplementedError
+      // case Increment(line, col, loc) => throw new NotImplementedError
+      // case Decrement(line, col, loc) => throw new NotImplementedError
       case _ => throw new NotImplementedError
     }
 

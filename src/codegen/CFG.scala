@@ -69,11 +69,18 @@ case class CFGConditional(
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
+ * @param label a string that uniquely identifies this block
  * @param block control flow graph block, corresponding to the body of the method
  * @param params parameters of this method
+ * @param next not used
  * @param parents the basic block where this method was declared
  */
-case class CFGMethod(label: String, block: CFG, params: Vector[IR], var next: Option[CFG] = None, parents: Set[CFG]) extends CFG
+case class CFGMethod(
+    label: String,
+    block: CFG,
+    params: Vector[IR],
+    var next: Option[CFG] = None,
+    parents: Set[CFG] = Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
