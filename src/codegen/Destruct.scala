@@ -67,16 +67,36 @@ object Destruct {
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => {
         // val (conditionalStart, conditionalEnd) = Destruct.conditional(conditionBlock.get)
         val (ifStart, ifEnd) = Destruct(ifTrue)
-        lazy val (elseStart, elseEnd) = Destruct(ifFalse.get)
-
         val statements = conditionBlock.get.declarations ++ conditionBlock.get.statements
 
-        CFGConditional(
-          s"l${line}c${col}",
-          statements,
-          Set(start),
-          Option(ifStart),
-          if (ifFalse.isDefined) Option(elseStart) else Option(end))
+        val label = s"l${line}c${col}"
+        val parents: Set[CFG] = Set(start)
+        val blockIfTrue = Option(ifStart)
+
+        var blockIfFalse: Option[CFG] = None
+        // if an `else` block exists
+        //   blockIfFalse points to the start node of the else block
+        // if `else` block does not exist
+        //   blockIfFalse simply points to the end node
+        if (ifFalse.isDefined) {
+          val (elseStart, elseEnd) = Destruct(ifFalse.get)
+          // if block -> else block
+          ifEnd.next = Option(elseStart)
+          elseStart.parents += ifEnd
+
+          // else block -> end
+          elseStart.next = Option(end)
+          end.parents += elseStart
+
+          blockIfFalse = Option(elseStart)
+        } else {
+          ifEnd.next = Option(end)
+          end.parents += ifEnd
+
+          blockIfFalse = Option(end)
+        }
+
+        CFGConditional(label, statements, parents, blockIfTrue, blockIfFalse)
       }
 
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => new Exception
