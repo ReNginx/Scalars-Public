@@ -168,15 +168,16 @@ object Compiler {
     }
     
     val ir = optIR.get
-    
-    val lowIR = IRto3Addr{ir}
+    val iter = Stream.iterate(0)(_ + 1).iterator
+
+    val irModified = IRto3Addr(ir, iter)
 
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree view:")
-      PrettyPrint(lowIR)
+      PrettyPrint(irModified)
     }
 
-    lowIR
+    irModified
   }
 }

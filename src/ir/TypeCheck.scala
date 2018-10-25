@@ -108,7 +108,7 @@ object TypeCheck {
       }
     }
 
-    case If(line, col, condition, ifTrue, ifFalse) => {
+    case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => {
       TypeCheck(condition)
       if (condition.typ != Option(BoolType)) {
         stderr(s"line: ${line}, col: ${col}, if statement has a invalid condition, expect ${Option(BoolType)} found ${condition.typ}")
@@ -120,14 +120,14 @@ object TypeCheck {
       }
     }
 
-    case AssignStatement(line, col, location, expression) => {
+    case AssignStatement(line, col, location, expression, valueBlock) => {
       TypeCheck(location)
       TypeCheck(expression)
       if (location.typ != expression.typ) {
         stderr(s"line: $line, col: $col, cannot assign a(n) ${expression.typ} to ${location.typ}")
       }
     }
-    case CompoundAssignStatement(line, col, location, expression, _) => {
+    case CompoundAssignStatement(line, col, location, expression, valueBlock, _) => {
       TypeCheck(location)
       TypeCheck(expression)
       if (location.typ != expression.typ || location.typ != Option(IntType)) {

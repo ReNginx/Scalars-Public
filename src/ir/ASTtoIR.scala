@@ -73,7 +73,7 @@ object ASTtoIR {
 
       case DecafParserTokenTypes.METHOD_CALL => {
         val rhs = children(1).children map { ASTtoIR(_).asInstanceOf[Expression] }
-        MethodCall(lhsLoc.line, lhsLoc.col, lhsLoc.name, rhs)
+        MethodCall(lhsLoc.line, lhsLoc.col, lhsLoc.name, rhs, Vector())
       }
 
       case DecafParserTokenTypes.PROGRAM => {
@@ -127,12 +127,12 @@ object ASTtoIR {
 
       case DecafParserTokenTypes.VAR => isVirtualNode  // VAR is just id
       case DecafParserTokenTypes.ID  => isVirtualNode  // ID is just SC_ID
-      case DecafParserTokenTypes.SC_ID => Location(line, col, name, None)
+      case DecafParserTokenTypes.SC_ID => Location(line, col, name, None, None)
 
       case DecafParserTokenTypes.ARRAY => {
         val id = lhsLoc  // eventually SC_ID
         val index = Option(rhsExpr)
-        Location(id.line, id.col, id.name, index)
+        Location(id.line, id.col, id.name, index, None)
       }
 
       case DecafParserTokenTypes.METHOD_DECLARATION => {
@@ -213,9 +213,9 @@ object ASTtoIR {
         Block(line, col, fieldDecls, statements)
       }
 
-      case DecafParserTokenTypes.ASSIGN       => AssignStatement(line, col, lhsLoc, rhsExpr)
-      case DecafParserTokenTypes.PLUS_ASSIGN  => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Add)
-      case DecafParserTokenTypes.MINUS_ASSIGN => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Subtract)
+      case DecafParserTokenTypes.ASSIGN       => AssignStatement(line, col, lhsLoc, rhsExpr, None)
+      case DecafParserTokenTypes.PLUS_ASSIGN  => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, None, Add)
+      case DecafParserTokenTypes.MINUS_ASSIGN => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, None, Subtract)
 
       // CONDITION is just an expression
       case DecafParserTokenTypes.CONDITION => isVirtualNode
@@ -237,7 +237,7 @@ object ASTtoIR {
           }
         }
 
-        If(line, col, condition, ifTrue, ifFalse)
+        If(line, col, condition, None, ifTrue, ifFalse)
       }
 
       // FOR_START is just ASSIGN
@@ -258,23 +258,23 @@ object ASTtoIR {
       case DecafParserTokenTypes.TK_while => {
         val condition = lhsExpr
         val block = rhs.asInstanceOf[Block]
-        While(line, col, condition, block)
+        While(line, col, condition, None, block)
       }
       case DecafParserTokenTypes.TK_for => {
         val start = lhs.asInstanceOf[AssignStatement]
         val condition = rhsExpr
         val update = ASTtoIR(children(2)).asInstanceOf[Assignment]
         val block  = ASTtoIR(children(3)).asInstanceOf[Block]
-        For(line, col, start, condition, update, block)
+        For(line, col, start, condition, None, update, block)
       }
 
       case DecafParserTokenTypes.TK_len    => Length(line, col, lhsLoc)
       case DecafParserTokenTypes.TK_return => {
         if (children.size == 0) {
-          Return(line, col)
+          Return(line, col, None, None)
         }
         else {
-          Return(line, col, Option(lhsExpr))
+          Return(line, col, Option(lhsExpr), None)
         }
       }
 

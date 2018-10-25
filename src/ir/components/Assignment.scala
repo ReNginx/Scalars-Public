@@ -6,7 +6,8 @@ case class AssignStatement(
     line: Int,
     col: Int,
     loc: Location,
-    value: Expression) extends Assignment {
+    value: Expression,
+    valueBlock: Option[Block]) extends Assignment {
     
   def typ: Option[Type] = loc.typ
 
@@ -18,6 +19,7 @@ case class CompoundAssignStatement(
     col: Int,
     loc: Location,
     value: Expression,
+    valueBlock: Option[Block],
     operator: ArithmeticOperator) extends Assignment {
 
   override def toString: String = s"[CompoundAssignStatement] ${operator}  (${line}:${col})"

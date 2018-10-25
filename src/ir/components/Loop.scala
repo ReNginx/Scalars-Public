@@ -11,6 +11,7 @@ case class For(
     col: Int,
     start: AssignStatement,
     condition: Expression,
+    conditionBlock: Option[Block],
     update: Assignment,
     var ifTrue: Block) extends Loop {
 
@@ -21,6 +22,7 @@ case class While(
     line: Int,
     col: Int,
     condition: Expression,
+    conditionBlock: Option[Block],
     var ifTrue: Block) extends Loop {
 
   override def toString: String = s"[While]  (${line}:${col})"

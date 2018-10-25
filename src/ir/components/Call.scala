@@ -8,6 +8,7 @@ case class MethodCall(
     col: Int,
     name: String,
     params: Vector[Expression],
+    paramBlocks: Vector[Option[Block]],
     var method: Option[MethodDeclaration] = None
     ) extends Call {
 

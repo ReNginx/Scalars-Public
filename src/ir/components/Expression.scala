@@ -15,6 +15,7 @@ case class Location(
     col: Int,
     name: String,
     index: Option[Expression],
+    indexBlock: Option[Block],
     var field: Option[FieldDeclaration] = None) extends Expression {
 
   override def typ: Option[Type] = {
