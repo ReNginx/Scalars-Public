@@ -37,7 +37,7 @@ object Destruct {
 
                 val start = VirtualCFG()
                 val end = VirtualCFG()
-                val block = CFGBlock(contiguous)
+                val block = CFGBlock(s"l${line}c${col}", contiguous)
                 start.next = Option(block)
                 end.parents += block
                 block.parents += start
@@ -69,10 +69,14 @@ object Destruct {
         val (ifStart, ifEnd) = Destruct(ifTrue)
         lazy val (elseStart, elseEnd) = Destruct(ifFalse.get)
 
-        // ConditionalCFG(conditionBlock, )
+        val statements = conditionBlock.get.declarations ++ conditionBlock.get.statements
 
-
-
+        CFGConditional(
+          s"l${line}c${col}",
+          statements,
+          Set(start),
+          Option(ifStart),
+          if (ifFalse.isDefined) Option(elseStart) else Option(end))
       }
 
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => new Exception
