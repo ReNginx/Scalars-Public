@@ -21,7 +21,7 @@ trait CFG {
  * @param parent all possible blocks that the program could have been in, prior to this block
  * @param next the next block to go to, after all statements in this block has executed
  */
-case class CFGBlock(statements: Vector[IR], var parent: Set[CFG], next: CFG) extends CFG
+case class CFGBlock(statements: Vector[IR], parent: Set[CFG], next: CFG) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statent.
  *
@@ -34,7 +34,7 @@ case class CFGBlock(statements: Vector[IR], var parent: Set[CFG], next: CFG) ext
  * @param ifTrue the next block to go to, if conditional evaluates to true
  * @param ifFalse the next block to go to, if conditional evaluates to false
  */
-case class CFGConditionalBlock(conditional: Vector[IR], var parent: Set[CFG], ifTrue: CFG, ifFalse: CFG) extends CFG
+case class CFGConditionalBlock(conditional: Vector[IR], parent: Set[CFG], ifTrue: CFG, ifFalse: CFG) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
@@ -53,6 +53,7 @@ object FlatIRToCFG {
     ir match {
 
       case Program(line, col, imports, fields, methods) => {
+        val methods = methods map { FlatIRToCFG(_) }
         // irModified = ir.asInstanceOf[Program].copy(
         //   imports = imports.map(IRto3Addr(_, iter)).asInstanceOf[Vector[ExtMethodDeclaration]],
         //   fields = fields.map(IRto3Addr(_, iter)).asInstanceOf[Vector[FieldDeclaration]],
