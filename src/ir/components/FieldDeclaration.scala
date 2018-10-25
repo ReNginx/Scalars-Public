@@ -26,6 +26,8 @@ case class VariableDeclaration(
     name: String,
     typ: Option[Type]) extends FieldDeclaration {
 
+  var isGlobal: Boolean = false
+  var offset: Int = 0
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 
@@ -36,5 +38,7 @@ case class ArrayDeclaration(
     length: IntLiteral,
     typ: Option[Type]) extends FieldDeclaration {
 
+  var isGlobal: Boolean = false
+  var offset: Int = 0
   override def toString: String = s"[ArrayDeclaration] ${typ.get} ${name}[${length}]  (${line}:${col})"
 }
