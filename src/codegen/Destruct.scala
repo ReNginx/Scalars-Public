@@ -85,9 +85,9 @@ object Destruct {
   }
 
   // parents is set to empty set initially
-  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: Option[CFG]= None): CFGConditional = {
+  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: CFG): CFGConditional = {
     val statements = block.declarations ++ block.statements
-    CFGConditional(label, statements, Set(), Option(ifTrue), ifFalse)
+    CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse))
   }
 
   /** Destruct an if/else statement.
@@ -121,7 +121,7 @@ object Destruct {
       link(ifEnd, end)
     }
 
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get)
     link(start, conditionalCFG)
 
     (start, end)
@@ -151,7 +151,7 @@ object Destruct {
     val (initializeStart, initializeEnd) = Destruct(initialize)
     val (updateStart, updateEnd) = Destruct(update)
     val (blockStart, blockEnd) = Destruct(ifTrue)
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, Option(end))
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
@@ -180,7 +180,7 @@ object Destruct {
     val (start, end) = createStartEnd(line, col)
 
     val (blockStart, blockEnd) = Destruct(ifTrue)
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, Option(end))
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
 
     link(start, conditionalCFG)
     link(blockEnd, conditionalCFG)
@@ -209,9 +209,8 @@ object Destruct {
     val middle: Tuple2[VirtualCFG, VirtualCFG] = ir match {
       case Block(line, col, declarations, statements) => destructBlock(line, col, declarations, statements)
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse)
-
-      case For(line, col, start, condition, conditionBlock, update, ifTrue) => throw new NotImplementedError
-      case While(line, col, condition, conditionBlock, ifTrue) => throw new NotImplementedError
+      case For(line, col, start, condition, conditionBlock, update, ifTrue) => destructFor(line, col, start, condition, conditionBlock, update, ifTrue)
+      case While(line, col, condition, conditionBlock, ifTrue) => destructWhile(line, col, condition, conditionBlock, ifTrue)
 
       case Program(line, col, imports, fields, methods) => throw new NotImplementedError
       case LocMethodDeclaration(line, col, name, typ, params, block) => throw new NotImplementedError
