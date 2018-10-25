@@ -6,7 +6,7 @@ import scala.Console
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
 import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
 import ir.components.IR
-import codegen.{IRto3Addr}
+import codegen._
 import util.CLI
 
 object Compiler {
@@ -166,7 +166,7 @@ object Compiler {
     if (optIR.isEmpty) {
       System.exit(1)
     }
-    
+
     val ir = optIR.get
     val iter = Stream.iterate(0)(_ + 1).iterator
 
