@@ -1,6 +1,7 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set, HashMap, Map}
+import scala.collection.mutable.{HashSet, Set}
+import scala.collection.immutable.Map
 
 import ir.components._
 import ir.PrettyPrint
@@ -19,7 +20,7 @@ trait CFG {}
  * @param parent all possible blocks that the program could have been in, prior to this block
  * @param next the next block to go to, after all statements in this block has executed
  */
-case class CFGBlock(statements: Vector[IR], parent: Set[CFG], next: CFG) extends CFG
+case class CFGBlock(statements: Vector[IR], parent: Set[CFG], next: Option[CFG]) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statent.
  *
@@ -36,14 +37,15 @@ case class CFGConditionalBlock(conditional: Vector[IR], parent: Set[CFG], ifTrue
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
+ * @param block control flow graph block, corresponding to the body of the method
  * @param params parameters of this method
  * @param parent the basic block where this method was declared
  */
-case class CFGMethod(params: Vector[IR], parent: CFG) extends CFG
+case class CFGMethod(block: CFG, params: Vector[IR], parent: CFG) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
-case class CFGProgram(imports: Vector[IR], fields: Vector[IR], methods: HashMap[String, CFG]) extends CFG
+case class CFGProgram(imports: Vector[IR], fields: CFGBlock, methods: Map[String, CFG]) extends CFG
 
 /** Convert an IR to CFG.
  */
@@ -55,17 +57,16 @@ object FlatIRToCFG {
     ir match {
 
       case Program(line, col, imports, fields, methods) => {
-        // lazy val thisCFG = CFGProgram(importsCFG, )
-        // lazy val importsCFG = None
-        // lazy val fieldsCFG = None
-        // lazy val importsCFG = None
-        // val methodCFG = methods map { FlatIRToCFG(_, new HashSet[CFG]()) }
-        // irModified = ir.asInstanceOf[Program].copy(
-        //   imports = imports.map(IRto3Addr(_, iter)).asInstanceOf[Vector[ExtMethodDeclaration]],
-        //   fields = fields.map(IRto3Addr(_, iter)).asInstanceOf[Vector[FieldDeclaration]],
-        //   methods = methods.map(IRto3Addr(_, iter)).asInstanceOf[Vector[LocMethodDeclaration]]
-        // )
+        lazy val importsCFG = imports
+        lazy val fieldsCFG = CFGBlock(fields, Set(thisCFG), None)
+        lazy val methodsCFG = methods.map(m => m.name -> FlatIRToCFG(m, Option(thisCFG))).toMap
+        lazy val thisCFG: CFGProgram = CFGProgram(importsCFG, fieldsCFG, methodsCFG)
   	  }
+
+      case LocMethodDeclaration(line, col, name, typ, params, block) => {
+
+      }
+
       // case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => new NotImplementedError
       // case For(line, col, start, condition, conditionBlock, update, ifTrue) => new NotImplementedError
       // case While(line, col, condition, conditionBlock, ifTrue) => new NotImplementedError
