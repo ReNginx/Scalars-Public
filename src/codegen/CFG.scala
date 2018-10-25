@@ -27,9 +27,9 @@ trait CFG {
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
  */
 case class VirtualCFG(
+    label: String,
     parents: Set[CFG]=HashSet(),
-    var next: Option[CFG]=None,
-    label: String="virtual") extends CFG
+    var next: Option[CFG]=None) extends CFG
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
  *
