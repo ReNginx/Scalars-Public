@@ -1,6 +1,6 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set}
+import scala.collection.mutable.{HashSet, Set, HashMap, Map}
 
 import ir.components._
 import ir.PrettyPrint
@@ -43,7 +43,7 @@ case class CFGMethod(params: Vector[IR], parent: CFG) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
-case class CFGProgram(imports: Vector[IR], fields: Vector[IR], methods: Vector[IR]) extends CFG
+case class CFGProgram(imports: Vector[IR], fields: Vector[IR], methods: HashMap[String, CFG]) extends CFG
 
 /** Convert an IR to CFG.
  */
@@ -55,7 +55,10 @@ object FlatIRToCFG {
     ir match {
 
       case Program(line, col, imports, fields, methods) => {
-        // lazy val thisCFG =
+        // lazy val thisCFG = CFGProgram(importsCFG, )
+        // lazy val importsCFG = None
+        // lazy val fieldsCFG = None
+        // lazy val importsCFG = None
         // val methodCFG = methods map { FlatIRToCFG(_, new HashSet[CFG]()) }
         // irModified = ir.asInstanceOf[Program].copy(
         //   imports = imports.map(IRto3Addr(_, iter)).asInstanceOf[Vector[ExtMethodDeclaration]],
