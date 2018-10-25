@@ -9,11 +9,11 @@ import ir.PrettyPrint
 
 object TranslateCFG {
 
-  def output(str: String) {
+  def output(str: String) = {
       throw Exception
   }
 
-  def apply(cfg: CFG) {
+  def apply(cfg: CFG) = {
     cfg match {
       case VirtualCFG(label, _, next) => {
         output(label + ":")
@@ -25,7 +25,7 @@ object TranslateCFG {
         output(label + ":")
         for (statement <- statements) {
           statment match {
-            case decl: FieldDeclaration => // ignore decls. 
+            case decl: FieldDeclaration => // ignore decls.
             case _ => output(TranslateIR(_))
           }
         }
@@ -44,18 +44,22 @@ object TranslateCFG {
           TranslateCFG(ifFalse.get)
       }
 
-      case CFGMethod(label, block, _, _, _) => {
-        output(label + ":")
-        Allocate(block)
+      case method: CFGMethod => {
+        output(method.label + ":")
+        output(s"enter $${method.spaceAllocated}, \$ 0")
+        // TODO copy params from regs and stacks
+        TranslateCFG(block)
+        output("leave")
+        output("ret")
       }
 
-      case CFGProgram(_, _, fields, methods) => {
-        fields foreach { _.isGlobal = true }
-        for (method <- methods) {
-          offset = -sizeOfVar // local var starts from -8
-          Allocate(method)
-          method.spaceAllocated = offset + sizeOfVar
-        }
+      case CFGProgram(label, _, fields, methods) => {
+        output(".bss")
+        fields foreach { output(TranslateIR(_)) }
+        output(".section .rodata")
+        // TODO string literal goes here.
+        output(".text")
+        methods foreach { output(TranslateCFG(_) }
       }
 
       case _ =>
