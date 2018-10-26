@@ -2,12 +2,12 @@ package ir.components
 
 trait UnaryOperation extends Expression
 
-case class Not(line: Int, col: Int, expression: Expression) extends UnaryOperation {
+case class Not(line: Int, col: Int, block: Option[Block], expression: Expression) extends UnaryOperation {
   def typ: Option[Type] = Option(BoolType)
   override def toString: String = s"[Not] ${typ.get}  (${line}:${col})"
 }
 
-case class Negate(line: Int, col: Int, expression: Expression) extends UnaryOperation {
+case class Negate(line: Int, col: Int, block: Option[Block], expression: Expression) extends UnaryOperation {
   def typ: Option[Type] = Option(IntType)
   override def toString: String = s"[Negate] ${typ.get}  (${line}:${col})"
 }
@@ -20,6 +20,7 @@ trait BinaryOperation extends Expression {
 case class ArithmeticOperation(
     line: Int,
     col: Int,
+    block: Option[Block],
     operator: ArithmeticOperator,
     lhs: Expression,
     rhs: Expression) extends BinaryOperation {
@@ -31,6 +32,7 @@ case class ArithmeticOperation(
 case class LogicalOperation(
     line: Int,
     col: Int,
+    block: Option[Block],
     operator: LogicalOperator,
     lhs: Expression,
     rhs: Expression) extends BinaryOperation {
@@ -42,6 +44,7 @@ case class LogicalOperation(
 case class TernaryOperation(
     line: Int,
     col: Int,
+    block: Option[Block],
     condition: Expression,
     ifTrue: Expression,
     ifFalse: Expression) extends Expression {

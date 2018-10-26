@@ -156,19 +156,19 @@ object PrettyPrint {
 
       // Operation
 
-      case Not(line, col, expression) => {
+      case Not(line, col, block, expression) => {
         println(ir)
         println(leadingWS + "- expression")
         PrettyPrint(expression, indentLevel + 1)
       }
 
-      case Negate(line, col, expression) => {
+      case Negate(line, col, block, expression) => {
         println(ir)
         println(leadingWS + "- expression")
         PrettyPrint(expression, indentLevel + 1)
       }
 
-      case ArithmeticOperation(line, col, operator, lhs, rhs) => {
+      case ArithmeticOperation(line, col, block, operator, lhs, rhs) => {
         println(ir)
         println(leadingWS + "- lhs")
         PrettyPrint(lhs, indentLevel + 1)
@@ -176,7 +176,7 @@ object PrettyPrint {
         PrettyPrint(rhs, indentLevel + 1)
       }
 
-      case LogicalOperation(line, col, operator, lhs, rhs) => {
+      case LogicalOperation(line, col, block, operator, lhs, rhs) => {
         println(ir)
         println(leadingWS + "- lhs")
         PrettyPrint(lhs, indentLevel + 1)
@@ -184,7 +184,7 @@ object PrettyPrint {
         PrettyPrint(rhs, indentLevel + 1)
       }
 
-      case TernaryOperation(line, col, condition, ifTrue, ifFalse) => {
+      case TernaryOperation(line, col, block, condition, ifTrue, ifFalse) => {
         println(ir)
         println(leadingWS + "- condition")
         PrettyPrint(condition, indentLevel + 1)
