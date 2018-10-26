@@ -82,6 +82,7 @@ case class CFGMethod(
     label: String,
     var block: Option[CFG],  // for preventing recursion
     params: Vector[IR],
+    method: LocMethodDeclaration,
     var next: Option[CFG] = None,  // no meaning
     parents: Set[CFG] = Set(),
     typ: Option[Type] = None) extends CFG  // where declared
