@@ -102,7 +102,7 @@ case class CFGMethodCall(
 case class CFGProgram(
   label: String,
   imports: Vector[IR],
-  fields: Tuple2[CFG, CFG],
+  fields: CFGBlock,
   methods: Map[String, Option[CFGMethod]],  // TODO change to vector
   var next: Option[CFG] = None,  // not used
   parents: Set[CFG] = Set()) extends CFG  // not used
