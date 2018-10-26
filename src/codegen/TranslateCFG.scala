@@ -10,7 +10,7 @@ import java.io._
 
 object TranslateCFG {
   val strs: ArrayBuffer[Tuple2[String, String]] = ArrayBuffer() // all string literals go here.
-  var fileName: String = ""
+  var fileName: String = "output.s"
   lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
 
   def output(str: String) = {
@@ -157,7 +157,10 @@ object TranslateCFG {
         fields.statements foreach { x => outputVec(TranslateIR(x)) }
         //functions goes here.
         output(".text")
-        methods foreach {x => TranslateCFG(x._2) } // methods is a map, iterate through its value
+        for ((str, mthd) <- methods) {
+          if (mthd.isDefined)
+            TranslateCFG(mthd.get)// methods is a map, iterate through its value
+        }
         //string goes here
         output(".section .rodata")
         strs foreach {
