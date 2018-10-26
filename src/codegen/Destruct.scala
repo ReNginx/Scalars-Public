@@ -1,7 +1,7 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set, ListBuffer}
-import scala.collection.immutable.{Map}
+import scala.collection.mutable.{Set, HashSet, ListBuffer}
+import scala.collection.immutable.{Map, HashMap}
 
 import ir.components._
 import ir.PrettyPrint
@@ -79,7 +79,7 @@ object Destruct {
           val (start, end) = Destruct(s)
           blocks += Tuple3(start, end, None)
         }
-        case m: MethodCall => throw new NotImplementedError
+        // case m: MethodCall => throw new NotImplementedError
         case _ => contiguousBlock += s
       }
     }
@@ -239,7 +239,26 @@ object Destruct {
       col: Int,
       imports: Vector[ExtMethodDeclaration],
       fields: Vector[FieldDeclaration],
-      methods: Vector[LocMethodDeclaration]) : Tuple2[VirtualCFG, VirtualCFG] = {
+      methods: Vector[LocMethodDeclaration]): Tuple2[VirtualCFG, VirtualCFG] = {
+
+    throw new NotImplementedError
+  }
+
+  private def destructMethodCall(
+      line: Int,
+      col: Int,
+      name: String,
+      params: Vector[Expression],
+      paramBlocks: Vector[Option[Block]],
+      method: Option[MethodDeclaration] = None,
+      methods: Map[String, CFGMethod] = Map()): Tuple2[VirtualCFG, VirtualCFG] = {
+
+
+        // case class CFGMethodCall(
+        //     label: String,
+        //     params: Vector[IR],
+        //     var next: Option[CFG] = None,
+        //     parents: Set[CFG] = Set()) extends CFG
 
     throw new NotImplementedError
   }
@@ -260,11 +279,13 @@ object Destruct {
 
   /** Destructure a given IR and return its start and end nodes.
    * @param ir the flattened IR to destruct
+   * @param methods maps method names to declarations
    */
   def apply(
       ir: IR,
       loopStart: Option[CFG] = None,
-      loopEnd: Option[CFG] = None): Tuple2[VirtualCFG, VirtualCFG] = {
+      loopEnd: Option[CFG] = None,
+      methods: Map[String, CFGMethod] = Map()): Tuple2[VirtualCFG, VirtualCFG] = {
 
     val middle: Tuple2[VirtualCFG, VirtualCFG] = ir match {
       case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd)
@@ -274,6 +295,7 @@ object Destruct {
       case LocMethodDeclaration(line, col, name, typ, params, block) =>        destructMethodDeclaration(line, col, name, typ, params, block)
       case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ)
       case Program(line, col, imports, fields, methods) =>                     destructProgram(line, col, imports, fields, methods)
+      case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, method)
 
       // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
       // FIXME don't know what to do with assignments because they are not yet flattened

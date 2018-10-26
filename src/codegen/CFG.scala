@@ -84,12 +84,12 @@ case class CFGMethod(
     var next: Option[CFG] = None,
     parents: Set[CFG] = Set()) extends CFG
 
+// `next` simply points to 
 case class CFGMethodCall(
-  label: String,
-  block: CFG,
-  params: Vector[IR],
-  var next: Option[CFG] = None,
-  parents: Set[CFG] = Set()) extends CFG
+    label: String,
+    params: Vector[IR],
+    var next: Option[CFG] = None,
+    parents: Set[CFG] = Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
