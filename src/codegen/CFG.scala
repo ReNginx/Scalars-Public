@@ -90,6 +90,7 @@ case class CFGMethod(
 case class CFGMethodCall(
     label: String,
     params: Vector[IR],   // TODO Vector[IR], where IR can be either Literal or Location
+    declaration: CFGMethod,
     var next: Option[CFG] = None,  // points to start of declration
     parents: Set[CFG] = Set()) extends CFG  // where it was called
 
