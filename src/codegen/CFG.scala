@@ -86,7 +86,9 @@ case class CFGMethod(
     method: LocMethodDeclaration,
     var next: Option[CFG] = None,  // no meaning
     parents: Set[CFG] = Set(),
-    typ: Option[Type] = None) extends CFG  // where declared
+    typ: Option[Type] = None) extends CFG { // where declared
+      var spaceAllocated: Int = 0;
+    }
 
 // `next` simply points to
 case class CFGMethodCall(
