@@ -80,12 +80,7 @@
 //   }
 //
 //   def apply(cfg: CFG, untilBlock: Option[CFG] = None) = {
-//     if (Option(cfg) == untilBlock) {
-//       output("jmp " + cfg.label)
-//       return
-//     }
-//
-//     if (cfg.isTranslated) {
+//     if (cfg.isTranslated || Option(cfg) == untilBlock) {
 //       output("jmp " + cfg.label)
 //       return
 //     }
@@ -113,7 +108,7 @@
 //       }
 //
 //       case CFGConditional(label, statements, _, next, ifFalse, end) => {
-//         output(label)
+//         output(label + ":")
 //         //TODO not sure about how to deal with conditional.
 //
 //         if (next.isDefined) {
