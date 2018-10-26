@@ -1,0 +1,16 @@
+import random;
+import srandom;
+import printf;
+int a[10];
+
+void main ( ) {
+  int i;
+  srandom ( 17 );
+  for ( i = 0; i < 10; i += 1 ) {
+    /*
+    int temp;
+    temp = random ( );
+    */
+    printf(i);
+  }
+}

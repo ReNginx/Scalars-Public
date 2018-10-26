@@ -146,13 +146,10 @@ object IRto3Addr {
         var blockChild = Block(0, 0, Vector(), Vector()) // placeholder
 
         expressionChild match {
-          case Location (_, _, _, _, _, _) => {
-            blockChild = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              expression = expressionChild
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               expression = expressionChild
@@ -191,13 +188,11 @@ object IRto3Addr {
         var blockChild = Block(0, 0, Vector(), Vector()) // placeholder
 
         expressionChild match {
-          case Location (_, _, _, _, _, _) => {
-            blockChild = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              expression = expressionChild
-            )
-          }
-          case IntLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               expression = expressionChild
@@ -239,13 +234,11 @@ object IRto3Addr {
         var blockRHS = Block(0, 0, Vector(), Vector()) // placeholder
 
         expressionLHS match {
-          case Location (_, _, _, _, _, _) => {
-            blockLHS = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              lhs = expressionLHS
-            )
-          }
-          case IntLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockLHS = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               lhs = expressionLHS
@@ -260,13 +253,11 @@ object IRto3Addr {
         }
 
         expressionRHS match {
-          case Location (_, _, _, _, _, _) => {
-            blockRHS = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              rhs = expressionRHS
-            )
-          }
-          case IntLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockRHS = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               rhs = expressionRHS
@@ -308,13 +299,12 @@ object IRto3Addr {
         var blockRHS = Block(0, 0, Vector(), Vector()) // placeholder
 
         expressionLHS match {
-          case Location (_, _, _, _, _, _) => {
-            blockLHS = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              lhs = expressionLHS
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockLHS = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               lhs = expressionLHS
@@ -329,13 +319,12 @@ object IRto3Addr {
         }
 
         expressionRHS match {
-          case Location (_, _, _, _, _, _) => {
-            blockRHS = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              rhs = expressionRHS
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockRHS = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               rhs = expressionRHS
@@ -380,13 +369,10 @@ object IRto3Addr {
         var blockFalse = Block(0, 0, Vector(), Vector()) // placeholder
 
         expressionCond match {
-          case Location (_, _, _, _, _, _) => {
-            blockCond = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              condition = expressionCond
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) => {
             blockCond = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               condition = expressionCond
@@ -401,13 +387,12 @@ object IRto3Addr {
         }
 
         expressionTrue match {
-          case Location (_, _, _, _, _, _) => {
-            blockTrue = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              ifTrue = expressionTrue
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockTrue = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               ifTrue = expressionTrue
@@ -422,13 +407,12 @@ object IRto3Addr {
         }
 
         expressionFalse match {
-          case Location (_, _, _, _, _, _) => {
-            blockFalse = Block(0, 0, Vector(), Vector())
-            exprNew = exprNew.copy(
-              ifFalse = expressionFalse
-            )
-          }
-          case BoolLiteral (_, _, _) => {
+          case
+            Location (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
+            BoolLiteral (_, _, _) |
+            IntLiteral (_, _, _) |
+            CharLiteral (_, _, _) => {
             blockFalse = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
               ifFalse = expressionFalse
