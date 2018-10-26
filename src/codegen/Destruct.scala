@@ -19,14 +19,14 @@ object Destruct {
 
   /** Link adjacent CFG's in the provided vectors
    *
-   * @param Vector(start,end,ir) such that end is linked to the next item's start
+   * @param Vector[(start,end,ir)] such that v[i].end will be linked to v[i+1].start
    */
   private def linkAdjacent(vector: Vector[Tuple3[CFG, CFG, Option[IR]]]): Unit = {
     vector.zipWithIndex filter {
       case (_, index) => index < vector.size - 1  // all but the last one
     } foreach {
       case ((_, end, ir), index) => {
-        val (start2, end2, ir) = vector(index + 1)
+        val (start2, _, ir) = vector(index + 1)
         link(end, start2)
       }
     }
@@ -273,10 +273,10 @@ object Destruct {
 
 
     val (start, end) = createStartEnd(line, col)
-    val fieldCFGs = CFGBlock(label, fields)
+    val fieldsCFG = CFGBlock(start.label, fields)
     val programCFG = CFGProgram(start.label, imports, fieldsCFG, methods)
     link(programCFG, end)
-    (programCFG, end)
+    (programCFG, end, None)
   }
 
   /**
