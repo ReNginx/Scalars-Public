@@ -237,16 +237,13 @@ object Destruct {
     val lastBlockEnd = blocks(-1)._2
 
     val (start, end) = createStartEnd(line, col)
-    val methodDeclaration = (methods get name).get
+    val methodDeclaration = (methods get name).get.get
 
-    // start -> blocks
-    link(start, firstBlockStart)
+    val methodCFG = CFGMethodCall(start.label, parameters, methodDeclaration)
+    link(start, firstBlockStart)        // start -> blocks
+    link(lastBlockEnd, methodCFG)       // blocks -> method call
+    link(methodCFG, end)  // method call -> end
 
-    // blocks -> method
-    link(lastBlockEnd, methodDeclaration.get)
-
-    // method -> end
-    link(methodDeclaration.get, end)
     (start, end)
   }
 
@@ -282,11 +279,21 @@ object Destruct {
    * @param col
    * @return (startNode, endNode)
    */
-  def createStartEnd(line: Int, col: Int): Tuple2[CFG, CFG] = {
+  private def createStartEnd(line: Int, col: Int): Tuple2[CFG, CFG] = {
     val label = s"l${line}c${col}"
     val start = VirtualCFG(s"${label}_start")
     val end = VirtualCFG(s"${label}_end")
     (start, end)
+  }
+
+  private def destructAssignment(assignment: Assignment): Tuple2[CFG, CFG] = {
+    assignment match {
+      case AssignStatement(line, col, loc, value, valueBlock) => throw new NotImplementedError
+      case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => throw new NotImplementedError
+      case Increment(line: Int, col: Int, loc: Location) => throw new NotImplementedError
+      case Decrement(line: Int, col: Int, loc: Location) => throw new NotImplementedError
+    }
+    throw new NotImplementedError
   }
 
   /** Destructure a given IR and return its start and end nodes.
@@ -300,6 +307,7 @@ object Destruct {
       methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val middle: Tuple2[CFG, CFG] = ir match {
+      // assignment
       case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd, methods)
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) =>        destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse, methods)
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => destructFor(line, col, start, condition, conditionBlock, update, ifTrue, methods)
@@ -308,6 +316,13 @@ object Destruct {
       case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ, methods)
       case Program(line, col, imports, fields, methodVec) =>                   destructProgram(line, col, imports, fields, methodVec, methods)
       case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, methods)
+      case assignment: Assignment => destructAssignment(assignment)
+      case Not(line, col, eval, block, expression) => throw new NotImplementedError
+      case Negate(line, col, eval, block, expression) => throw new NotImplementedError
+      case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
+      case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => throw new NotImplementedError
+
 
       // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
       // FIXME don't know what to do with assignments because they are not yet flattened

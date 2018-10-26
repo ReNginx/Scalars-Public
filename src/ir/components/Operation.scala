@@ -1,6 +1,10 @@
 package ir.components
 
-trait UnaryOperation extends Expression
+trait Operation {
+  
+}
+
+trait UnaryOperation extends Expression with Operation
 
 case class Not(
     line: Int,
@@ -8,7 +12,7 @@ case class Not(
     override val eval: Option[Location],
     override val block: Option[Block],
     expression: Expression) extends UnaryOperation {
-    
+
   def typ: Option[Type] = Option(BoolType)
   override def toString: String = s"[Not] ${typ.get}  (${line}:${col})"
 }
@@ -19,12 +23,12 @@ case class Negate(
     override val eval: Option[Location],
     override val block: Option[Block],
     expression: Expression) extends UnaryOperation {
-  
+
   def typ: Option[Type] = Option(IntType)
   override def toString: String = s"[Negate] ${typ.get}  (${line}:${col})"
 }
 
-trait BinaryOperation extends Expression {
+trait BinaryOperation extends Expression with Operation {
   def lhs: Expression
   def rhs: Expression
 }
@@ -62,7 +66,7 @@ case class TernaryOperation(
     override val block: Option[Block],
     condition: Expression,
     ifTrue: Expression,
-    ifFalse: Expression) extends Expression {
+    ifFalse: Expression) extends Expression with Operation {
 
   def typ: Option[Type] = if (ifTrue.typ == ifFalse.typ) ifTrue.typ else None
   override def toString: String = s"[TernaryOperation] ${typ.get}  (${line}:${col})"
