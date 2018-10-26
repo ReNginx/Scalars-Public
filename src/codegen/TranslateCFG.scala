@@ -8,7 +8,8 @@
 //
 //
 // object TranslateCFG {
-//   val strs: Vector[Tuple2[String, String]] = new Vector
+//   val strs: Vector[Tuple2[String, String]] = new Vector // all string literals go here.
+//   var fileName: String
 //
 //   def output(str: String) = {
 //       throw Exception
@@ -30,7 +31,7 @@
 //       val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
 //       param match {
 //         case loc: Location => {
-//           outputMov(loc.decl.offsetRep.toString, reg)
+//           outputMov(loc.decl.rep.toString, reg)
 //         }
 //
 //         case str: StringLiteral => {
@@ -40,7 +41,7 @@
 //         }
 //
 //         case bool: BoolLiteral => {
-//           outputMov("$"+(if bool.value "1" else "0"), reg)
+//           outputMov("$"+(if (bool.value) "1" else "0"), reg)
 //         }
 //
 //         case char: CharLiteral => {
@@ -53,24 +54,24 @@
 //       val param = params(i)
 //       param match {
 //         case loc: Location => {
-//           output(s"movq ${loc.decl.offsetRep}, %rax")
+//           output(s"movq ${loc.decl.rep}, %rax")
 //           output(s"pushq %rax")
 //         }
 //
 //         case str: StringLiteral => {
 //           val name = s"str_r${str.line},c${str.col}";
 //           strs += Tuple2(name, str.value)
-//           output(s"movq $.${name}, ${regs}")
+//           output(s"movq $$.${name}, ${regs}")
 //           output(s"pushq %rax")
 //         }
 //
 //         case bool: BoolLiteral => {
-//           output(s"movq $${if (bool.value) 1 else 0}, %rax")
+//           output(s"movq $$${if (bool.value) 1 else 0}, %rax")
 //           output(s"pushq %rax")
 //         }
 //
 //         case char: CharLiteral => {
-//           output(s"movq $${char.value.toInt}, %rax")
+//           output(s"movq $$${char.value.toInt}, %rax")
 //           output(s"pushq %rax")
 //         }
 //       }
@@ -119,23 +120,27 @@
 //         }
 //       }
 //
-//       case CFGMethodCall(_, params, next, _) => {
+//       case CFGMethodCall(_, params, next, _, decla) => {
 //         val sizePushedToStack = paramCopy(params)
-//         output(s"call ${next.get.label}")
+//         //we call this function
+//         output(s"call ${declaration.get.label}")
 //         // destroy used params
 //         output(s"addq %rsp ${sizePushedToStack}")
-//         // call should have a next block, which is not this one.
+//
+//         if (next.isDefined)
+//           TranslateCFG(next.get)
 //         // for now we don't restore regs, rather we copy them to stack at beginning of a method..
 //       }
 //
 //       case method: CFGMethod => {
 //         output(method.label + ":")
-//         output(s"enter $${method.spaceAllocated}, \$ 0")
+//         output(s"enter $$${method.spaceAllocated}, $$0")
 //         // copy params from regs and stacks
 //         val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
 //         for ((param, i) <- method.params.zipWithIndex) { // params are decl
-//           val from = param.offsetRep
-//           val to = if i < 6 regs(i) else s""
+//           val from = param.rep
+//           val to = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
+//           outputMov(from, to);
 //         }
 //         TranslateCFG(method.block)
 //         // TODO here deal with no return error.

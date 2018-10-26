@@ -1,24 +1,134 @@
 // package codegen
 //
-// import scala.collection.mutable.{HashSet, Set}
+// import scala.collection.mutable.{HashSet, Set, Vector}
 // import scala.collection.immutable.Map
 //
 // import ir.components._
 // import ir.PrettyPrint
 //
 // object TranslateIR {
-//   def apply(ir: IR): Vector[String] = {
+//   def apply(ir: IR): Vector[String] = { // assuming here we only have
+//     val res: Vector[String] = new Vector
 //     ir match {
-//       case loc: Location => {
+//       case assign: AssignStatement => { // assume that
+//         res ++= assign.loc.indexCheck
+//         assign.value match {
+//           case op: Operation => {
+//             op match {
+//               case ury: UnaryOperation => {
+//                 res += s"movq ${ury.expression.rep}, %rax"
 //
+//                 ury match {
+//                   case not: Not => {
+//                     res += s"not %rax"
+//                   }
+//
+//                   case neg: Negate => {
+//                     res += s"neg %rax"
+//                   }
+//                 }
+//               }
+//               case bin: BinaryOperation => {
+//                 res += s"movq ${bin.lhs.rep}, %rax"
+//
+//                 bin.operator match {
+//                   case Add => {
+//                     res += s"addq ${bin.rhs.rep}, %rax"
+//                   }
+//
+//                   case Substrct => {
+//                     res += s"subq ${bin.rhs.rep}, %rax"
+//                   }
+//
+//                   case Divide => {
+//                     res += s"idivq ${bin.rhs.rep}"
+//                   }
+//
+//                   case Modulo => {
+//                     res += s"idivq ${bin.rhs.rep}"
+//                     res += s"movq %rdx, %rax"
+//                   }
+//
+//                   case Mutiply => {
+//                     res += s"imulq ${bin.rhs.rep}"
+//                   }
+//                 }
+//               }
+//
+//               case log: LogicalOperation => {
+//                 res += s"movq ${log.lhs.rep}, %rdx"
+//                 res += s"movq ${log.rhs.rep}, %rax"
+//
+//                 log.operator match {
+//                   case And => {
+//                     throw Exception
+//                   }
+//                   case Or => {
+//                     throw Exception
+//                   }
+//
+//                   case Equal => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"sete %al"
+//                   }
+//
+//                   case NotEqual => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"setne %al"
+//                   }
+//
+//                   case GreaterThan => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"setg %al"
+//                   }
+//
+//                   case GreaterThanOrEqual => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"setge %al"
+//                   }
+//
+//                   case LessThan => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"setl %al"
+//                   }
+//
+//                   case LessThanOrEqual => {
+//                     res += s"cmpq %rax, %rdx"
+//                     res += s"setle %al"
+//                   }
+//                 }
+//
+//                 res += s"movzbl %al, %eax"
+//               }
+//             }
+//           }
+//
+//           case loc: Location => {
+//             res += s"movq %rax, ${loc.rep}"
+//           }
+//           case lit: Literal => {
+//             res += s"movq %rax, ${lit.rep}"
+//           }
+//         }
+//
+//         res += s"movq %rax, ${assign.loc.rep}"
 //       }
 //
-//       case Assignment => {
-//
+//       case compAsg: CompundAssignStatement => {
+//         throw Exception
 //       }
 //
-//       case
-//       // TODO not sure what are contained in 3 addr ir.
+//       case inc: Increment => {
+//         res ++= inc.loc.indexCheck
+//         res += s"incq ${inc.loc.rep}"
+//       }
+//
+//       case dec: Decrement => {
+//         res ++= inc.loc.indexCheck
+//         res += s"decq ${inc.loc.rep}"
+//       }
 //     }
+//
+//     res
 //   }
 // }

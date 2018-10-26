@@ -23,6 +23,7 @@ trait CFG {
   def label: String
   def parents: Set[CFG]
   var isTranslated: Boolean = false
+  var isAllocated: Boolean = false
   var next: Option[CFG]
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.

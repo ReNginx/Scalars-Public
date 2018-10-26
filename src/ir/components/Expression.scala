@@ -4,12 +4,11 @@ trait Expression extends IR {
   def typ: Option[Type]
   def eval: Option[Location] = None
   def block: Option[Block] = None
-  def rep: String //only location and literal would have this.
+  def rep: String = "" //only location and literal would have this.
 }
 
 case class Length(line: Int, col: Int, location: Location) extends Expression {
   val typ = Option(IntType)
-
   override def toString: String = s"[Length]  (${line}:${col})"
 }
 
@@ -40,17 +39,28 @@ case class Location(
       }
     }
   }
-  //TODO
-  // def rep: String = {
-  //   assert(field.isDefined)
-  //   field.get.match {
-  //     // case var: VariableDeclaration => var.rep
-  //     // case ary: ArrayDeclaration => s"${ary.offset}(%rbp, ${})"
-  //   }
-  // }
 
-  // def indexCheck: Vector[String] = {
-  //
-  // }
+  override def rep: String = {
+    assert(field.isDefined)
+    field.get match {
+      case variable: VariableDeclaration => {
+        return variable.rep
+      }
+      case ary: ArrayDeclaration => {
+        if (ary.isGlobal)
+          return s"${ary.name}(, ${index.get.rep}, 8)"
+        else
+          return s"${ary.offset}(%rbp, ${index.get.rep}, 8)"
+      }
+      case _ =>
+    }
+    ""
+  }
+
+  //TODO
+  def indexCheck: Vector[String] = {
+    return Vector[String]()
+  }
+
   override def toString: String = s"[Location] ${name}  (${line}:${col})"
 }

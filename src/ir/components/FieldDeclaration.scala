@@ -28,7 +28,7 @@ case class VariableDeclaration(
 
   var isGlobal: Boolean = false
   var offset: Int = 0
-  def offsetRep = s"$${offset.toString}(%rbp)"
+  def rep = s"$${offset.toString}(%rbp)"
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 

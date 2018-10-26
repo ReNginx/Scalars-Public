@@ -7,10 +7,14 @@
 // import ir.PrettyPrint
 //
 // object Allocate {
-//   val sizeOfVar = 8
-//   var offset = 0
+//   val sizeOfVar:Int = 8
+//   var offset:Int = 0
 //
-//   def apply(cfg: CFG) = {
+//   def apply(cfg: CFG): Unit = {
+//     if (cfg.isAllocated)
+//       return
+//     cfg.isAllocated = true
+//
 //     cfg match {
 //       case VirtualCFG(_, _, next) => {
 //         if (next.isDefined)
@@ -19,7 +23,7 @@
 //
 //       case CFGBlock(_, statements, _, next) => {
 //         for (statement <- statements) {
-//           statment match {
+//           statement match {
 //             case variable: VariableDeclaration => {
 //                 variable.offset = offset
 //                 offset -= sizeOfVar
@@ -27,7 +31,7 @@
 //
 //             case array: ArrayDeclaration => {
 //               array.offset = offset
-//               offset -= array.length.value * sizeOfVar
+//               offset -= array.length.value.toInt * sizeOfVar
 //             }
 //
 //             case _ =>
