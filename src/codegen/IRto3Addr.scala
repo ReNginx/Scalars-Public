@@ -190,6 +190,7 @@ object IRto3Addr {
         expressionChild match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -236,6 +237,7 @@ object IRto3Addr {
         expressionLHS match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -255,6 +257,7 @@ object IRto3Addr {
         expressionRHS match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -301,6 +304,7 @@ object IRto3Addr {
         expressionLHS match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
@@ -321,6 +325,7 @@ object IRto3Addr {
         expressionRHS match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
@@ -389,6 +394,7 @@ object IRto3Addr {
         expressionTrue match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
@@ -409,6 +415,7 @@ object IRto3Addr {
         expressionFalse match {
           case
             Location (_, _, _, _, _, _) |
+            Length (_, _, _) |
             MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
@@ -460,19 +467,25 @@ object IRto3Addr {
       // Statement
 
       case Break(line, col, loop) => {
+        irModified = ir
+        /* Do not recurse into loop
         irModified = ir.asInstanceOf[Break].copy(
           loop = if (!loop.isEmpty)
             Some(IRto3Addr(loop.get, iter).asInstanceOf[Loop])
             else loop
         )
+        */
       }
 
       case Continue(line, col, loop) => {
+        irModified = ir
+        /* Do not recurse into loop
         irModified = ir.asInstanceOf[Continue].copy(
           loop = if (!loop.isEmpty)
             Some(IRto3Addr(loop.get, iter).asInstanceOf[Loop])
             else loop
         )
+        */
       }
 
       case Return(line, col, value, valueBlock) => {
