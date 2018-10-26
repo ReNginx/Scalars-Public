@@ -31,10 +31,12 @@ object Destruct {
       line: Int,
       col: Int,
       declarations: Vector[IR],
-      statements: Vector[IR]): Tuple2[VirtualCFG, VirtualCFG] = {
+      statements: Vector[IR],
+      loopStart: Option[CFG] = None,
+      loopEnd: Option[CFG] = None): Tuple2[VirtualCFG, VirtualCFG] = {
 
-    // (start, end) of every basic block in this Block
-    val blocks: ListBuffer[Tuple2[VirtualCFG, VirtualCFG]] = ListBuffer()
+    // (start, end) of every basic block in this Block, with third element being the original IR
+    val blocks: ListBuffer[Tuple3[VirtualCFG, VirtualCFG, Option[IR]]] = ListBuffer()
 
     // used to form contiguous series of commands from which to form a basic block
     val contiguousBlock: ListBuffer[IR] = declarations.to[ListBuffer]
@@ -42,34 +44,71 @@ object Destruct {
       val contiguous = contiguousBlock map { x => x }  // copy
       contiguousBlock.clear()
 
-      val (start, end) = createStartEnd(line, col)
-      val block = CFGBlock(start.label, contiguous.toVector)
+      val breakContinues = contiguous.zipWithIndex map {
+        z => z match {
+          case (_: Break, index) => index
+          case (_: Continue, index) => index
+          case (_, index) => -1
+        }
+      } filter { _ >= 0 }
 
+      val (start, end) = createStartEnd(line, col)
+
+      // aggregate everything before the break/continue statement as one single block
+      def breakContinueIndex = breakContinues(0)
+      val newContiguous = if (breakContinues.size == 0) contiguous else contiguous.slice(0, breakContinueIndex)
+      val block = CFGBlock(start.label, newContiguous.toVector)
       link(start, block)
       link(block, end)
-      blocks += Tuple2(start, end)
+      blocks += Tuple3(start, end, None)
+
+      // add break and continue as separate, empty blocks
+      if (breakContinues.size > 0) {
+        val breakContinue = contiguous(breakContinueIndex)
+        val (start, end) = breakContinue match {
+          case b: Break =>    createStartEnd(b.line, b.col)
+          case c: Continue => createStartEnd(c.line, c.col)
+          case _ => throw new IllegalArgumentException
+        }
+        blocks += Tuple3(start, end, Option(breakContinue))
+      }
     }
 
     statements foreach {
-      statement => statement match {
+      s => s match {
         // encountered conditional, so destruct the contiguous block, then the conditional
         case _: If | _: For | _: While => {
           if (contiguousBlock.size == 0) {
             destructContiguousBlock()
           }
-          blocks += Destruct(statement)
+          val (start, end) = Destruct(s)
+          blocks += Tuple3(start, end, None)
         }
         case m: MethodCall => throw new NotImplementedError
-        case _ => contiguousBlock += statement
+        case _ => contiguousBlock += s
       }
     }
 
     // link adjacent basic blocks in blocks
     (0 to blocks.size - 2) foreach {
       i => {
-        val (start1, end1) = blocks(i)
-        val (start2, end2) = blocks(i + 1)
+        val (start1, end1, ir1) = blocks(i)
+        val (start2, end2, ir2) = blocks(i + 1)
         link(end1, start2)
+      }
+    }
+
+    // after linking, check for breaks and continue
+    blocks.zipWithIndex filter {
+      _ match {
+        case (tuple, index) => tuple._3.isDefined
+      }
+    } foreach {
+      _ match {
+        case ((start, end, optStatement), index) => optStatement.get match {
+          case b: Break => link(end, loopEnd.get)  // the end of break block pointㄴ to the loop end
+          case c: Continue => link(end, loopStart.get)  // point to start of loop
+        }
       }
     }
 
@@ -129,7 +168,7 @@ object Destruct {
 
   /** Destruct an for loop.
    */
-  private def destructFor(
+  private def destructFor(  // TODO handle continue and break
       line: Int,
       col: Int,
       initialize: AssignStatement,
@@ -142,7 +181,7 @@ object Destruct {
 
     val (initializeStart, initializeEnd) = Destruct(initialize)
     val (updateStart, updateEnd) = Destruct(update)
-    val (blockStart, blockEnd) = Destruct(ifTrue)
+    val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end))
     val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
 
     link(start, initializeStart)
@@ -154,7 +193,7 @@ object Destruct {
 
   /** Destruct an while loop.
    */
-  private def destructWhile(
+  private def destructWhile(  // TODO handle continue and break
       line: Int,
       col: Int,
       condition: Expression,
@@ -163,7 +202,7 @@ object Destruct {
 
     val (start, end) = createStartEnd(line, col)
 
-    val (blockStart, blockEnd) = Destruct(ifTrue)
+    val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end))
     val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
 
     link(start, conditionalCFG)
@@ -227,10 +266,13 @@ object Destruct {
   /** Destructure a given IR and return its start and end nodes.
    * @param ir the flattened IR to destruct
    */
-  def apply(ir: IR): Tuple2[VirtualCFG, VirtualCFG] = {
+  def apply(
+      ir: IR,
+      loopStart: Option[CFG] = None,
+      loopEnd: Option[CFG] = None): Tuple2[VirtualCFG, VirtualCFG] = {
 
     val middle: Tuple2[VirtualCFG, VirtualCFG] = ir match {
-      case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements)
+      case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd)
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) =>        destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse)
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => destructFor(line, col, start, condition, conditionBlock, update, ifTrue)
       case While(line, col, condition, conditionBlock, ifTrue) =>              destructWhile(line, col, condition, conditionBlock, ifTrue)
