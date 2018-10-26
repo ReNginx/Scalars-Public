@@ -5,14 +5,16 @@ import scala.collection.immutable.Map
 import scala.collection.mutable.ArrayBuffer
 import ir.components._
 import ir.PrettyPrint
+import java.io._
 
 
 object TranslateCFG {
   val strs: ArrayBuffer[Tuple2[String, String]] = ArrayBuffer() // all string literals go here.
   var fileName: String = ""
+  lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
 
   def output(str: String) = {
-      //TODO
+    writer.write(str + "\n")
   }
 
   private def outputMov(from: String, to: String) = {
@@ -26,7 +28,7 @@ object TranslateCFG {
   }
 
   private def outputVec(strs: Vector[String]) = {
-    //TODO
+    strs foreach {output(_)}
   }
 
   //params stores locations
