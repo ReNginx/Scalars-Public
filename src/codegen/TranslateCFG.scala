@@ -13,7 +13,12 @@
 //       throw Exception
 //   }
 //
-//   def apply(cfg: CFG, explicitJump: Boolean = false) = {
+//   def apply(cfg: CFG, untilBlock: Option[CFG] = None) = {
+//     if (Option(cfg) == untilBlock) {
+//       output("jmp " + cfg.label)
+//       return
+//     }
+//
 //     if (cfg.isTranslated) {
 //       return
 //     }
@@ -40,16 +45,24 @@
 //             TranslateCFG(next.get)
 //       }
 //
-//       case CFGConditional(label, statements, _, next, ifFalse) => {
+//       case CFGConditional(label, statements, _, next, ifFalse, end) => {
 //         output(label)
 //         //TODO not sure about how to deal with conditional.
 //
 //         if (next.isDefined) {
-//           TranslateCFG(next.get, true)
+//           TranslateCFG(next.get, end)
 //         }
 //         if (ifFalse.isDefined) {
 //           TranslateCFG(ifFalse.get)
 //         }
+//       }
+//
+//       case CFGMethodCall(_, params, next, _) => {
+//         // copy params to their place. note form here, could be var or literal???
+//         output("call " + next.get.label)
+//         // call should have a next block, which is not this one.
+//         // for now we don't
+//          restore regs, rather we copy them to stack at beginning of a method..
 //       }
 //
 //       case method: CFGMethod => {
