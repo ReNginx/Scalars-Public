@@ -156,36 +156,76 @@ object PrettyPrint {
 
       // Operation
 
-      case Not(line, col, block, expression) => {
+      case Not(line, col, eval, block, expression) => {
         println(ir)
+        if (!eval.isEmpty) {
+          println(leadingWS + "- eval")
+          PrettyPrint(eval.get, indentLevel + 1)
+        }
+        if (!block.isEmpty) {
+          println(leadingWS + "- block")
+          PrettyPrint(block.get, indentLevel + 1)
+        }
         println(leadingWS + "- expression")
         PrettyPrint(expression, indentLevel + 1)
       }
 
-      case Negate(line, col, block, expression) => {
+      case Negate(line, col, eval, block, expression) => {
         println(ir)
+        if (!eval.isEmpty) {
+          println(leadingWS + "- eval")
+          PrettyPrint(eval.get, indentLevel + 1)
+        }
+        if (!block.isEmpty) {
+          println(leadingWS + "- block")
+          PrettyPrint(block.get, indentLevel + 1)
+        }
         println(leadingWS + "- expression")
         PrettyPrint(expression, indentLevel + 1)
       }
 
-      case ArithmeticOperation(line, col, block, operator, lhs, rhs) => {
+      case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => {
         println(ir)
+        if (!eval.isEmpty) {
+          println(leadingWS + "- eval")
+          PrettyPrint(eval.get, indentLevel + 1)
+        }
+        if (!block.isEmpty) {
+          println(leadingWS + "- block")
+          PrettyPrint(block.get, indentLevel + 1)
+        }
         println(leadingWS + "- lhs")
         PrettyPrint(lhs, indentLevel + 1)
         println(leadingWS + "- rhs")
         PrettyPrint(rhs, indentLevel + 1)
       }
 
-      case LogicalOperation(line, col, block, operator, lhs, rhs) => {
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => {
         println(ir)
+        if (!eval.isEmpty) {
+          println(leadingWS + "- eval")
+          PrettyPrint(eval.get, indentLevel + 1)
+        }
+        if (!block.isEmpty) {
+          println(leadingWS + "- block")
+          PrettyPrint(block.get, indentLevel + 1)
+        }
         println(leadingWS + "- lhs")
         PrettyPrint(lhs, indentLevel + 1)
         println(leadingWS + "- rhs")
         PrettyPrint(rhs, indentLevel + 1)
       }
 
-      case TernaryOperation(line, col, block, condition, ifTrue, ifFalse) => {
+      case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => {
         println(ir)
+        if (!eval.isEmpty) {
+          println(leadingWS + "- eval")
+          PrettyPrint(eval.get, indentLevel + 1)
+        }
+        if (!block.isEmpty) {
+          println(leadingWS + "- block")
+          PrettyPrint(block.get, indentLevel + 1)
+        }
         println(leadingWS + "- condition")
         PrettyPrint(condition, indentLevel + 1)
         println(leadingWS + "- ifTrue")

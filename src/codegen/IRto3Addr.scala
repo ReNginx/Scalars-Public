@@ -91,11 +91,11 @@ object IRto3Addr {
       case BoolLiteral(line, col, value) => {
         irModified = ir
       }
-      
+
       case CharLiteral(line, col, value) => {
         irModified = ir
       }
-      
+
       case StringLiteral(line, col, value) => {
         irModified = ir
       }
@@ -135,24 +135,325 @@ object IRto3Addr {
 
       // Operation
 
-      case Not(line, col, block, expression) => {
-        irModified = ir
+      case Not(line, col, eval, block, expression) => {
+        irModified = ir.asInstanceOf[Not].copy(
+          expression = IRto3Addr(expression, iter).asInstanceOf[Expression]
+        )
+
+        val expressionChild = irModified.asInstanceOf[Not].expression
+
+        var exprNew = Not(0, 0, None, None, expressionChild) // placeholder
+        var blockChild = Block(0, 0, Vector(), Vector()) // placeholder
+
+        expressionChild match {
+          case Location (_, _, _, _, _, _) => {
+            blockChild = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              expression = expressionChild
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockChild = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              expression = expressionChild
+            )
+          }
+          case _ => {
+            blockChild = expressionChild.block.get
+            exprNew = exprNew.copy(
+              expression = expressionChild.eval.get
+            )
+          }
+        }
+
+        val varIndex = iter.next
+        val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
+        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val blockNew = blockChild.asInstanceOf[Block].copy(
+          declarations = blockChild.declarations :+ varNew,
+          statements = blockChild.statements :+ statementNew
+        )
+        irModified = irModified.asInstanceOf[Not].copy(
+          eval = Some(evalNew),
+          block = Some(blockNew)
+        )
       }
 
-      case Negate(line, col, block, expression) => {
-        irModified = ir
+      case Negate(line, col, eval, block, expression) => {
+        irModified = ir.asInstanceOf[Negate].copy(
+          expression = IRto3Addr(expression, iter).asInstanceOf[Expression]
+        )
+
+        val expressionChild = irModified.asInstanceOf[Negate].expression
+
+        var exprNew = Negate(0, 0, None, None, expressionChild) // placeholder
+        var blockChild = Block(0, 0, Vector(), Vector()) // placeholder
+
+        expressionChild match {
+          case Location (_, _, _, _, _, _) => {
+            blockChild = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              expression = expressionChild
+            )
+          }
+          case IntLiteral (_, _, _) => {
+            blockChild = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              expression = expressionChild
+            )
+          }
+          case _ => {
+            blockChild = expressionChild.block.get
+            exprNew = exprNew.copy(
+              expression = expressionChild.eval.get
+            )
+          }
+        }
+
+        val varIndex = iter.next
+        val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(IntType))
+        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val blockNew = blockChild.asInstanceOf[Block].copy(
+          declarations = blockChild.declarations :+ varNew,
+          statements = blockChild.statements :+ statementNew
+        )
+        irModified = irModified.asInstanceOf[Negate].copy(
+          eval = Some(evalNew),
+          block = Some(blockNew)
+        )
       }
 
-      case ArithmeticOperation(line, col, block, operator, lhs, rhs) => {
-        irModified = ir
+      case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => {
+        irModified = ir.asInstanceOf[ArithmeticOperation].copy(
+          lhs = IRto3Addr(lhs, iter).asInstanceOf[Expression],
+          rhs = IRto3Addr(rhs, iter).asInstanceOf[Expression]
+        )
+
+        val expressionLHS = irModified.asInstanceOf[ArithmeticOperation].lhs
+        val expressionRHS = irModified.asInstanceOf[ArithmeticOperation].rhs
+
+        var exprNew = ArithmeticOperation(0, 0, None, None, operator, expressionLHS, expressionRHS) // placeholder
+        var blockLHS = Block(0, 0, Vector(), Vector()) // placeholder
+        var blockRHS = Block(0, 0, Vector(), Vector()) // placeholder
+
+        expressionLHS match {
+          case Location (_, _, _, _, _, _) => {
+            blockLHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              lhs = expressionLHS
+            )
+          }
+          case IntLiteral (_, _, _) => {
+            blockLHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              lhs = expressionLHS
+            )
+          }
+          case _ => {
+            blockLHS = expressionLHS.block.get
+            exprNew = exprNew.copy(
+              lhs = expressionLHS.eval.get
+            )
+          }
+        }
+
+        expressionRHS match {
+          case Location (_, _, _, _, _, _) => {
+            blockRHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              rhs = expressionRHS
+            )
+          }
+          case IntLiteral (_, _, _) => {
+            blockRHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              rhs = expressionRHS
+            )
+          }
+          case _ => {
+            blockRHS = expressionRHS.block.get
+            exprNew = exprNew.copy(
+              rhs = expressionRHS.eval.get
+            )
+          }
+        }
+
+        val varIndex = iter.next
+        val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(IntType))
+        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val blockNew = blockLHS.asInstanceOf[Block].copy(
+          declarations = blockLHS.declarations ++ blockRHS.declarations :+ varNew,
+          statements = blockLHS.statements ++ blockRHS.statements :+ statementNew
+        )
+        irModified = irModified.asInstanceOf[ArithmeticOperation].copy(
+          eval = Some(evalNew),
+          block = Some(blockNew)
+        )
       }
 
-      case LogicalOperation(line, col, block, operator, lhs, rhs) => {
-        irModified = ir
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => {
+        irModified = ir.asInstanceOf[LogicalOperation].copy(
+          lhs = IRto3Addr(lhs, iter).asInstanceOf[Expression],
+          rhs = IRto3Addr(rhs, iter).asInstanceOf[Expression]
+        )
+
+        val expressionLHS = irModified.asInstanceOf[LogicalOperation].lhs
+        val expressionRHS = irModified.asInstanceOf[LogicalOperation].rhs
+
+        var exprNew = LogicalOperation(0, 0, None, None, operator, expressionLHS, expressionRHS) // placeholder
+        var blockLHS = Block(0, 0, Vector(), Vector()) // placeholder
+        var blockRHS = Block(0, 0, Vector(), Vector()) // placeholder
+
+        expressionLHS match {
+          case Location (_, _, _, _, _, _) => {
+            blockLHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              lhs = expressionLHS
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockLHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              lhs = expressionLHS
+            )
+          }
+          case _ => {
+            blockLHS = expressionLHS.block.get
+            exprNew = exprNew.copy(
+              lhs = expressionLHS.eval.get
+            )
+          }
+        }
+
+        expressionRHS match {
+          case Location (_, _, _, _, _, _) => {
+            blockRHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              rhs = expressionRHS
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockRHS = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              rhs = expressionRHS
+            )
+          }
+          case _ => {
+            blockRHS = expressionRHS.block.get
+            exprNew = exprNew.copy(
+              rhs = expressionRHS.eval.get
+            )
+          }
+        }
+
+        val varIndex = iter.next
+        val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
+        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val blockNew = blockLHS.asInstanceOf[Block].copy(
+          declarations = blockLHS.declarations ++ blockRHS.declarations :+ varNew,
+          statements = blockLHS.statements ++ blockRHS.statements :+ statementNew
+        )
+        irModified = irModified.asInstanceOf[LogicalOperation].copy(
+          eval = Some(evalNew),
+          block = Some(blockNew)
+        )
       }
 
-      case TernaryOperation(line, col, block, condition, ifTrue, ifFalse) => {
-        irModified = ir
+      case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => {
+        irModified = ir.asInstanceOf[TernaryOperation].copy(
+          condition = IRto3Addr(condition, iter).asInstanceOf[Expression],
+          ifTrue = IRto3Addr(ifTrue, iter).asInstanceOf[Expression],
+          ifFalse = IRto3Addr(ifFalse, iter).asInstanceOf[Expression]
+        )
+
+        val expressionCond = irModified.asInstanceOf[TernaryOperation].condition
+        val expressionTrue = irModified.asInstanceOf[TernaryOperation].ifTrue
+        val expressionFalse = irModified.asInstanceOf[TernaryOperation].ifFalse
+
+        var exprNew = TernaryOperation(0, 0, None, None, expressionCond, expressionTrue, expressionFalse) // placeholder
+        var blockCond = Block(0, 0, Vector(), Vector()) // placeholder
+        var blockTrue = Block(0, 0, Vector(), Vector()) // placeholder
+        var blockFalse = Block(0, 0, Vector(), Vector()) // placeholder
+
+        expressionCond match {
+          case Location (_, _, _, _, _, _) => {
+            blockCond = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              condition = expressionCond
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockCond = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              condition = expressionCond
+            )
+          }
+          case _ => {
+            blockCond = expressionCond.block.get
+            exprNew = exprNew.copy(
+              condition = expressionCond.eval.get
+            )
+          }
+        }
+
+        expressionTrue match {
+          case Location (_, _, _, _, _, _) => {
+            blockTrue = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              ifTrue = expressionTrue
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockTrue = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              ifTrue = expressionTrue
+            )
+          }
+          case _ => {
+            blockTrue = expressionTrue.block.get
+            exprNew = exprNew.copy(
+              ifTrue = expressionTrue.eval.get
+            )
+          }
+        }
+
+        expressionFalse match {
+          case Location (_, _, _, _, _, _) => {
+            blockFalse = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              ifFalse = expressionFalse
+            )
+          }
+          case BoolLiteral (_, _, _) => {
+            blockFalse = Block(0, 0, Vector(), Vector())
+            exprNew = exprNew.copy(
+              ifFalse = expressionFalse
+            )
+          }
+          case _ => {
+            blockFalse = expressionFalse.block.get
+            exprNew = exprNew.copy(
+              ifFalse = expressionFalse.eval.get
+            )
+          }
+        }
+
+        val varIndex = iter.next
+        val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
+        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val blockNew = blockCond.asInstanceOf[Block].copy(
+          declarations = blockCond.declarations ++ blockTrue.declarations ++ blockFalse.declarations :+ varNew,
+          statements = blockCond.statements ++ blockTrue.statements ++ blockFalse.statements :+ statementNew
+        )
+        irModified = irModified.asInstanceOf[TernaryOperation].copy(
+          eval = Some(evalNew),
+          block = Some(blockNew)
+        )
       }
 
       // Program

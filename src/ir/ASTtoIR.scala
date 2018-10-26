@@ -43,35 +43,35 @@ object ASTtoIR {
       case DecafParserTokenTypes.MINUS => {
         // is a binary operation
         if (children.size == 2) {
-          return ArithmeticOperation(line, col, None, Subtract, lhsExpr, rhsExpr)
+          return ArithmeticOperation(line, col, None, None, Subtract, lhsExpr, rhsExpr)
         }
 
         // unary operation, so negate the sign
         val expr = ASTtoIR(children(0), !positive).asInstanceOf[Expression]
         expr match {
           case int: IntLiteral => int
-          case _ => Negate(line, col, None, expr)
+          case _ => Negate(line, col, None, None, expr)
         }
       }
 
       // binary arithmetic operations
-      case DecafParserTokenTypes.MULTIPLY => ArithmeticOperation(line, col, None, Multiply, lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.DIVIDE   => ArithmeticOperation(line, col, None, Divide,   lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.PLUS     => ArithmeticOperation(line, col, None, Add,      lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.MOD      => ArithmeticOperation(line, col, None, Modulo,   lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.MULTIPLY => ArithmeticOperation(line, col, None, None, Multiply, lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.DIVIDE   => ArithmeticOperation(line, col, None, None, Divide,   lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.PLUS     => ArithmeticOperation(line, col, None, None, Add,      lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.MOD      => ArithmeticOperation(line, col, None, None, Modulo,   lhsExpr, rhsExpr)
 
       // binary logical operations
-      case DecafParserTokenTypes.AND                => LogicalOperation(line, col, None, And,                lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.OR                 => LogicalOperation(line, col, None, Or,                 lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.EQUAL              => LogicalOperation(line, col, None, Equal,              lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.NEQUAL             => LogicalOperation(line, col, None, NotEqual,           lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.LESS_THAN          => LogicalOperation(line, col, None, LessThan,           lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.LESS_THAN_OR_EQ    => LogicalOperation(line, col, None, LessThanOrEqual,    lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.GREATER_THAN       => LogicalOperation(line, col, None, GreaterThan,        lhsExpr, rhsExpr)
-      case DecafParserTokenTypes.GREATER_THAN_OR_EQ => LogicalOperation(line, col, None, GreaterThanOrEqual, lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.AND                => LogicalOperation(line, col, None, None, And,                lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.OR                 => LogicalOperation(line, col, None, None, Or,                 lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.EQUAL              => LogicalOperation(line, col, None, None, Equal,              lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.NEQUAL             => LogicalOperation(line, col, None, None, NotEqual,           lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.LESS_THAN          => LogicalOperation(line, col, None, None, LessThan,           lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.LESS_THAN_OR_EQ    => LogicalOperation(line, col, None, None, LessThanOrEqual,    lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.GREATER_THAN       => LogicalOperation(line, col, None, None, GreaterThan,        lhsExpr, rhsExpr)
+      case DecafParserTokenTypes.GREATER_THAN_OR_EQ => LogicalOperation(line, col, None, None, GreaterThanOrEqual, lhsExpr, rhsExpr)
 
       // unary logical operation
-      case DecafParserTokenTypes.NOT => Not(line, col, None, lhsExpr)
+      case DecafParserTokenTypes.NOT => Not(line, col, None, None, lhsExpr)
 
       case DecafParserTokenTypes.METHOD_CALL => {
         val rhs = children(1).children map { ASTtoIR(_).asInstanceOf[Expression] }
@@ -196,7 +196,7 @@ object ASTtoIR {
         val condition = lhsExpr
         val ifTrue = rhsExpr
         val ifFalse = ASTtoIR(children(2)).asInstanceOf[Expression]
-        TernaryOperation(line, col, None, condition, ifTrue, ifFalse)
+        TernaryOperation(line, col, None, None, condition, ifTrue, ifFalse)
       }
 
       case DecafParserTokenTypes.BLOCK => {

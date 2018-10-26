@@ -2,6 +2,8 @@ package ir.components
 
 trait Expression extends IR {
   def typ: Option[Type]
+  def eval: Option[Location] = None
+  def block: Option[Block] = None
 }
 
 case class Length(line: Int, col: Int, location: Location) extends Expression {

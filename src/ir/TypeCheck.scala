@@ -214,21 +214,21 @@ object TypeCheck {
       }
     }
 
-    case Not(line, col, block, expression) => {
+    case Not(line, col, value, block, expression) => {
       TypeCheck(expression)
       if (expression.typ != Option(BoolType)) {
         stderr(s"line: $line, col: $col, cannot apply NOT to ${expression.typ}")
       }
     }
 
-    case Negate(line, col, block, expression) => {
+    case Negate(line, col, value, block, expression) => {
       TypeCheck(expression)
       if (expression.typ != Option(IntType)) {
         stderr(s"line: $line, col: $col, cannot apply Negation to ${expression.typ}")
       }
     }
 
-    case ArithmeticOperation(line, col, block, operator, lhs, rhs) => {
+    case ArithmeticOperation(line, col, value, block, operator, lhs, rhs) => {
       TypeCheck(lhs)
       TypeCheck(rhs)
       if (lhs.typ != Option(IntType) || rhs.typ != Option(IntType)) {
@@ -236,7 +236,7 @@ object TypeCheck {
       }
     }
 
-    case LogicalOperation(line, col, block, operator, lhs, rhs) => {
+    case LogicalOperation(line, col, value, block, operator, lhs, rhs) => {
       TypeCheck(lhs)
       TypeCheck(rhs)
       if (lhs.typ != rhs.typ) {
@@ -262,7 +262,7 @@ object TypeCheck {
       }
     }
 
-    case TernaryOperation(line, col, block, condition, ifTrue, ifFalse) => {
+    case TernaryOperation(line, col, value, block, condition, ifTrue, ifFalse) => {
       TypeCheck(condition)
       TypeCheck(ifTrue)
       TypeCheck(ifFalse)
