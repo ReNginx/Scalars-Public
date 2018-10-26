@@ -39,11 +39,11 @@ object Destruct {
       statements: Vector[IR],
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val blocks = (declarations ++ statements) map {
       s => {
-        val (start, end) = Destruct(s, loopStart, loopEnd, methods)
+        val (start, end, _) = Destruct(s, loopStart, loopEnd, methods)
         Tuple3(start, end, s)
       }
     }
@@ -69,7 +69,7 @@ object Destruct {
     link(start, firstBlockStart)
     link(lastBlockEnd, end)
 
-    (start, end)
+    (start, end, None)
   }
 
   // parents is set to empty set initially
@@ -95,15 +95,15 @@ object Destruct {
       conditionBlock: Option[Block],
       ifTrue: Block,
       ifFalse: Option[Block],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     // start and end of this if statement
     val (start, end) = createStartEnd(line, col)
-    val (ifStart, ifEnd) = Destruct(ifTrue, methods=methods)
+    val (ifStart, ifEnd, _) = Destruct(ifTrue, methods=methods)
 
     var blockIfFalse: Option[CFG] = None
     if (ifFalse.isDefined) {  // an `else` block exists
-      val (elseStart, elseEnd) = Destruct(ifFalse.get, methods=methods)
+      val (elseStart, elseEnd, _) = Destruct(ifFalse.get, methods=methods)
       blockIfFalse = Option(elseStart)
       link(elseEnd, end)
     } else {  // `else` block does not exist, so blockIfFalse simply points to the end node
@@ -114,7 +114,7 @@ object Destruct {
     val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get, end)
     link(start, conditionalCFG)
 
-    (start, end)
+    (start, end, None)
   }
 
   /** Destruct an for loop.
@@ -127,20 +127,20 @@ object Destruct {
       conditionBlock: Option[Block],
       update: Assignment,
       ifTrue: Block,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(line, col)
 
-    val (initializeStart, initializeEnd) = Destruct(initialize, methods=methods)
-    val (updateStart, updateEnd) = Destruct(update, methods=methods)
-    val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
+    val (initializeStart, initializeEnd, _) = Destruct(initialize, methods=methods)
+    val (updateStart, updateEnd, _) = Destruct(update, methods=methods)
+    val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
     val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
     link(updateEnd, conditionalCFG)
     link(blockEnd, updateStart)
-    (start, end)
+    (start, end, None)
   }
 
   /** Destruct an while loop.
@@ -151,16 +151,16 @@ object Destruct {
       condition: Expression,
       conditionBlock: Option[Block],
       ifTrue: Block,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(line, col)
 
-    val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
+    val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
     val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
 
     link(start, conditionalCFG)
     link(blockEnd, conditionalCFG)
-    (start, end)
+    (start, end, None)
   }
 
   private def destructMethodDeclaration(
@@ -170,7 +170,7 @@ object Destruct {
       typ: Option[Type],
       params: Vector[FieldDeclaration],
       block: Block,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(line, col)
 
@@ -178,13 +178,13 @@ object Destruct {
     val methodCFG = CFGMethod(start.label, None, params)
     methods += name -> Option(methodCFG)
 
-    val (blockStart, blockEnd) = Destruct(block)
+    val (blockStart, blockEnd, _) = Destruct(block)
     methodCFG.block = Option(blockStart)
 
     link(start, methodCFG)
     link(methodCFG, end)
 
-    (start, end)
+    (start, end, None)
   }
 
   private def destructMethodCall(
@@ -193,12 +193,12 @@ object Destruct {
       name: String,
       params: Vector[Expression],
       paramBlocks: Vector[Option[Block]],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val blocks = params map {
       Destruct(_, methods=methods)
     } map {  // just to be compatible with linkAdjacent
-      case (start, end) => Tuple3(start, end, IntLiteral(0, 0, 0))
+      case (start, end, _) => Tuple3(start, end, IntLiteral(0, 0, 0))
     }
 
     // link each block with each other
@@ -226,7 +226,7 @@ object Destruct {
     link(lastBlockEnd, methodCFG)       // blocks -> method call
     link(methodCFG, end)  // method call -> end
 
-    (start, end)
+    (start, end, None)
   }
 
   private def destructImport(
@@ -234,7 +234,7 @@ object Destruct {
       col: Int,
       name: String,
       typ: Option[Type],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val emptyBlock = Block(line, col, Vector(), Vector())
     destructMethodDeclaration(line, col, name, typ, Vector(), emptyBlock)
@@ -246,7 +246,7 @@ object Destruct {
       imports: Vector[ExtMethodDeclaration],
       fields: Vector[FieldDeclaration],
       methodVec: Vector[MethodDeclaration],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val importCFGs = imports   map { Destruct(_, methods=methods) }
     val fieldCFGs  = fields    map { Destruct(_, methods=methods) }
@@ -268,67 +268,81 @@ object Destruct {
     (start, end)
   }
 
-  private def destructAssignment(assignment: Assignment): Tuple2[CFG, CFG] = {
+  private def destructAssignment(assignment: Assignment): Tuple3[CFG, CFG, Option[Location]] = {
     assignment match {
       case AssignStatement(line, col, loc, value, valueBlock) => throw new NotImplementedError
       case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => throw new NotImplementedError
       case Increment(line: Int, col: Int, loc: Location) => throw new NotImplementedError
       case Decrement(line: Int, col: Int, loc: Location) => throw new NotImplementedError
     }
+
+    // case class AssignStatement(
+    //     line: Int,
+    //     col: Int,
+    //     loc: Location,
+    //     value: Expression,  // use the eval field
+    //     valueBlock: Option[Block])
+    //
+    // case class CompoundAssignStatement(
+    //     line: Int,
+    //     col: Int,
+    //     loc: Location,
+    //     value: Expression,  // use the eval field
+    //     valueBlock: Option[Block],
+    //     operator: ArithmeticOperator)
+
     throw new NotImplementedError
   }
 
-  /** Destruct a location.
-   *
-   * @return (start, end) such that:
-   *         if location contains an index, the CFG returned has the following format:
-   *             start -> block -> CFGBlock -> end
-   *             where block is the flattened code to calculate the index expression
-   *         else
-   *             start -> CFGBlock -> end
-   *
-   *         CFGBlock only contians a single IR, which is Location
-   *         this location is the original IR that was destructured, now containing
-   *         an updated .index field that stores the temp variable that holds the index
-   */
-  private def destructLocation(loc: Location, methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
-
-    val (start, end) = createStartEnd(loc.line, loc.col)
-
-    val blockCFG = CFGBlock(start.label, Vector(loc))
-
-    if (loc.index.isDefined) {
-      val index = loc.index.get
-      val (indexStart, indexEnd) = index match {
-        case call: MethodCall => Destruct(call, methods=methods)
-        case loc: Location => Destruct(loc, methods=methods)
-        case lit: Literal => Destruct(lit, methods=methods)
-        case len: Length => Destruct(len, methods=methods)
-        case _ => Destruct(index.block.get, methods=methods)
-      }
-
-      val indexLocation = index match {
-        case call: MethodCall => call
-        case loc: Location => loc
-        case lit: Literal => lit
-        case len: Length => len
-        case _ => index.eval.get
-      }
-
-      // assign it to the location of the temp var
-      loc.index = Option(indexLocation)
-
-      // make sure index block is between start and blockCFG
-      link(start, indexStart)
-      link(indexEnd, blockCFG)
-    } else {
-      link(start, blockCFG)
-    }
-
-    link(blockCFG, end)
-
-    (start, end)
-  }
+  // /** Destruct a location.
+  //  *
+  //  * @return (start, end) such that:
+  //  *         if location contains an index, the CFG returned has the following format:
+  //  *             start -> block -> CFGBlock -> end
+  //  *             where block is the flattened code to calculate the index expression
+  //  *         else
+  //  *             start -> CFGBlock -> end
+  //  *
+  //  *         CFGBlock only contians a single IR, which is Location
+  //  *         this location is the original IR that was destructured, now containing
+  //  *         an updated .index field that stores the temp variable that holds the index
+  //  */
+  // private def destructLocation(loc: Location, methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+  //   val (start, end) = createStartEnd(loc.line, loc.col)
+  //   val blockCFG = CFGBlock(start.label, Vector(loc))
+  //
+  //   if (loc.index.isDefined) {
+  //     val index = loc.index.get
+  //     val (indexStart, indexEnd, _) = index match {
+  //       case call: MethodCall => Destruct(call, methods=methods)
+  //       case loc: Location => Destruct(loc, methods=methods)
+  //       case lit: Literal => Destruct(lit, methods=methods)
+  //       case len: Length => Destruct(len, methods=methods)
+  //       case _ => Destruct(index.block.get, methods=methods)
+  //     }
+  //
+  //     val indexLocation = index match {
+  //       case call: MethodCall => call
+  //       case loc: Location => loc
+  //       case lit: Literal => lit
+  //       case len: Length => len
+  //       case _ => index.eval.get
+  //     }
+  //
+  //     // assign it to the location of the temp var
+  //     loc.index = Option(indexLocation)
+  //
+  //     // make sure index block is between start and blockCFG
+  //     link(start, indexStart)
+  //     link(indexEnd, blockCFG)
+  //   } else {
+  //     link(start, blockCFG)
+  //   }
+  //
+  //   link(blockCFG, end)
+  //
+  //   (start, end, None)
+  // }
 
   /** Destructure a given IR and return its start and end nodes.
    * @param ir the flattened IR to destruct
@@ -338,9 +352,9 @@ object Destruct {
       ir: IR,  // the end node of CFGProgram has no meaning
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
-    val middle: Tuple2[CFG, CFG] = ir match {
+    val middle: Tuple3[CFG, CFG, Option[Location]] = ir match {
       // assignment
       case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd, methods)
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) =>        destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse, methods)
@@ -356,7 +370,6 @@ object Destruct {
       // case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       // case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       // case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => throw new NotImplementedError
-      case location: Location => destructLocation(location, methods)
 
 
       // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
@@ -371,7 +384,7 @@ object Destruct {
         val block = CFGBlock(start.label, Vector(s))
         link(start, block)
         link(block, end)
-        (start, end)
+        (start, end, None)
       }
       case _ => throw new NotImplementedError
     }
