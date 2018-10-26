@@ -243,7 +243,7 @@ object Destruct {
     link(methodCFG, assignBlock)  // method call -> end
     link(assignBlock, end)
 
-    (start, end, tempResult)
+    (start, end, Option(tempResult))
   }
 
   private def destructImport(
