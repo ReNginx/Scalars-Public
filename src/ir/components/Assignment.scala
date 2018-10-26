@@ -4,12 +4,16 @@ trait Assignment extends Statement {
   def loc: Location
 }
 
+trait AssignmentStatements extends Assignment {
+  def value: Expression
+}
+
 case class AssignStatement(
     line: Int,
     col: Int,
     loc: Location,
     value: Expression,  // use the eval field
-    valueBlock: Option[Block]) extends Assignment {
+    valueBlock: Option[Block]) extends Assignment with AssignmentStatements {
 
   def typ: Option[Type] = loc.typ
 
@@ -22,7 +26,7 @@ case class CompoundAssignStatement(
     loc: Location,
     value: Expression,  // use the eval field
     valueBlock: Option[Block],
-    operator: ArithmeticOperator) extends Assignment {
+    operator: ArithmeticOperator) extends Assignment with AssignmentStatements {
 
   override def toString: String = s"[CompoundAssignStatement] ${operator}  (${line}:${col})"
 }

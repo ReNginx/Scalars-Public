@@ -1,7 +1,6 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set}
-import scala.collection.immutable.Map
+import scala.collection.mutable.{HashSet, Set, Map}
 
 import ir.components._
 import ir.PrettyPrint
@@ -101,7 +100,7 @@ case class CFGMethodCall(
 case class CFGProgram(
   label: String,
   imports: Vector[IR],
-  fields: CFGBlock,
-  methods: Map[String, CFGMethod],  // TODO change to vector
+  fields: Tuple2[CFG, CFG],
+  methods: Map[String, Option[CFGMethod]],  // TODO change to vector
   var next: Option[CFG] = None,  // not used
   parents: Set[CFG] = Set()) extends CFG  // not used

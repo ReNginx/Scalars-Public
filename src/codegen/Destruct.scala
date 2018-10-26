@@ -9,19 +9,19 @@ object Destruct {
 
   /** Link the two basic blocks of CFG.
    *
-   * @param source such that source.sink will be set to Option(sink)
-   * @param sink such that one of its parents will be source
+   * @param parent such that parent.child will be set to Option(child)
+   * @param child such that one of its parents will be parent
    */
-  private def link(source: CFG, sink: CFG): Unit = {
-    source.next = Option(sink)
-    sink.parents += source
+  private def link(parent: CFG, child: CFG): Unit = {
+    parent.next = Option(child)
+    child.parents += parent
   }
 
   /** Link adjacent CFG's in the provided vectors
    *
    * @param Vector(start,end,ir) such that end is linked to the next item's start
    */
-  private def linkAdjacent(vector: Vector[Tuple3[CFG, CFG, IR]]): Unit = {
+  private def linkAdjacent(vector: Vector[Tuple3[CFG, CFG, Option[IR]]]): Unit = {
     vector.zipWithIndex filter {
       case (_, index) => index < vector.size - 1  // all but the last one
     } foreach {
@@ -48,7 +48,7 @@ object Destruct {
     val blocks = (declarations ++ statements) map {
       s => {
         val (start, end, _) = Destruct(s, loopStart, loopEnd, methods)
-        Tuple3(start, end, s)
+        Tuple3(start, end, Option(s))
       }
     }
 
@@ -63,7 +63,7 @@ object Destruct {
     // if we run into `break` or `continue`, redirect elsewhere besides the next block
     blocks foreach {
       case (_, statementEnd, ir) => {
-        ir match {
+        ir.get match {
           case b: Break =>       link(statementEnd, loopEnd.get)
           case call: Continue => link(statementEnd, loopStart.get)
           case ret: Return => {
@@ -194,6 +194,9 @@ object Destruct {
     (start, end, None)
   }
 
+  /**
+   * @return (start, end, loc) where loc holds the
+   */
   private def destructMethodCall(
       line: Int,
       col: Int,
@@ -204,9 +207,9 @@ object Destruct {
       iter: Iterator[Int]): Tuple3[CFG, CFG, Option[Location]] = {
 
     val blocks = params map {
-      Destruct(_, methods=methods)
+      exp => Destruct(exp.block.get, methods=methods)
     } map {  // just to be compatible with linkAdjacent
-      case (start, end, _) => Tuple3(start, end, IntLiteral(0, 0, 0))
+      case (start, end, _) => Tuple3(start, end, None)
     }
 
     // link each block with each other
@@ -219,7 +222,7 @@ object Destruct {
     val methodDeclaration = (methods get name).get.get
 
     // locations or literals of each parameters
-    val parameters = params map {
+    val paramLocations = params map {
       p => p match {
         case call: MethodCall => call
         case loc: Location => loc
@@ -229,7 +232,7 @@ object Destruct {
       }
     }
 
-    val methodCFG = CFGMethodCall(start.label, parameters, methodDeclaration)
+    val methodCFG = CFGMethodCall(start.label, paramLocations, methodDeclaration)
     link(start, firstBlockStart)        // start -> blocks
     link(lastBlockEnd, methodCFG)       // blocks -> method call
 
@@ -246,16 +249,14 @@ object Destruct {
     (start, end, Option(tempResult))
   }
 
-  private def destructImport(
-      line: Int,
-      col: Int,
-      name: String,
-      typ: Option[Type],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+  private def destructImport(ext: ExtMethodDeclaration): Tuple3[CFG, CFG, Option[Location]] = {
+    val (start, end) = createStartEnd(ext.line, ext.col)
+    val assignBlock = CFGBlock(start.label, Vector(ext))
 
-    val emptyBlock = Block(line, col, Vector(), Vector())
-    throw new NotImplementedError
-    // destructMethodDeclaration(line, col, name, typ, Vector(), emptyBlock)
+    link(start, assignBlock)  // method call -> end
+    link(assignBlock, end)
+
+    (start, end, None)
   }
 
   private def destructProgram(
@@ -267,8 +268,22 @@ object Destruct {
       methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val importCFGs = imports   map { Destruct(_, methods=methods) }
-    val fieldCFGs  = fields    map { Destruct(_, methods=methods) }
     val methodCFGs = methodVec map { Destruct(_, methods=methods) }
+    val fieldCFGs = fields map { Destruct(_, methods=methods) }
+    linkAdjacent(fieldCFGs)
+    val firstFieldStart = fieldCFGs(0)._1
+    val lastFieldEnd = fieldCFGs(-1)._2
+
+    val (start, end) = createStartEnd(line, col)
+    val programCFG = CFGProgram(start.label, imports, (firstFieldStart, lastFieldEnd), methods)
+    // case class CFGProgram(
+    //   label: String,
+    //   imports: Vector[IR],
+    //   fields: CFGBlock,
+    //   methods: Map[String, CFGMethod],  // TODO change to vector
+    //   var next: Option[CFG] = None,  // not used
+    //   parents: Set[CFG] = Set()) extends CFG  // not used
+
     throw new NotImplementedError
   }
 
@@ -286,52 +301,60 @@ object Destruct {
     (start, end)
   }
 
-  /**
+  /** Destruct an Assignment.
    *
+   * Destructs an assignment statement to the following structure:
+   *     start -> block -> CFGBlock -> end
+   * Where `block` contains the flattened code to calculate the location to assign to
+   * as well as the expression to assign there.
+   * CFGBlock contains one of Increment, Decrement, AssignStatement, CompoundAssignStatement.
    */
   private def destructAssignment(
       assignment: Assignment,
       methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
-    // def getExpressionBlock(value: Expression): Option[Block] = value match {
-    //   case call: MethodCall => call
-    //   case loc: Location => loc
-    //   case lit: Literal => lit
-    //   case len: Length => len
-    //   case _ => value.eval.get
-    // }
+    def getExpLoc(value: Expression): Expression = value match {
+      case call: MethodCall => call
+      case loc: Location => loc
+      case lit: Literal => lit
+      case len: Length => len
+      case _ => value.eval.get
+    }
 
-    assignment match {
-      // see spec of destructLocation for reasons why we destruct location here
-      // the location of the actual value is stored under value.eval
-      case Increment(line: Int, col: Int, loc: Location) =>                        Destruct(loc, methods=methods)
-      case Decrement(line: Int, col: Int, loc: Location) =>                        Destruct(loc, methods=methods)
-      case AssignStatement(line, col, loc, value, valueBlock) => {
-        val (start, end, _) = Destruct(loc, methods=methods)
-        val expressionLocation = value match {
-          case call: MethodCall => call
-          case loc: Location => loc
-          case lit: Literal => lit
-          case len: Length => len
-          case _ => value.eval.get
-        }
-      }
-      case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => {
-        val (start, end, _) = Destruct(loc, methods=methods)
-        val expressionLocation = value match {
-          case call: MethodCall => call
-          case loc: Location => loc
-          case lit: Literal => lit
-          case len: Length => len
-          case _ => value.eval.get
-        }
-      }
+    def getExpBlock(value: Expression): Tuple3[CFG, CFG, Option[Location]] = value match {
+      case call: MethodCall => Destruct(call, methods=methods)
+      case loc: Location => Destruct(loc, methods=methods)
+      case lit: Literal => Destruct(lit, methods=methods)
+      case len: Length => Destruct(len, methods=methods)
+      case _ => Destruct(value.eval.get, methods=methods)
     }
 
     val (start, end) = createStartEnd(assignment.line, assignment.col)
-    val cfgBlock = CFGBlock(start.label, Vector(assignment))
-    link(start, cfgBlock)
-    link(cfgBlock, end)
+
+    val (expStart, expEnd) = assignment match {
+      // see spec of destructLocation for reasons why we destruct location here
+      // the location of the actual value is stored under value.eval
+      case _: Increment | _: Decrement => {
+        val (start, end) = createStartEnd(assignment.line, assignment.col)
+        Destruct(assignment.loc, methods=methods)
+        val block = CFGBlock(start.label, Vector(assignment))
+        link(end, block)
+        (start, block)
+      }
+      case ass: AssignmentStatements => {
+        val (indexStart, indexEnd, _) = Destruct(ass.loc, methods=methods)
+        val expressionLocation = getExpLoc(ass.value)
+        val (blockStart, blockEnd, blockLocation) = getExpBlock(ass.value)
+        val assignBlock = CFGBlock(start.label, Vector(ass))
+        link(indexEnd, blockStart)
+        link(blockEnd, assignBlock)
+        (indexStart, assignBlock)
+      }
+    }
+
+    link(start, expStart)
+    link(expEnd, end)
+
     (start, end, None)
   }
 
@@ -347,28 +370,29 @@ object Destruct {
     val (start, end) = createStartEnd(loc.line, loc.col)
     val blockCFG = CFGBlock(start.label, Vector(loc))
 
-    if (loc.index.isDefined) {
-      val index = loc.index.get
-      val (indexStart, indexEnd, _) = index match {
+    if (loc.index.isDefined) {  // location is an array
+      val indexExpression = loc.index.get
+      val (indexStart, indexEnd, _) = indexExpression match {
         case call: MethodCall => Destruct(call, methods=methods)
-        case loc: Location => Destruct(loc, methods=methods)
-        case lit: Literal => Destruct(lit, methods=methods)
-        case len: Length => Destruct(len, methods=methods)
-        case _ => Destruct(index.block.get, methods=methods)
+        case loc: Location    => Destruct(loc,  methods=methods)
+        case lit: Literal     => Destruct(lit,  methods=methods)
+        case len: Length      => Destruct(len,  methods=methods)
+        case _ => Destruct(indexExpression.block.get, methods=methods)
       }
 
-      val indexLocation = index match {
+      // location that actually holds the final result
+      val indexLocation = indexExpression match {
         case call: MethodCall => call
         case loc: Location => loc
         case lit: Literal => lit
         case len: Length => len
-        case _ => index.eval.get
+        case _ => indexExpression.eval.get
       }
 
       // assign it to the location of the temp var
       loc.index = Option(indexLocation)
 
-      // make sure index block is between start and blockCFG
+      // start -> indexBlock -> indexCFG -> end
       link(start, indexStart)
       link(indexEnd, blockCFG)
     } else {
@@ -398,7 +422,7 @@ object Destruct {
       case For(line, col, start, condition, conditionBlock, update, ifTrue) => destructFor(line, col, start, condition, conditionBlock, update, ifTrue, methods)
       case While(line, col, condition, conditionBlock, ifTrue) =>              destructWhile(line, col, condition, conditionBlock, ifTrue, methods)
       case method: LocMethodDeclaration =>                                     destructMethodDeclaration(method, methods=methods)
-      case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ, methods)
+      case ext: ExtMethodDeclaration =>                                        destructImport(ext)
       case Program(line, col, imports, fields, methodVec) =>                   destructProgram(line, col, imports, fields, methodVec, methods)
       case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, methods, iter)
       case assignment: Assignment =>                                           destructAssignment(assignment, methods)
@@ -407,14 +431,6 @@ object Destruct {
       // case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       // case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       // case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => throw new NotImplementedError
-
-
-      // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
-      // FIXME don't know what to do with assignments because they are not yet flattened
-      // case AssignStatement(line, col, loc, value, valueBlock) => throw new NotImplementedError
-      // case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => throw new NotImplementedError
-      // case Increment(line, col, loc) => throw new NotImplementedError
-      // case Decrement(line, col, loc) => throw new NotImplementedError
 
       case s: Statement => {  // literals and etc
         val (start, end) = createStartEnd(s.line, s.col)
