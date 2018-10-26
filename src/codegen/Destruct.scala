@@ -269,22 +269,14 @@ object Destruct {
 
     val importCFGs = imports   map { Destruct(_, methods=methods) }
     val methodCFGs = methodVec map { Destruct(_, methods=methods) }
-    val fieldCFGs = fields map { Destruct(_, methods=methods) }
-    linkAdjacent(fieldCFGs)
-    val firstFieldStart = fieldCFGs(0)._1
-    val lastFieldEnd = fieldCFGs(-1)._2
+
+
 
     val (start, end) = createStartEnd(line, col)
-    val programCFG = CFGProgram(start.label, imports, (firstFieldStart, lastFieldEnd), methods)
-    // case class CFGProgram(
-    //   label: String,
-    //   imports: Vector[IR],
-    //   fields: CFGBlock,
-    //   methods: Map[String, CFGMethod],  // TODO change to vector
-    //   var next: Option[CFG] = None,  // not used
-    //   parents: Set[CFG] = Set()) extends CFG  // not used
-
-    throw new NotImplementedError
+    val fieldCFGs = CFGBlock(label, fields)
+    val programCFG = CFGProgram(start.label, imports, fieldsCFG, methods)
+    link(programCFG, end)
+    (programCFG, end)
   }
 
   /**
