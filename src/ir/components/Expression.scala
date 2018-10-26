@@ -4,6 +4,7 @@ trait Expression extends IR {
   def typ: Option[Type]
   def eval: Option[Location] = None
   def block: Option[Block] = None
+  def rep: String //only location and literal would have this.
 }
 
 case class Length(line: Int, col: Int, location: Location) extends Expression {
@@ -40,10 +41,10 @@ case class Location(
     }
   }
   //TODO
-  // def offsetRep: String = {
+  // def rep: String = {
   //   assert(field.isDefined)
   //   field.get.match {
-  //     // case var: VariableDeclaration => var.offsetRep
+  //     // case var: VariableDeclaration => var.rep
   //     // case ary: ArrayDeclaration => s"${ary.offset}(%rbp, ${})"
   //   }
   // }
