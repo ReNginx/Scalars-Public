@@ -8,17 +8,12 @@ import ir.PrettyPrint
 
 object Destruct {
 
-  // returns start, end
-  def conditional(block: Block): Tuple2[VirtualCFG, VirtualCFG] = {
-    throw new NotImplementedError
-  }
-
   /** Link the two basic blocks of CFG.
    *
    * @param source such that source.sink will be set to Option(sink)
    * @param sink such that one of its parents will be source
    */
-  def link(source: CFG, sink: CFG): Unit = {
+  private def link(source: CFG, sink: CFG): Unit = {
     source.next = Option(sink)
     sink.parents += source
   }
@@ -124,9 +119,9 @@ object Destruct {
   }
 
   // parents is set to empty set initially
-  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: CFG): CFGConditional = {
+  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: CFG, end: CFG): CFGConditional = {
     val statements = block.declarations ++ block.statements
-    CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse))
+    CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
   }
 
   /** Destruct an if/else statement.
@@ -160,7 +155,7 @@ object Destruct {
       link(ifEnd, end)
     }
 
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get, end)
     link(start, conditionalCFG)
 
     (start, end)
@@ -182,7 +177,7 @@ object Destruct {
     val (initializeStart, initializeEnd) = Destruct(initialize)
     val (updateStart, updateEnd) = Destruct(update)
     val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end))
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
@@ -203,7 +198,7 @@ object Destruct {
     val (start, end) = createStartEnd(line, col)
 
     val (blockStart, blockEnd) = Destruct(ifTrue, Option(start), Option(end))
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end)
+    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
 
     link(start, conditionalCFG)
     link(blockEnd, conditionalCFG)

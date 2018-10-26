@@ -66,7 +66,8 @@ case class CFGConditional(
     statements: Vector[IR],
     parents: Set[CFG]=HashSet(),
     var next: Option[CFG] = None,
-    var ifFalse: Option[CFG]=None) extends CFG
+    var ifFalse: Option[CFG] = None,
+    var end: Option[CFG] = None) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
