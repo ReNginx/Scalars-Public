@@ -296,6 +296,17 @@ object Destruct {
     throw new NotImplementedError
   }
 
+  private def destructLocation(
+    line: Int,
+    col: Int,
+    name: String,
+    index: Option[Expression],  // lcoation or int linteral
+    indexBlock: Option[Block],
+    field: Option[FieldDeclaration] = None): Tuple2[CFG, CFG] = {
+
+    throw new NotImplementedError
+  }
+
   /** Destructure a given IR and return its start and end nodes.
    * @param ir the flattened IR to destruct
    * @param methods maps method names to declarations
@@ -316,12 +327,13 @@ object Destruct {
       case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ, methods)
       case Program(line, col, imports, fields, methodVec) =>                   destructProgram(line, col, imports, fields, methodVec, methods)
       case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, methods)
-      case assignment: Assignment => destructAssignment(assignment)
+      // case assignment: Assignment => destructAssignment(assignment)
       case Not(line, col, eval, block, expression) => throw new NotImplementedError
       case Negate(line, col, eval, block, expression) => throw new NotImplementedError
       case ArithmeticOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => throw new NotImplementedError
       case TernaryOperation(line, col, eval, block, condition, ifTrue, ifFalse) => throw new NotImplementedError
+      case Location(line, col, name, index, indexBlock, field) => destructLocation(line, col, name, index, indexBlock, field)
 
 
       // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError

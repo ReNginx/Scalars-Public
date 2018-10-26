@@ -16,7 +16,7 @@ case class Location(
     line: Int,
     col: Int,
     name: String,
-    index: Option[Expression],
+    var index: Option[Expression],  // lcoation or int linteral
     indexBlock: Option[Block],
     var field: Option[FieldDeclaration] = None) extends Expression {
 
