@@ -7,7 +7,7 @@ case class MethodCall(
     line: Int,
     col: Int,
     name: String,
-    params: Vector[Expression], 
+    params: Vector[Expression],
     paramBlocks: Vector[Option[Block]],  // TODO use this
     var method: Option[MethodDeclaration] = None
     ) extends Call {
@@ -16,6 +16,6 @@ case class MethodCall(
     case Some(x) => x.typ
     case None => None
   }
-
+  
   override def toString: String = s"[MethodCall] ${typ.get} ${name}  (${line}:${col})"
 }
