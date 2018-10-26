@@ -13,7 +13,13 @@
 //       throw Exception
 //   }
 //
-//   def apply(cfg: CFG) = {
+//   def apply(cfg: CFG, explicitJump: Boolean = false) = {
+//     if (cfg.isTranslated) {
+//       return
+//     }
+//
+//     cfg.isTranslated = true
+//
 //     cfg match {
 //       case VirtualCFG(label, _, next) => {
 //         output(label + ":")
@@ -38,19 +44,20 @@
 //         output(label)
 //         //TODO not sure about how to deal with conditional.
 //
-//         if (next.isDefined)
-//           TranslateCFG(next.get)
-//         if (ifFalse.isDefined)
+//         if (next.isDefined) {
+//           TranslateCFG(next.get, true)
+//         }
+//         if (ifFalse.isDefined) {
 //           TranslateCFG(ifFalse.get)
+//         }
 //       }
 //
 //       case method: CFGMethod => {
 //         output(method.label + ":")
 //         output(s"enter $${method.spaceAllocated}, \$ 0")
 //         // TODO copy params from regs and stacks
-//         TranslateCFG(block)
-//         output("leave")
-//         output("ret")
+//         TranslateCFG(method.block)
+//         // TODO here deal with no return error.
 //       }
 //
 //       case CFGProgram(label, _, fields, methods) => {
