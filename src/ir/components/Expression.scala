@@ -39,12 +39,12 @@ case class Location(
       }
     }
   }
-  def offsetRep: String = {
-    assert(field.isDefined)
-    field.get.match {
-      // case var: VariableDeclaration => var.offsetRep
-      // case ary: ArrayDeclaration => s"${ary.offset}(%rbp, ${})"
-    }
-  }
+  // def offsetRep: String = {
+  //   assert(field.isDefined)
+  //   field.get.match {
+  //     // case var: VariableDeclaration => var.offsetRep
+  //     // case ary: ArrayDeclaration => s"${ary.offset}(%rbp, ${})"
+  //   }
+  // }
   override def toString: String = s"[Location] ${name}  (${line}:${col})"
 }
