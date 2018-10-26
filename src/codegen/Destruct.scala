@@ -17,6 +17,17 @@ object Destruct {
     sink.parents += source
   }
 
+  private def linkAdjacent(vector: Vector[Tuple3[CFG, CFG, IR]]): Unit = {
+    vector.zipWithIndex filter {
+      case (tuple, index) => index < vector.size - 1  // all but the last one
+    } foreach {
+      case ((start, end, ir), index) => {
+        val (start2, end2, ir) = vector(index + 1)
+        link(end, start2)
+      }
+    }
+  }
+
   /**
    * @param params identical to params of Block
    * @return (start, end) nodes as a result of destructuring this block
@@ -28,7 +39,7 @@ object Destruct {
       statements: Vector[IR],
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     // (start, end) of every basic block in this Block, with third element being the original IR
     // val blocks: ListBuffer[Tuple3[VirtualCFG, VirtualCFG, Option[IR]]] = ListBuffer()
@@ -41,14 +52,15 @@ object Destruct {
     }
 
     // link adjacent blocks, in the order that they appear
-    blocks.zipWithIndex filter {
-      case (tuple, index) => index < blocks.size - 1  // all but the last one
-    } foreach {
-      case ((start, end, ir), index) => {
-        val (start2, end2, ir) = blocks(index + 1)
-        link(end, start2)
-      }
-    }
+    linkAdjacent(blocks)
+    // blocks.zipWithIndex filter {
+    //   case (tuple, index) => index < blocks.size - 1  // all but the last one
+    // } foreach {
+    //   case ((start, end, ir), index) => {
+    //     val (start2, end2, ir) = blocks(index + 1)
+    //     link(end, start2)
+    //   }
+    // }
 
     // if we run into `break` or `continue`, redirect elsewhere besides the next block
     blocks foreach {
@@ -94,7 +106,7 @@ object Destruct {
       conditionBlock: Option[Block],
       ifTrue: Block,
       ifFalse: Option[Block],
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     // start and end of this if statement
     val (start, end) = createStartEnd(line, col)
@@ -126,7 +138,7 @@ object Destruct {
       conditionBlock: Option[Block],
       update: Assignment,
       ifTrue: Block,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val (start, end) = createStartEnd(line, col)
 
@@ -150,7 +162,7 @@ object Destruct {
       condition: Expression,
       conditionBlock: Option[Block],
       ifTrue: Block,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val (start, end) = createStartEnd(line, col)
 
@@ -169,16 +181,72 @@ object Destruct {
       typ: Option[Type],
       params: Vector[FieldDeclaration],
       block: Block,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val (start, end) = createStartEnd(line, col)
-    val (blockStart, blockEnd) = Destruct(block)
 
-    // hmm, what to do with blockEnd
-    val methodCFG = CFGMethod(start.label, blockStart, params)
+    // made methodCFG mutable so that when destructing method call, it knows where to point to
+    val methodCFG = CFGMethod(start.label, None, params)
+    methods += name -> Option(methodCFG)
+
+    val (blockStart, blockEnd) = Destruct(block)
+    methodCFG.block = Option(blockStart)
+
     link(start, methodCFG)
     link(methodCFG, end)
 
+    (start, end)
+  }
+
+  private def destructMethodCall(
+      line: Int,
+      col: Int,
+      name: String,
+      params: Vector[Expression],
+      paramBlocks: Vector[Option[Block]],
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
+
+    // locations or literals of each parameters
+    val parameters = paramBlocks map {
+      _.get  // optional
+    } map {
+      b => b.declarations ++ b.statements  // vector of its code
+    } map {
+      _(-1)  // get last assignment
+    } map {
+      a => a match {  // if assignment, get the locations
+        case assignment: Assignment => assignment.loc
+        case literal: Literal => literal
+        case _ => throw new IllegalArgumentException  // else fail fast
+      }
+    }
+
+    // blocks of parameters, destructured
+    val blocks = paramBlocks map {
+      _.get
+    } map {
+      b => destructBlock(line, col, b.declarations, b.statements, methods=methods)
+    } map {  // just to be compatible with linkAdjacent
+      case (start, end) => Tuple3(start, end, IntLiteral(0, 0, 0))
+    }
+
+    // link each block with each other
+    linkAdjacent(blocks)
+
+    val firstBlockStart = blocks(0)._1
+    val lastBlockEnd = blocks(-1)._2
+
+    val (start, end) = createStartEnd(line, col)
+    val methodDeclaration = (methods get name).get
+
+    // start -> blocks
+    link(start, firstBlockStart)
+
+    // blocks -> method
+    link(lastBlockEnd, methodDeclaration.get)
+
+    // method -> end
+    link(methodDeclaration.get, end)
     (start, end)
   }
 
@@ -187,7 +255,7 @@ object Destruct {
       col: Int,
       name: String,
       typ: Option[Type],
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val emptyBlock = Block(line, col, Vector(), Vector())
     destructMethodDeclaration(line, col, name, typ, Vector(), emptyBlock)
@@ -198,24 +266,13 @@ object Destruct {
       col: Int,
       imports: Vector[ExtMethodDeclaration],
       fields: Vector[FieldDeclaration],
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methodVec: Vector[MethodDeclaration],
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
+    val importCFGs = imports   map { Destruct(_, methods=methods) }
+    val fieldCFGs  = fields    map { Destruct(_, methods=methods) }
+    val methodCFGs = methodVec map { Destruct(_, methods=methods) }
     throw new NotImplementedError
-  }
-
-  private def destructMethodCall(
-      line: Int,
-      col: Int,
-      name: String,
-      params: Vector[Expression],
-      paramBlocks: Vector[Option[Block]],
-      method: Option[MethodDeclaration] = None,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
-
-    val (start, end) = createStartEnd(line, col)
-    val methodDeclaration = methods get name
-    link(start, methodDeclaration.get)
-    (start, methodDeclaration.get)
   }
 
   /**
@@ -236,11 +293,11 @@ object Destruct {
    * @param ir the flattened IR to destruct
    * @param methods maps method names to declarations
    */
-  def apply(
-      ir: IR,
+  def apply(  // when called on a program, the returned start node simply points to the CFGProgram
+      ir: IR,  // the end node of CFGProgram has no meaning
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, CFGMethod] = Map()): Tuple2[CFG, CFG] = {
+      methods: Map[String, Option[CFGMethod]] = Map()): Tuple2[CFG, CFG] = {
 
     val middle: Tuple2[CFG, CFG] = ir match {
       case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd, methods)
@@ -249,8 +306,8 @@ object Destruct {
       case While(line, col, condition, conditionBlock, ifTrue) =>              destructWhile(line, col, condition, conditionBlock, ifTrue, methods)
       case LocMethodDeclaration(line, col, name, typ, params, block) =>        destructMethodDeclaration(line, col, name, typ, params, block, methods)
       case ExtMethodDeclaration(line, col, name, typ) =>                       destructImport(line, col, name, typ, methods)
-      case Program(line, col, imports, fields, methodVec) =>                   destructProgram(line, col, imports, fields, methods)
-      case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, method, methods)
+      case Program(line, col, imports, fields, methodVec) =>                   destructProgram(line, col, imports, fields, methodVec, methods)
+      case MethodCall(line, col, name, params, paramBlocks, method) =>         destructMethodCall(line, col, name, params, paramBlocks, methods)
 
       // FIXME case MethodCall(line, col, name, params, paramBlocks, method) => throw new NotImplementedError
       // FIXME don't know what to do with assignments because they are not yet flattened

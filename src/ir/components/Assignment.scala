@@ -1,6 +1,8 @@
 package ir.components
 
-trait Assignment extends Statement
+trait Assignment extends Statement {
+  def loc: Location
+}
 
 case class AssignStatement(
     line: Int,
@@ -8,7 +10,7 @@ case class AssignStatement(
     loc: Location,
     value: Expression,
     valueBlock: Option[Block]) extends Assignment {
-    
+
   def typ: Option[Type] = loc.typ
 
   override def toString: String = s"[AssignStatement] ${typ.get}  (${line}:${col})"

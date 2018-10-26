@@ -76,20 +76,22 @@ case class CFGConditional(
  * @param params parameters of this method
  * @param next not used
  * @param parents the basic block where this method was declared
+ * @param typ return type
  */
 case class CFGMethod(
     label: String,
-    block: CFG,
+    var block: Option[CFG],  // for preventing recursion
     params: Vector[IR],
-    var next: Option[CFG] = None,
-    parents: Set[CFG] = Set()) extends CFG
+    var next: Option[CFG] = None,  // no meaning
+    parents: Set[CFG] = Set(),
+    typ: Option[Type] = None) extends CFG  // where declared
 
-// `next` simply points to 
+// `next` simply points to
 case class CFGMethodCall(
     label: String,
-    params: Vector[IR],
-    var next: Option[CFG] = None,
-    parents: Set[CFG] = Set()) extends CFG
+    params: Vector[IR],   // TODO Vector[IR], where IR can be either Literal or Location
+    var next: Option[CFG] = None,  // points to start of declration
+    parents: Set[CFG] = Set()) extends CFG  // where it was called
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */
@@ -97,6 +99,6 @@ case class CFGProgram(
   label: String,
   imports: Vector[IR],
   fields: CFGBlock,
-  methods: Map[String, CFG],
-  var next: Option[CFG] = None,
-  parents: Set[CFG] = Set()) extends CFG
+  methods: Map[String, CFGMethod],  // TODO change to vector
+  var next: Option[CFG] = None,  // not used
+  parents: Set[CFG] = Set()) extends CFG  // not used

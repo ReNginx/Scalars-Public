@@ -12,11 +12,12 @@ case class Program(
   override def toString: String = s"[Program]  (${line}:${col})"
 }
 
+// value is store in the last register
 case class Block(
     line: Int,
     col: Int,
     declarations: Vector[FieldDeclaration],
     statements: Vector[Statement]) extends IR {
-      
+
   override def toString: String = s"[Block]  (${line}:${col})"
 }
