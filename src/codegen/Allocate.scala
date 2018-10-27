@@ -67,15 +67,10 @@ object Allocate {
         Allocate(fields)
         for ((string,method) <- methods) {
           offset = -sizeOfVar // local var starts from -8
-<<<<<<< HEAD
-          Allocate(method.get)
-          method.get.spaceAllocated = offset + sizeOfVar
-=======
           if (method.isDefined) {
             Allocate(method.get)
             method.get.spaceAllocated = offset + sizeOfVar
           }
->>>>>>> 38288d4896c16b4307eede20f9d3c56c2c0a2b02
         }
       }
 
