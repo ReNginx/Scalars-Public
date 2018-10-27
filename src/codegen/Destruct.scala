@@ -75,11 +75,13 @@ object Destruct {
     }
 
     // start of first block, and end of last block
-    val firstBlockStart = blocks(0)._1
-    val lastBlockEnd = blocks(-1)._2
+    if (blocks.size > 0) {
+      val firstBlockStart = blocks(0)._1
+      val lastBlockEnd = blocks(-1)._2
 
-    link(start, firstBlockStart)
-    link(lastBlockEnd, end)
+      link(start, firstBlockStart)
+      link(lastBlockEnd, end)
+    }
 
     (start, end, returnLocation)
   }
@@ -193,6 +195,13 @@ object Destruct {
       methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(method.line, method.col)
+
+    if (methods contains method.name) {
+      val methodCFG = (methods get method.name).get
+      link(start, methodCFG.get)
+      link(methodCFG.get, end)
+      return (start, end, None)
+    }
 
     // made methodCFG mutable so that when destructing method call, it knows where to point to
     val methodCFG = CFGMethod(start.label, None, method.params, method)
@@ -420,7 +429,7 @@ object Destruct {
       methods: Map[String, Option[CFGMethod]] = Map(),
       iter: Iterator[Int] = Stream.iterate(0)(_ + 1).iterator): Tuple3[CFG, CFG, Option[Location]] = {
 
-    val middle: Tuple3[CFG, CFG, Option[Location]] = ir match {
+    ir match {
       // assignment
       case Block(line, col, declarations, statements) =>                       destructBlock(line, col, declarations, statements, loopStart, loopEnd, methods)
       case If(line, col, condition, conditionBlock, ifTrue, ifFalse) =>        destructIf(line, col, condition, conditionBlock, ifTrue, ifFalse, methods)
@@ -446,7 +455,5 @@ object Destruct {
       }
       case _ => throw new NotImplementedError
     }
-
-    throw new NotImplementedError
   }
 }

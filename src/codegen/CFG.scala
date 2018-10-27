@@ -29,7 +29,7 @@ trait CFG {
  */
 case class VirtualCFG(
     label: String,
-    parents: Set[CFG]=HashSet(),
+    parents: Set[CFG]=Set(),
     var next: Option[CFG] = None) extends CFG
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
@@ -47,7 +47,7 @@ case class CFGBlock(
     label: String,
     statements: Vector[IR],
     var next: Option[CFG] = None,
-    parents: Set[CFG]=HashSet()) extends CFG
+    parents: Set[CFG]=Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statent.
  *
@@ -64,7 +64,7 @@ case class CFGBlock(
 case class CFGConditional(
     label: String,
     statements: Vector[IR],
-    parents: Set[CFG]=HashSet(),
+    parents: Set[CFG]=Set(),
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,
     var end: Option[CFG] = None) extends CFG
