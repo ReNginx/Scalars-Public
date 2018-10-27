@@ -85,9 +85,22 @@ object Destruct {
   }
 
   // parents is set to empty set initially
-  private def blockToConditionalCFG(block: Block, label: String, ifTrue: CFG, ifFalse: CFG, end: CFG): CFGConditional = {
-    val statements = block.declarations ++ block.statements
-    CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
+  private def shortCircuit(condition: Expression, label: String, ifTrue: CFG, ifFalse: CFG, end: CFG): CFGConditional = {
+    condition match {
+      case Not(line, col, eval, block, expression) => {}
+      case Negate(line, col, eval, block, expression) => {}
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => {}
+      case _ => {  // literalks
+        // condition
+      }
+    }
+
+
+    // val statements = block.declarations ++ block.statements
+    // CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
+
+
+    throw new NotImplementedError
   }
 
   /** Destruct an if/else statement.
@@ -123,7 +136,7 @@ object Destruct {
       link(ifEnd, end)
     }
 
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, ifStart, blockIfFalse.get, end)
+    val conditionalCFG = shortCircuit(condition, start.label, ifStart, blockIfFalse.get, end)
     link(start, conditionalCFG)
 
     (start, end, None)
@@ -146,7 +159,7 @@ object Destruct {
     val (initializeStart, initializeEnd, _) = Destruct(initialize, methods=methods)
     val (updateStart, updateEnd, _) = Destruct(update, methods=methods)
     val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
+    val conditionalCFG = shortCircuit(condition, start.label, blockStart, end, end)
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
@@ -168,7 +181,7 @@ object Destruct {
     val (start, end) = createStartEnd(line, col)
 
     val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
-    val conditionalCFG = blockToConditionalCFG(conditionBlock.get, start.label, blockStart, end, end)
+    val conditionalCFG = shortCircuit(condition, start.label, blockStart, end, end)
 
     link(start, conditionalCFG)
     link(blockEnd, conditionalCFG)
