@@ -115,7 +115,7 @@ object TranslateIR {
       }
 
       case compAsg: CompoundAssignStatement => {
-        //TODO
+        res += s"movq ${compAsg.loc.rep}, %rax"
       }
 
       case inc: Increment => {

@@ -17,6 +17,10 @@ object TranslateCFG {
     writer.write(str + "\n")
   }
 
+  def close() = {
+    writer.close()
+  }
+
   private def outputMov(from: String, to: String) = {
     if (from(0) == '%' || to(0) == '%') {
       output(s"movq ${from}, ${to}")

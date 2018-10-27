@@ -5,7 +5,7 @@ import scala.Console
 
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
 import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
-import ir.components.IR
+import ir.components._
 import codegen._
 import util.CLI
 
@@ -171,7 +171,11 @@ object Compiler {
     val iter = Stream.iterate(0)(_ + 1).iterator
 
     val irModified = IRto3Addr(ir, iter)
-
+    val cfg: Tuple3[CFG, CFG, Option[Location]] = Destruct(irModified)
+    Allocate(cfg._1)
+    TranslateCFG(cfg._1)
+    TranslateCFG.close()
+    
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree view:")
