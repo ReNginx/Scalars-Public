@@ -141,6 +141,7 @@ object TranslateCFG {
       }
 
       case method: CFGMethod => {
+        output(s".globl ${method.label}")
         output(method.label + ":")
         output(s"enter $$${method.spaceAllocated}, $$0")
         // copy params from regs and stacks
@@ -152,7 +153,7 @@ object TranslateCFG {
         }
         if (method.block.isDefined)
           TranslateCFG(method.block.get)
-        // TODO here deal with no return error.
+
       }
 
       case CFGProgram(_, _, fields, methods, _, _) => {
@@ -162,9 +163,17 @@ object TranslateCFG {
         //functions goes here.
         output(".text")
         for ((str, mthd) <- methods) {
-          if (mthd.isDefined)
-            TranslateCFG(mthd.get)// methods is a map, iterate through its value
+          TranslateCFG(mthd)// methods is a map, iterate through its value
         }
+
+        //deal with output.
+        output(".noReturn")
+        output("movq $-2, %rdi")
+        output("call exit")
+        output(".outOfBound")
+        output("movq $-1, %rdi")
+        output("call exit")
+
         //string goes here
         output(".section .rodata")
         strs foreach {
