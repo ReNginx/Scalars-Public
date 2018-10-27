@@ -1,0 +1,8 @@
+int foo(int x) {
+  return x;
+}
+void main() {
+  int y, z, w;
+  y = w + foo(10);
+  z = w + foo(20);
+}
