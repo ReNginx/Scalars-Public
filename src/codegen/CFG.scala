@@ -64,7 +64,8 @@ case class CFGBlock(
  */
 case class CFGConditional(
     label: String,
-    statements: Vector[IR],
+    // statements: Vector[IR],
+    condition: Location,
     parents: Set[CFG]=Set(),
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,

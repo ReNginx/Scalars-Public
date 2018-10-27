@@ -1,7 +1,7 @@
 package ir.components
 
 trait Operation {
-  
+
 }
 
 trait UnaryOperation extends Expression with Operation

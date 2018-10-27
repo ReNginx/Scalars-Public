@@ -86,13 +86,31 @@ object Destruct {
     (start, end, returnLocation)
   }
 
-  // parents is set to empty set initially
-  private def shortCircuit(condition: Expression, label: String, ifTrue: CFG, ifFalse: CFG, end: CFG): CFGConditional = {
+  // returns (cfg, CFGConditional) wherre cfg is the start node
+  // CFGConditional contains all the ifTrue/ifFalse/end and good stuff
+  private def shortCircuit(condition: Expression, label: String, ifTrue: CFG, ifFalse: CFG, end: CFG): Tuple2[CFG, CFGConditional] = {
+    // case class CFGConditional(
+    //     label: String,
+    //     statements: Vector[IR],
+    //     parents: Set[CFG]=Set(),
+    //     var next: Option[CFG] = None,
+    //     var ifFalse: Option[CFG] = None,
+    //     var end: Option[CFG] = None) extends CFG
+
+    // set condition and next and iffalse appropriately
+    val (start, end) = createStartEnd(0, 0, Option(label))
     condition match {
-      case Not(line, col, eval, block, expression) => {}
-      case Negate(line, col, eval, block, expression) => {}
+      case Not(line, col, eval, block, expression) => {
+        
+      }
       case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => operator match {
-        case And => {}
+        case And => {
+          // evaluate lhs, and jump to end if flase
+          val lhsBlock = lhs.block.get  // if destruct block
+          val lhsLocation = lhs.eval.get
+          val rhsBlock = rhs.block.get
+          val rhsLocation = rhs.eval.get
+        }
         case Or => {}
         case _ => {}  // other logical operators
       }
@@ -100,7 +118,6 @@ object Destruct {
         // condition
       }
     }
-
 
     // val statements = block.declarations ++ block.statements
     // CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
@@ -140,8 +157,8 @@ object Destruct {
       link(ifEnd, end)
     }
 
-    val conditionalCFG = shortCircuit(condition, start.label, ifStart, blockIfFalse.get, end)
-    link(start, conditionalCFG)
+    val (condStart, condCFG) = shortCircuit(condition, start.label, ifStart, blockIfFalse.get, end)
+    link(start, condStart)
 
     (start, end, None)
   }
@@ -163,11 +180,11 @@ object Destruct {
     val (initializeStart, initializeEnd, _) = Destruct(initialize, methods=methods)
     val (updateStart, updateEnd, _) = Destruct(update, methods=methods)
     val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
-    val conditionalCFG = shortCircuit(condition, start.label, blockStart, end, end)
+    val (condStart, condCFG) = shortCircuit(condition, start.label, blockStart, end, end)
 
     link(start, initializeStart)
     link(initializeEnd, updateStart)
-    link(updateEnd, conditionalCFG)
+    link(updateEnd, condStart)
     link(blockEnd, updateStart)
     (start, end, None)
   }
@@ -185,10 +202,10 @@ object Destruct {
     val (start, end) = createStartEnd(line, col)
 
     val (blockStart, blockEnd, _) = Destruct(ifTrue, Option(start), Option(end), methods=methods)
-    val conditionalCFG = shortCircuit(condition, start.label, blockStart, end, end)
+    val (condStart, condCFG) = shortCircuit(condition, start.label, blockStart, end, end)
 
-    link(start, conditionalCFG)
-    link(blockEnd, conditionalCFG)
+    link(start, condStart)
+    link(blockEnd, condStart)
     (start, end, None)
   }
 
@@ -308,8 +325,8 @@ object Destruct {
    * @param col
    * @return (startNode, endNode)
    */
-  private def createStartEnd(line: Int, col: Int): Tuple2[CFG, CFG] = {
-    val label = s"l${line}call${col}"
+  private def createStartEnd(line: Int, col: Int, labelT: Option[String] = None): Tuple2[CFG, CFG] = {
+    val label = if (labelT.isDefined) labelT.get else s"l${line}call${col}"
     val start = VirtualCFG(s"${label}_start")
     val end = VirtualCFG(s"${label}_end")
     (start, end)
