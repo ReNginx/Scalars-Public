@@ -4,6 +4,12 @@ import ir.components._
 
 object IRto3Addr {
 
+  /** Recursively create IR nodes with flattened expression trees
+   *
+   * @param ir   The original IR node
+   * @param iter The integer iterator to keep track of naming temporary variables
+   */
+
 	def apply (ir: IR, iter:Iterator[Int]): IR = {
 
     var irModified: IR = ir
