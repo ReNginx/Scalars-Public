@@ -127,7 +127,7 @@ object TranslateIR {
         res += s"movq %rax, ${compAsg.value.rep}"
       }
 
-      case inc: Increment => { 
+      case inc: Increment => {
         res ++= inc.loc.indexCheck
         res += s"incq ${inc.loc.rep}"
       }
@@ -144,6 +144,18 @@ object TranslateIR {
         res += s"leave"
         res += s"ret"
       }
+
+      case variable: VariableDeclaration => {
+          res += s"${variable.name}:"
+          res += s".zero 8"
+      }
+
+      case array: ArrayDeclaration => {
+        res += s"${array.name}:"
+        res += s".zero ${8*array.length.value}"
+      }
+
+      case _ => throw new NotImplementedError
     }
     res.toVector
   }

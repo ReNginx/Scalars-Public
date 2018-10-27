@@ -1,8 +1,7 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set}
+import scala.collection.mutable.{HashSet, Set, ArrayBuffer}
 import scala.collection.immutable.Map
-import scala.collection.mutable.ArrayBuffer
 import ir.components._
 import ir.PrettyPrint
 import java.io._
@@ -15,6 +14,7 @@ object TranslateCFG {
 
   def output(str: String) = {
     writer.write(str + "\n")
+    println(str)
   }
 
   def close() = {
@@ -151,9 +151,16 @@ object TranslateCFG {
           val to = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
           outputMov(from, to);
         }
-        if (method.block.isDefined)
+        if (method.block.isDefined) {
           TranslateCFG(method.block.get)
-
+          if (method.method.typ == Option(VoidType)) {
+            output(s"leave")
+            output(s"ret")
+          }
+          else {
+            output(s"jmp noReturn")
+          }
+        }
       }
 
       case CFGProgram(_, _, fields, methods, _, _) => {
@@ -166,11 +173,11 @@ object TranslateCFG {
           TranslateCFG(mthd)// methods is a map, iterate through its value
         }
 
-        //deal with output.
-        output(".noReturn")
+        //deal with runtime check.
+        output("noReturn:")
         output("movq $-2, %rdi")
         output("call exit")
-        output(".outOfBound")
+        output("outOfBound:")
         output("movq $-1, %rdi")
         output("call exit")
 

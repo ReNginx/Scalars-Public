@@ -59,7 +59,7 @@ case class Location(
 
   //TODO
   def indexCheck: Vector[String] = {
-    return Vector[String]()
+    return field.get.indexCheck
   }
 
   override def toString: String = s"[Location] ${name}  (${line}:${col})"
