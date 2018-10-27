@@ -91,7 +91,11 @@ object Destruct {
     condition match {
       case Not(line, col, eval, block, expression) => {}
       case Negate(line, col, eval, block, expression) => {}
-      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => {}
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => operator match {
+        case And => {}
+        case Or => {}
+        case _ => {}  // other logical operators
+      }
       case _ => {  // literalks
         // condition
       }
@@ -100,8 +104,6 @@ object Destruct {
 
     // val statements = block.declarations ++ block.statements
     // CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
-
-
     throw new NotImplementedError
   }
 
