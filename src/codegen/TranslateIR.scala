@@ -139,10 +139,17 @@ object TranslateIR {
 
       case ret: Return => {
         if (ret.value.isDefined) {
+<<<<<<< HEAD
           res += s"movq, ${ret.value.get.rep}, %rax)"
         }
         res += s"leave"
         res += s"ret"
+=======
+          ret += s"movq, ${ret.value.get.rep}, %rax)"
+        }
+        ret += s"leave"
+        ret += s"ret"
+>>>>>>> 8de44426c48197f20ee60b9048279b047ff39240
       }
     }
     res.toVector
