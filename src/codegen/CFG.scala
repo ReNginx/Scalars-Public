@@ -49,7 +49,7 @@ case class CFGBlock(
     var next: Option[CFG] = None,
     parents: Set[CFG]=Set()) extends CFG
 
-/** Basic Block in Control Flow Graph, which represents a single conditional statent.
+/** Basic Block in Control Flow Graph, which represents a single conditional statement.
  *
  * Conceptually, this block only contains a single conditional statement, flattened into
  * a series of 3-address statements. If the conditional statement evaluates to true, the next
