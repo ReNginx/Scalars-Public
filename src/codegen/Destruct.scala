@@ -43,7 +43,7 @@ object Destruct {
       statements: Vector[IR],
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val blocks = (declarations ++ statements) map {
       s => {
@@ -91,7 +91,11 @@ object Destruct {
     condition match {
       case Not(line, col, eval, block, expression) => {}
       case Negate(line, col, eval, block, expression) => {}
-      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => {}
+      case LogicalOperation(line, col, eval, block, operator, lhs, rhs) => operator match {
+        case And => {}
+        case Or => {}
+        case _ => {}  // other logical operators
+      }
       case _ => {  // literalks
         // condition
       }
@@ -100,8 +104,6 @@ object Destruct {
 
     // val statements = block.declarations ++ block.statements
     // CFGConditional(label, statements, Set(), Option(ifTrue), Option(ifFalse), Option(end))
-
-
     throw new NotImplementedError
   }
 
@@ -122,7 +124,7 @@ object Destruct {
       conditionBlock: Option[Block],
       ifTrue: Block,
       ifFalse: Option[Block],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     // start and end of this if statement
     val (start, end) = createStartEnd(line, col)
@@ -154,7 +156,7 @@ object Destruct {
       conditionBlock: Option[Block],
       update: Assignment,
       ifTrue: Block,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(line, col)
 
@@ -178,7 +180,7 @@ object Destruct {
       condition: Expression,
       conditionBlock: Option[Block],
       ifTrue: Block,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(line, col)
 
@@ -192,20 +194,20 @@ object Destruct {
 
   private def destructMethodDeclaration(
       method: LocMethodDeclaration,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val (start, end) = createStartEnd(method.line, method.col)
 
     if (methods contains method.name) {
       val methodCFG = (methods get method.name).get
-      link(start, methodCFG.get)
-      link(methodCFG.get, end)
+      link(start, methodCFG)
+      link(methodCFG, end)
       return (start, end, None)
     }
 
     // made methodCFG mutable so that when destructing method call, it knows where to point to
     val methodCFG = CFGMethod(start.label, None, method.params, method)
-    methods += method.name -> Option(methodCFG)
+    methods += method.name -> methodCFG
 
     val (blockStart, blockEnd, _) = Destruct(method.block)
     methodCFG.block = Option(blockStart)
@@ -225,7 +227,7 @@ object Destruct {
       name: String,
       params: Vector[Expression],
       paramBlocks: Vector[Option[Block]],
-      methods: Map[String, Option[CFGMethod]] = Map(),
+      methods: Map[String, CFGMethod] = Map(),
       iter: Iterator[Int]): Tuple3[CFG, CFG, Option[Location]] = {
 
     val blocks = params map {
@@ -241,7 +243,7 @@ object Destruct {
     val lastBlockEnd = blocks(-1)._2
 
     val (start, end) = createStartEnd(line, col)
-    val methodDeclaration = (methods get name).get.get
+    val methodDeclaration = (methods get name).get
 
     // locations or literals of each parameters
     val paramLocations = params map {
@@ -287,12 +289,10 @@ object Destruct {
       imports: Vector[ExtMethodDeclaration],
       fields: Vector[FieldDeclaration],
       methodVec: Vector[MethodDeclaration],
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     val importCFGs = imports   map { Destruct(_, methods=methods) }
     val methodCFGs = methodVec map { Destruct(_, methods=methods) }
-
-
 
     val (start, end) = createStartEnd(line, col)
     val fieldsCFG = CFGBlock(start.label, fields)
@@ -325,7 +325,7 @@ object Destruct {
    */
   private def destructAssignment(
       assignment: Assignment,
-      methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+      methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
 
     def getExpLoc(value: Expression): Expression = value match {
       case call: MethodCall => call
@@ -380,7 +380,7 @@ object Destruct {
    * @return (start, end, loc) such that:
    *         loc is the original location that was destructed, this is mainly for convenience
    */
-  private def destructLocation(loc: Location, methods: Map[String, Option[CFGMethod]] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
+  private def destructLocation(loc: Location, methods: Map[String, CFGMethod] = Map()): Tuple3[CFG, CFG, Option[Location]] = {
     val (start, end) = createStartEnd(loc.line, loc.col)
     val blockCFG = CFGBlock(start.label, Vector(loc))
 
@@ -426,7 +426,7 @@ object Destruct {
       ir: IR,  // the end node of CFGProgram has no meaning
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None,
-      methods: Map[String, Option[CFGMethod]] = Map(),
+      methods: Map[String, CFGMethod] = Map(),
       iter: Iterator[Int] = Stream.iterate(0)(_ + 1).iterator): Tuple3[CFG, CFG, Option[Location]] = {
 
     ir match {
