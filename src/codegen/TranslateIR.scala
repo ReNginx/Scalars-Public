@@ -116,6 +116,15 @@ object TranslateIR {
 
       case compAsg: CompoundAssignStatement => {
         res += s"movq ${compAsg.loc.rep}, %rax"
+        compAsg.operator match {
+          case Add => {
+            res += s"addq ${compAsg.value.rep}, %rax"
+          }
+          case Subtract => {
+            res += s"subq ${compAsg.value.rep}, %rax"
+          }
+        }
+        res += s"movq %rax, ${compAsg.value.rep}"
       }
 
       case inc: Increment => {
@@ -127,8 +136,15 @@ object TranslateIR {
         res ++= dec.loc.indexCheck
         res += s"decq ${dec.loc.rep}"
       }
-    }
 
+      case ret: Return => {
+        if (ret.value.isDefined) {
+          ret += s"movq, ${ret.value.get.rep}, %rax)"
+        }
+        ret += s"leave"
+        ret += s"ret"
+      }
+    }
     res.toVector
   }
 }
