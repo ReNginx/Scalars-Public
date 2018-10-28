@@ -51,6 +51,7 @@ object DestructNew {
   }
   /**
    * destruct a block. Note that this function does not return a CFG block with begin, end node.
+    * when encounter a break or continue, we ignore the rest, and end the transformation.
    * @return (start, end) nodes as a result of destructuring this block
    */
   private def destructBlock(
@@ -181,7 +182,7 @@ object DestructNew {
       case program: Program => destructProgram(program)
       case call: MethodCall => destructMethodCall(call)
       case expr: Operation => destructExpression(expr)
-      case loc: Location => destructLocation(loc)
+      case loc: Location => destructLocation(loc) // could only be array location
       case assign: Assignment => destructAssignment(assign)
       case _ => throw new NotImplementedError
     }

@@ -1,7 +1,6 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set, Map}
-
+import scala.collection.mutable.{ArrayBuffer, HashSet, Map, Set}
 import ir.components._
 import ir.PrettyPrint
 
@@ -48,7 +47,7 @@ case class VirtualCFG(
  */
 case class CFGBlock(
     label: String,
-    statements: Vector[IR],
+    statements: ArrayBuffer[IR],
     var next: Option[CFG] = None,
     parents: Set[CFG]=Set()) extends CFG
 
@@ -59,7 +58,7 @@ case class CFGBlock(
  * basic block becomes `ifTrue`, and `ifFalse` otherwise.
  *
  * @param label a string that uniquely identifies this block
- * @param condition a simple logical expression that does not contains "&&" or "||"
+ * @param condition a literal or a location.
  * @param parent all possible blocks that the program could have been in, prior to this block
  * @param next the next block to go to, if conditional evaluates to true
  * @param ifFalse the next block to go to, if conditional evaluates to false
