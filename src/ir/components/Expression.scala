@@ -2,7 +2,7 @@ package ir.components
 
 trait Expression extends IR {
   def typ: Option[Type]
-  def eval: Option[Location] = None
+  def eval: Option[Expression] = None
   def block: Option[Block] = None
   def rep: String = "" //only location and literal would have this.
 }
@@ -10,6 +10,10 @@ trait Expression extends IR {
 case class Length(line: Int, col: Int, location: Location) extends Expression {
   val typ = Option(IntType)
   override def toString: String = s"[Length]  (${line}:${col})"
+  override def eval: Option[Expression] = if (!location.field.isEmpty)
+    Some(location.field.get.asInstanceOf[ArrayDeclaration].length)
+    else None
+  override def block: Option[Block] = Some(Block(0, 0, Vector(), Vector()))
 }
 
 case class Location(
@@ -18,7 +22,10 @@ case class Location(
     name: String,
     var index: Option[Expression],  // lcoation or int linteral
     indexBlock: Option[Block],
-    var field: Option[FieldDeclaration] = None) extends Expression {
+    var field: Option[FieldDeclaration] = None) extends Expression { self =>
+  
+  override def eval: Option[Expression] = Some(self)
+  override def block: Option[Block] = Some(Block(0, 0, Vector(), Vector()))
 
   override def typ: Option[Type] = {
     if (field.isEmpty) {

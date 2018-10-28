@@ -68,7 +68,7 @@ object Destruct {
           case call: Continue => link(statementEnd, loopStart.get)
           case ret: Return => {
             link(statementEnd, end)
-            returnLocation = ret.value.get.eval
+            returnLocation = ret.value.get.eval.asInstanceOf[Option[Location]]
           }
         }
       }
