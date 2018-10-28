@@ -12,7 +12,7 @@ case class AssignStatement(
     line: Int,
     col: Int,
     loc: Location,
-    value: Expression,  // use the eval field
+    var value: Expression,  // use the eval field
     valueBlock: Option[Block]) extends Assignment with AssignmentStatements {
 
   def typ: Option[Type] = loc.typ
@@ -24,7 +24,7 @@ case class CompoundAssignStatement(
     line: Int,
     col: Int,
     loc: Location,
-    value: Expression,  // use the eval field
+    var value: Expression,  // use the eval field
     valueBlock: Option[Block],
     operator: ArithmeticOperator) extends Assignment with AssignmentStatements {
 
