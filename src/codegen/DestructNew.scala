@@ -1,12 +1,14 @@
 package codegen
 
 import ir.components._
+import javax.swing.DefaultListCellRenderer
 import sun.security.ssl.SSLContextImpl.DefaultSSLContext
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Map}
 
 object DestructNew {
+  var counter = 0
   /**
     * Link two CFG together.
     * @param from
@@ -29,8 +31,8 @@ object DestructNew {
     (st, ed)
   }
   /**
-    * this function deal with expressions contains && and ||.
-    * it should create a structure like the following example.
+    * this function deal with expressions whose topmost operator is bool operator
+    * for && it should create a structure like the following example.
     *
     * * && example
     * * block1, block2, cond1, cond2
@@ -48,21 +50,57 @@ object DestructNew {
     * * finally { assign %rdi to expr.eval } before the end node.
     *
     * so the final result can be found in %rdi
+    *
+    * || operator likewise, for other bool operator, it follows the usual start->left->right->self->end convention.
     * @param expr: the expression to destruct
     */
   private def destructBoolOperation(expr: Expression)= {
-    throw new NotImplementedError()
+    throw new NotImplementedError() // TODO
   }
   /**
    * destruct a block. Note that this function does not return a CFG block with begin, end node.
     * when encounter a break or continue, we ignore the rest, and end the transformation.
    * @return (start, end) nodes as a result of destructuring this block
    */
-  private def destructBlock(
-      block: Block,
-      loopStart: Option[CFG] = None,
-      loopEnd: Option[CFG] = None): (CFG, CFG) = {
-    throw new NotImplementedError()
+  private def destructBlock(block: Block,
+                            loopStart: Option[CFG] = None,
+                            loopEnd: Option[CFG] = None): (CFG, CFG) = {
+    val placeStr = s"r${block.line},c${block.col},Block"
+    val (start, end) = create(placeStr)
+    var last = start
+
+    for (stmt <- block.statements) {
+      stmt match {
+        case break: Break => {
+          assert(loopEnd.isDefined)
+          link(last, end)
+          link(end, loopEnd.get)
+          return (start, end)
+        }
+        case continue: Continue => {
+          assert(loopStart.isDefined)
+          link(last, end)
+          link(end, loopStart.get)
+          return (start, end)
+        }
+        case ret: Return => {
+          if (ret.value.isDefined) {
+            val (valSt, valEd) = DestructNew(ret.value.get)
+            link(last, valSt)
+            ret.value = ret.value.get.eval
+            last = valEd
+          }
+        }
+        case _ => {
+          val (stmtSt, stmtEd) = DestructNew(stmt)
+          link(last, stmtSt)
+          last = stmtEd
+        }
+      }
+    }
+
+    link(last, end)
+    (start, end)
   }
 
   /**
@@ -71,8 +109,10 @@ object DestructNew {
     * @param ifstmt
     * @return
     */
-  private def destructIf(ifstmt: If): (CFG, CFG) = {
-    val placeStr = s"r${ifstmt.line},c${ifstmt.col}"
+  private def destructIf(ifstmt: If,
+                         loopStart: Option[CFG] = None,
+                         loopEnd: Option[CFG] = None): (CFG, CFG) = {
+    val placeStr = s"r${ifstmt.line},c${ifstmt.col},If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(ifstmt.condition)
     val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
@@ -114,7 +154,7 @@ object DestructNew {
     * loop end is ifFalse branch of test
    */
   private def destructFor(forstmt: For): (CFG, CFG) = {
-    val placeStr = s"r${forstmt.line},c${forstmt.col}"
+    val placeStr = s"r${forstmt.line},c${forstmt.col},For"
     val (start, end) = create(placeStr)
     val (initSt, initEd) = DestructNew(forstmt.start)
     val (condSt, condEd) = DestructNew(forstmt.condition)
@@ -136,7 +176,7 @@ object DestructNew {
     * pretty much the same as the previous one.
    */
   private def destructWhile(whilestmt: While): (CFG, CFG) = {
-    val placeStr = s"r${whilestmt.line},c${whilestmt.col}"
+    val placeStr = s"r${whilestmt.line},c${whilestmt.col},While"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(whilestmt.condition)
     val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
@@ -158,7 +198,7 @@ object DestructNew {
     * @return
     */
   private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG) = {
-    val placeStr = s"r${method.line},c${method.col}"
+    val placeStr = s"r${method.line},c${method.col},Method"
     val (start, end) = create(placeStr)
     val params = method.params
     val (blockSt, blockEd) = DestructNew(method.block)
@@ -175,7 +215,7 @@ object DestructNew {
    * @return (start, end, loc) where loc holds the
    */
   private def destructMethodCall(call: MethodCall): (CFG, CFG) = {
-    val placeStr = s"r${call.line},c${call.col}"
+    val placeStr = s"r${call.line},c${call.col},Call"
     val (start, end) = create(placeStr)
     val paramList = ArrayBuffer[Expression]()
     var last = start
@@ -221,21 +261,79 @@ object DestructNew {
    * Where `block` contains the flattened code to calculate the location to assign to
    * as well as the expression to assign there.
    * CFGBlock contains one of Increment, Decrement, AssignStatement, CompoundAssignStatement.
+    * This function assures that
+    * assignment.expression = literal or location,
+    * assignment.loc.index = None or literal or location.
    */
   private def destructAssignment(assignment: Assignment): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${assignment.line},c${assignment.col},Assign"
+    val (start, end) = create(placeStr)
+    val (locSt, locEd) = DestructNew(assignment.loc)
+    var last = locEd
+
+    link(start, locSt)
+
+    assignment match {
+      case asg: AssignStatement => {
+        val (exprSt, exprEd) = DestructNew(asg.value)
+        link(last, exprSt)
+        asg.value = asg.value.eval.get
+        val block = CFGBlock(placeStr+"_assign", ArrayBuffer(asg))
+        link(exprEd, block)
+        last = block
+      }
+
+      case cAsg: CompoundAssignStatement => {
+        val (exprSt, exprEd) = DestructNew(cAsg.value)
+        link(last, exprSt)
+        cAsg.value = cAsg.value.eval.get
+        val block = CFGBlock(placeStr+"_assign", ArrayBuffer(cAsg))
+        link(exprEd, block)
+        last = block
+      }
+
+      case inc: Increment => {
+        val block = CFGBlock(placeStr+"_assign", ArrayBuffer(inc))
+        link(last, block)
+        last = block
+      }
+
+      case dec: Decrement => {
+        val block = CFGBlock(placeStr+"_assign", ArrayBuffer(dec))
+        link(last, block)
+        last = block
+      }
+
+      case _ => throw new NotImplementedError()
+    }
+
+    link(last, end)
+
+    (start, end)
   }
 
-  /** Destruct a location.
+  /** Destruct a location. mainly flattens the index part of location, if it's not an array, then this function returns
+    * start -> end. also, it sets the loc.index to final result of original loc.index
    *
    * MORE IMPORTANTLY, updates `loc` such that its `index` field now has the
    * location of the temporary variable that contains the result of flattened code.
    *
-   * @return (start, end, loc) such that:
-   *         loc is the original location that was destructed, this is mainly for convenience
+   * @return (start, end)
    */
   private def destructLocation(loc: Location): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${loc.line},c${loc.col},Loc"
+    val (start, end) = create(placeStr)
+    if (loc.index.isDefined) {
+      val (indexSt, indexEd) = DestructNew(loc.index.get)
+      loc.index = loc.index.get.eval
+      link(start, indexSt)
+      link(indexEd, end)
+    }
+    else {
+      link(start, end)
+    }
+
+    (start, end)
   }
 
   /**
@@ -245,8 +343,96 @@ object DestructNew {
     * @param expr
     * @return
     */
-  private def destructExpression(expr: Operation): (CFG, CFG) = {
-    throw new NotImplementedError()
+  private def destructOperation(expr: Operation): (CFG, CFG) = {
+    val placeStr = s"r${expr.line},c${expr.col},Oper"
+    val (start, end) = create(placeStr)
+
+    expr match {
+      case not: Not => {
+        val (exprSt, exprEd) = DestructNew(not.expression)
+        link(start, exprSt)
+
+        assert(not.expression.eval.isDefined)
+        not.expression = not.expression.eval.get
+
+        val self = CFGBlock(placeStr+"_expr", ArrayBuffer(not))
+        link(exprEd, self)
+        link(self, end)
+      }
+
+      case negate: Negate => {
+        val (exprSt, exprEd) = DestructNew(negate.expression)
+        link(start, exprSt)
+
+        assert(negate.expression.eval.isDefined)
+        negate.expression = negate.expression.eval.get
+
+        val self = CFGBlock(placeStr+"_expr", ArrayBuffer(negate))
+        link(exprEd, self)
+        link(self, end)
+      }
+
+      case arithmeticOperation: ArithmeticOperation => {
+        val (lhsSt, lhsEd) = DestructNew(arithmeticOperation.lhs)
+        val (rhsSt, rhsEd) = DestructNew(arithmeticOperation.rhs)
+        link(start, lhsSt)
+        link(lhsEd, rhsSt)
+
+        assert(arithmeticOperation.lhs.eval.isDefined)
+        assert(arithmeticOperation.rhs.eval.isDefined)
+        arithmeticOperation.lhs = arithmeticOperation.lhs.eval.get
+        arithmeticOperation.rhs = arithmeticOperation.rhs.eval.get
+
+        val self = CFGBlock(placeStr+"_expr", ArrayBuffer(arithmeticOperation))
+        link(rhsEd, self)
+        link(self, end)
+      }
+
+      case logicalOperation: LogicalOperation => {
+        val (exprSt, exprEd) = destructBoolOperation(logicalOperation)
+        link(start, exprSt)
+
+        assert(logicalOperation.lhs.eval.isDefined)
+        assert(logicalOperation.rhs.eval.isDefined)
+        logicalOperation.lhs = logicalOperation.lhs.eval.get
+        logicalOperation.rhs = logicalOperation.rhs.eval.get
+
+        val self = CFGBlock(placeStr+"_expr", ArrayBuffer(logicalOperation))
+        link(exprEd, self)
+        link(self, end)
+      }
+
+      case ternaryOperation: TernaryOperation => {
+        val (condSt, condEd) = DestructNew(ternaryOperation.condition)
+        val (ifTrueSt, ifTrueEd) = DestructNew(ternaryOperation.ifTrue)
+        val (ifFalseSt, ifFalseEd) = DestructNew(ternaryOperation.ifFalse)
+
+        val assignTrue = AssignStatement(expr.line, expr.col,
+                                      ternaryOperation.eval.get,
+                                      ternaryOperation.ifTrue.eval.get, None)
+        val assignFalse = AssignStatement(expr.line, expr.col,
+                                      ternaryOperation.eval.get,
+                                      ternaryOperation.ifFalse.eval.get, None)
+
+        val (trueSt, trueEd) = DestructNew(assignTrue)
+        val (falseSt, falseEd) = DestructNew(assignFalse)
+
+        link(ifTrueEd, trueSt)
+        link(ifFalseEd, falseSt)
+
+        val cfgCond = CFGConditional(placeStr+"_cond",
+                                ternaryOperation.condition.eval.get,
+                                Option(ifTrueSt),
+                                Option(ifFalseSt),
+                                Option(end))
+        link(start, condSt)
+        link(condEd, cfgCond)
+        link(trueEd, end)
+        link(falseEd, end)
+      }
+    }
+
+    (start, end)
   }
 
   /**
@@ -260,20 +446,25 @@ object DestructNew {
       ir: IR,  // the end node of CFGProgram has no meaning
       loopStart: Option[CFG] = None,
       loopEnd: Option[CFG] = None): (CFG, CFG) = {
-
     ir match {
       // assignment
       case block: Block => destructBlock(block, loopStart, loopEnd) // break and continue only appears here.
-      case ifstmt: If => destructIf(ifstmt)
+      case ifstmt: If => destructIf(ifstmt, loopStart, loopEnd)
       case forstmt: For => destructFor(forstmt)
       case whilestmt: While => destructWhile(whilestmt)
       case method: LocMethodDeclaration => destructMethodDeclaration(method)
       case program: Program => destructProgram(program)
       case call: MethodCall => destructMethodCall(call)
-      case expr: Operation => destructExpression(expr)
+      case expr: Operation => destructOperation(expr)
       case loc: Location => destructLocation(loc) // could only be array location
       case assign: Assignment => destructAssignment(assign)
-      case _ => throw new NotImplementedError
+      case literal: Literal => {
+        counter += 1;
+        val placeStr = s"emptyBlock${counter}"
+        val (start, end) = create(placeStr)
+        (start, end)
+      }
+      case _ => throw new NotImplementedError()
     }
   }
 }
