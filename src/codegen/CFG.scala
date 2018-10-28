@@ -85,8 +85,7 @@ case class CFGMethod(
     var block: Option[CFG],  // for preventing recursion
     params: Vector[VariableDeclaration],
     var next: Option[CFG] = None,  // no meaning
-    parents: Set[CFG] = Set(),
-    typ: Option[Type] = None) extends CFG { // where declared
+    parents: Set[CFG] = Set()) extends CFG { // where declared
       var spaceAllocated: Int = 0;
     }
 
