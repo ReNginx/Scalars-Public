@@ -54,7 +54,7 @@ object DestructNew {
     * || operator likewise, for other bool operator, it follows the usual start->left->right->self->end convention.
     * @param expr: the expression to destruct
     */
-  private def destructBoolOperation(expr: Expression)= {
+  private def destructLogicalOperation(expr: LogicalOperation): (CFG, CFG) = {
     throw new NotImplementedError() // TODO
   }
   /**
@@ -389,7 +389,7 @@ object DestructNew {
       }
 
       case logicalOperation: LogicalOperation => {
-        val (exprSt, exprEd) = destructBoolOperation(logicalOperation)
+        val (exprSt, exprEd) = destructLogicalOperation(logicalOperation)
         link(start, exprSt)
 
         assert(logicalOperation.lhs.eval.isDefined)
