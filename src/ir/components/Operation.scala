@@ -1,6 +1,6 @@
 package ir.components
 
-trait Operation {
+trait Operation extends Expression{
   def line: Int
   def col: Int
 }
