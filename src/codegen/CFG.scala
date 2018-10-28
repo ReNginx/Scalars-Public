@@ -104,7 +104,7 @@ case class CFGMethod(
 case class CFGMethodCall(
     label: String,
     params: Vector[Expression],
-    declaration: CFGMethod,
+    declaration: String,
     var next: Option[CFG] = None,
     parents: Set[CFG] = Set()) extends CFG
 
