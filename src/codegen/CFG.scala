@@ -112,7 +112,7 @@ case class CFGMethodCall(
  */
 case class CFGProgram(
   label: String,
-  fields: CFGBlock,
+  fields: Vector[FieldDeclaration],
   methods: Vector[CFGMethod],
   var next: Option[CFG] = None,  // not used
   parents: Set[CFG] = Set()) extends CFG  // not used
