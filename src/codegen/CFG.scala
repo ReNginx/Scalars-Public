@@ -66,10 +66,10 @@ case class CFGBlock(
 case class CFGConditional(
     label: String,
     condition: Expression,
-    parents: Set[CFG]=Set(),
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,
-    var end: Option[CFG] = None) extends CFG
+    var end: Option[CFG] = None,
+    parents: Set[CFG]=Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
@@ -83,7 +83,7 @@ case class CFGConditional(
 case class CFGMethod(
     label: String,
     var block: Option[CFG],  // for preventing recursion
-    params: Vector[VariableDeclaration],
+    params: Vector[FieldDeclaration],
     var next: Option[CFG] = None,  // no meaning
     parents: Set[CFG] = Set()) extends CFG { // where declared
       var spaceAllocated: Int = 0;

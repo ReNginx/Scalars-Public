@@ -1,8 +1,9 @@
 package codegen
 
 import ir.components._
+import sun.security.ssl.SSLContextImpl.DefaultSSLContext
 
-import scala.collection.mutable.Map
+import scala.collection.mutable.{ArrayBuffer, Map}
 
 object DestructNew {
   /**
@@ -22,7 +23,9 @@ object DestructNew {
     * @return
     */
   private def create(str: String): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val st = VirtualCFG(str + "_st")
+    val ed = VirtualCFG(str + "_ed")
+    (st, ed)
   }
   /**
     * this function deal with expressions contains && and ||.
@@ -92,7 +95,22 @@ object DestructNew {
     * loop end is ifFalse branch of test
    */
   private def destructFor(forstmt: For): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${forstmt.line},c${forstmt.col}"
+    val (start, end) = create(placeStr)
+    val (initSt, initEd) = DestructNew(forstmt.start)
+    val (condSt, condEd) = DestructNew(forstmt.condition)
+    val (updSt, updEd) = DestructNew(forstmt.update)
+    val (bodySt, bodyEd) = DestructNew(forstmt.ifTrue, Option(updSt), Option(end))
+
+    assert(forstmt.condition.eval.isDefined)
+    val cfgCond = CFGConditional(placeStr+"_cond", forstmt.condition.eval.get, Option(bodySt), Option(end))
+
+    linkCFG(start, initSt)
+    linkCFG(initEd, condSt)
+    linkCFG(condEd, cfgCond)
+    linkCFG(cfgCond.next.get.next.get, updSt)
+
+    (start, end)
   }
 
   /** Destruct an while loop.
@@ -109,7 +127,15 @@ object DestructNew {
     * @return
     */
   private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${method.line},c${method.col}"
+    val (start, end) = create(placeStr)
+    val params = method.params
+    val (blockSt, blockEd) = DestructNew(method.block)
+    val cfgMthd = CFGMethod(method.name, Option(blockSt), params)
+
+    linkCFG(start, cfgMthd)
+    linkCFG(cfgMthd, end)
+    (start, end)
   }
 
   /** destruct its param first. place at it front
@@ -118,11 +144,43 @@ object DestructNew {
    * @return (start, end, loc) where loc holds the
    */
   private def destructMethodCall(call: MethodCall): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${call.line},c${call.col}"
+    val (start, end) = create(placeStr)
+    val paramList = ArrayBuffer[Expression]()
+    var last = start
+
+    for (param <- call.params) {
+      val (st, ed) = DestructNew(param)
+      linkCFG(last, st)
+      last = ed
+      assert(param.eval.isDefined)
+      paramList += param.eval.get
+    }
+
+    val mthdCal = CFGMethodCall(placeStr+"_call", paramList.toVector, call.method.get.name)
+
+    linkCFG(last, mthdCal)
+    last = mthdCal
+
+    if (call.method.get.typ != Option(VoidType)) {
+      assert(call.block.isDefined)
+      val (st, ed) = DestructNew(call.block.get)
+      linkCFG(last, st)
+      last = ed
+    }
+
+    linkCFG(last, end)
+    (start, end)
   }
 
   private def destructProgram(program: Program): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val (start, end) = create("")
+    val fields = program.fields
+    val methods = program.methods map (DestructNew(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
+    val cfg = CFGProgram("program", fields, methods)
+    linkCFG(start, cfg)
+    linkCFG(cfg, end)
+    (start, end)
   }
 
   /** Destruct an Assignment.
