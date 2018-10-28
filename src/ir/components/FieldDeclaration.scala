@@ -20,10 +20,7 @@ case class FieldList(
 trait FieldDeclaration extends MemberDeclaration {
   def typ: Option[Type]
   def indexCheck: Vector[String]
-  var isGlobal: Boolean = false
-  var isReg: Boolean = false
-  var reg: String = ""
-  var offset: Int = 0
+
 }
 
 case class VariableDeclaration(
@@ -32,7 +29,10 @@ case class VariableDeclaration(
     name: String,
     typ: Option[Type]) extends FieldDeclaration {
 
-
+  var isGlobal: Boolean = false
+  var isReg: Boolean = false
+  var reg: String = ""
+  var offset: Int = 0
   def rep = s"$${offset.toString}(%rbp)"
   override def indexCheck: Vector[String] = Vector()
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
@@ -44,6 +44,11 @@ case class ArrayDeclaration(
     name: String,
     length: IntLiteral,
     typ: Option[Type]) extends FieldDeclaration {
+
+  var isGlobal: Boolean = false
+  val isReg: Boolean = false
+  val reg: String = ""
+  var offset: Int = 0
 
   override def indexCheck: Vector[String] = {
     // val res: ArrayBuffer[String] = ArrayBuffer()
@@ -71,8 +76,10 @@ case class Registers(
      col: Int = 0,
      typ: Option[Type] = None) extends FieldDeclaration {
 
-  override val isGlobal: Boolean = false
-  override val isReg: Boolean = true
+  val isGlobal: Boolean = false
+  val isReg: Boolean = true
+  var reg: String = ""
+  val offset: Int = 0
   def rep = s"%{name}"
   override def indexCheck: Vector[String] = Vector()
 }
