@@ -40,8 +40,8 @@ case class ArithmeticOperation(
     override val eval: Option[Location],
     override val block: Option[Block],
     operator: ArithmeticOperator,
-    lhs: Expression,
-    rhs: Expression) extends BinaryOperation {
+    var lhs: Expression,
+    var rhs: Expression) extends BinaryOperation {
 
   def typ: Option[Type] = Option(IntType)
   override def toString: String = s"[ArithmeticOperation] ${operator} ${typ.get}  (${line}:${col})"
@@ -53,8 +53,8 @@ case class LogicalOperation(
     override val eval: Option[Location],
     override val block: Option[Block],
     operator: LogicalOperator,
-    lhs: Expression,
-    rhs: Expression) extends BinaryOperation {
+    var lhs: Expression,
+    var rhs: Expression) extends BinaryOperation {
 
   def typ: Option[Type] = Option(BoolType)
   override def toString: String = s"[LogicalOperation] ${operator} ${typ.get}  (${line}:${col})"
@@ -66,8 +66,8 @@ case class TernaryOperation(
     override val eval: Option[Location],
     override val block: Option[Block],
     condition: Expression,
-    ifTrue: Expression,
-    ifFalse: Expression) extends Expression with Operation {
+    var ifTrue: Expression,
+    var ifFalse: Expression) extends Expression with Operation {
 
   def typ: Option[Type] = if (ifTrue.typ == ifFalse.typ) ifTrue.typ else None
   override def toString: String = s"[TernaryOperation] ${typ.get}  (${line}:${col})"
