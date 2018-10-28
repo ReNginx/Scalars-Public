@@ -3,6 +3,7 @@ package codegen
 import ir.components._
 import sun.security.ssl.SSLContextImpl.DefaultSSLContext
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Map}
 
 object DestructNew {
@@ -12,13 +13,13 @@ object DestructNew {
     * @param to
     * @return
     */
-  private def linkCFG(from: CFG, to: CFG)= {
+  private def link(from: CFG, to: CFG)= {
     from.next = Some(to)
     to.parents.add(from)
   }
 
   /**
-    * 
+    * create start node and end node.
     * @param str
     * @return
     */
@@ -71,7 +72,25 @@ object DestructNew {
     * @return
     */
   private def destructIf(ifstmt: If): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${ifstmt.line},c${ifstmt.col}"
+    val (start, end) = create(placeStr)
+    val (condSt, condEd) = DestructNew(ifstmt.condition)
+    val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
+    val cfgCond = CFGConditional(placeStr+"_cond", ifstmt.condition.eval.get, Option(nextSt))
+
+    link(condEd, cfgCond)
+
+    if (ifstmt.ifFalse.isDefined) {
+      val (ifFalseSt, ifFalseEd) = DestructNew(ifstmt.ifFalse.get)
+      cfgCond.ifFalse = Option(ifFalseSt)
+      link(ifFalseEd, end)
+    }
+    else {
+      cfgCond.ifFalse = Option(end)
+    }
+    link(start, condSt)
+
+    (start, end)
   }
 
   /** Destruct an for loop.
@@ -91,7 +110,7 @@ object DestructNew {
     *   |     |
     * update--|
     *
-    * loop start is start node of update. **after continue, you first goto update rather than test**
+    * loop start is start node of update. **after continue, you should first goto update rather than test**
     * loop end is ifFalse branch of test
    */
   private def destructFor(forstmt: For): (CFG, CFG) = {
@@ -105,10 +124,10 @@ object DestructNew {
     assert(forstmt.condition.eval.isDefined)
     val cfgCond = CFGConditional(placeStr+"_cond", forstmt.condition.eval.get, Option(bodySt), Option(end))
 
-    linkCFG(start, initSt)
-    linkCFG(initEd, condSt)
-    linkCFG(condEd, cfgCond)
-    linkCFG(cfgCond.next.get.next.get, updSt)
+    link(start, initSt)
+    link(initEd, condSt)
+    link(condEd, cfgCond)
+    link(bodyEd, updSt)
 
     (start, end)
   }
@@ -117,7 +136,19 @@ object DestructNew {
     * pretty much the same as the previous one.
    */
   private def destructWhile(whilestmt: While): (CFG, CFG) = {
-    throw new NotImplementedError()
+    val placeStr = s"r${whilestmt.line},c${whilestmt.col}"
+    val (start, end) = create(placeStr)
+    val (condSt, condEd) = DestructNew(whilestmt.condition)
+    val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
+
+    assert(whilestmt.condition.eval.isDefined)
+    val cfgCond = CFGConditional(placeStr+"_cond", whilestmt.condition.eval.get, Option(bodySt), Option(end))
+
+    link(start, condSt)
+    link(condEd, cfgCond)
+    link(bodyEd, condSt)
+
+    (start, end)
   }
 
   /**
@@ -133,8 +164,8 @@ object DestructNew {
     val (blockSt, blockEd) = DestructNew(method.block)
     val cfgMthd = CFGMethod(method.name, Option(blockSt), params)
 
-    linkCFG(start, cfgMthd)
-    linkCFG(cfgMthd, end)
+    link(start, cfgMthd)
+    link(cfgMthd, end)
     (start, end)
   }
 
@@ -151,7 +182,7 @@ object DestructNew {
 
     for (param <- call.params) {
       val (st, ed) = DestructNew(param)
-      linkCFG(last, st)
+      link(last, st)
       last = ed
       assert(param.eval.isDefined)
       paramList += param.eval.get
@@ -159,17 +190,17 @@ object DestructNew {
 
     val mthdCal = CFGMethodCall(placeStr+"_call", paramList.toVector, call.method.get.name)
 
-    linkCFG(last, mthdCal)
+    link(last, mthdCal)
     last = mthdCal
 
     if (call.method.get.typ != Option(VoidType)) {
       assert(call.block.isDefined)
       val (st, ed) = DestructNew(call.block.get)
-      linkCFG(last, st)
+      link(last, st)
       last = ed
     }
 
-    linkCFG(last, end)
+    link(last, end)
     (start, end)
   }
 
@@ -178,8 +209,8 @@ object DestructNew {
     val fields = program.fields
     val methods = program.methods map (DestructNew(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
     val cfg = CFGProgram("program", fields, methods)
-    linkCFG(start, cfg)
-    linkCFG(cfg, end)
+    link(start, cfg)
+    link(cfg, end)
     (start, end)
   }
 
