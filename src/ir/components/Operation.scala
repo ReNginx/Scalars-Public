@@ -1,7 +1,8 @@
 package ir.components
 
 trait Operation {
-
+  def line: Int
+  def col: Int
 }
 
 trait UnaryOperation extends Expression with Operation
