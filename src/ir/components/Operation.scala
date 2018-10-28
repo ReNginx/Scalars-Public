@@ -12,7 +12,7 @@ case class Not(
     col: Int,
     override val eval: Option[Location],
     override val block: Option[Block],
-    expression: Expression) extends UnaryOperation {
+    var expression: Expression) extends UnaryOperation {
 
   def typ: Option[Type] = Option(BoolType)
   override def toString: String = s"[Not] ${typ.get}  (${line}:${col})"
@@ -23,7 +23,7 @@ case class Negate(
     col: Int,
     override val eval: Option[Location],
     override val block: Option[Block],
-    expression: Expression) extends UnaryOperation {
+    var expression: Expression) extends UnaryOperation {
 
   def typ: Option[Type] = Option(IntType)
   override def toString: String = s"[Negate] ${typ.get}  (${line}:${col})"
