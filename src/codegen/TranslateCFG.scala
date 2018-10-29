@@ -115,7 +115,7 @@ object TranslateCFG {
         output(label + ":")
         output(s"\tmovq ${condition.eval.get.rep}, %rax")
         output(s"\ttest %rax, %rax")
-        output(s"\tjne ${ifFalse.get.label}")
+        output(s"\tje ${ifFalse.get.label}")
 
         assert(end.isDefined)
         if (next.isDefined) {

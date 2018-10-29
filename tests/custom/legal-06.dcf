@@ -1,7 +1,9 @@
+import printf;
 int array[10];
 void main ( ) {
   int j;
   for ( j = 0; j < len(array); j += 1 ) {
-    // array[j] = j*2;
+     array[j] = j*2;
+     printf("%d\n",array[j]);
   }
 }
