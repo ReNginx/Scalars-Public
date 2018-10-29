@@ -172,10 +172,10 @@ object Compiler {
 
     val irModified = IRto3Addr(ir, iter)
 
-//    val cfg: Tuple3[CFG, CFG, Option[Location]] = Destruct(irModified)
-//    Allocate(cfg._1)
-//    TranslateCFG(cfg._1)
-//    TranslateCFG.close()
+    val (start, end) = DestructNew(irModified)
+    Allocate(start)
+    TranslateCFG(start)
+    TranslateCFG.close()
 
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
