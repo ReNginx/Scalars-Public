@@ -10,6 +10,8 @@ trait Expression extends IR {
   def block: Option[Block] = None
 
   def rep: String = "" //only location and literal would have this.
+
+  def cfgRep: String = ""
 }
 
 case class Length(line: Int, col: Int, location: Location) extends Expression {
@@ -76,6 +78,11 @@ case class Location(
         s"%${reg.reg}"
       }
     }
+  }
+
+  override def cfgRep: String = {
+    assert(field.isDefined)
+    field.get.name
   }
 
   def indexCheck: Vector[String] = {

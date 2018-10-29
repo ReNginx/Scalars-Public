@@ -174,12 +174,16 @@ object Compiler {
     val irModified = IRto3Addr(ir, iter)
 
     val (start, end) = DestructNew(irModified)
+    PrintCFG.init()
+    PrintCFG(start)
+    PrintCFG.close()
+
     Allocate(start)
     TranslateCFG(start)
     TranslateCFG.close()
 
     if (debugSwitch) {
-      println("\nPrinting execution result\n")
+      println("\n\n\n\nPrinting execution result\n")
       "gcc -o output output.s".!
       "./output".!
 

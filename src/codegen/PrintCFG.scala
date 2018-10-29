@@ -1,21 +1,35 @@
 package codegen
 
-import ir.components._
+import java.io.{BufferedWriter, File, FileWriter}
 
+import ir.components._
+import sys.process._
 import scala.collection.mutable.{ArrayBuffer, HashSet, Map, Set}
 
 object PrintCFG {
+  var fileName: String = "cfg.dot"
+  lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
+  def init(): Unit = {
+    writer.write("digraph ER { \n")
+  }
+
+  def close(): Unit = {
+    writer.write("label=\"cfg graph\"}")
+    writer.close()
+    s"dot -Tpng ${fileName} -o cfg.png"!
+  }
 
   def doHeader(cfg: CFG): Unit = {
     println("\n\n#########START")
-    println(cfg.label)
+    println(cfg.getClass.toString + ":  " + cfg.label)
   }
 
   def prtNext(cfg: CFG): Unit = {
     if (cfg.next.isDefined) {
       println("Next: " + cfg.next.get.label)
-      println("#########END\n\n")
+      writer.write(s"${cfg.label} -> ${cfg.next.get.label};\n")
     }
+    println("#########END\n\n")
   }
 
   def goNext(cfg: CFG): Unit = {
@@ -28,6 +42,7 @@ object PrintCFG {
     if (cfg.ifFalse.isDefined) {
       println("False " + cfg.ifFalse.get.label)
       println("\n\n")
+      writer.write(s"${cfg.label} -> ${cfg.ifFalse.get.label};\n")
     }
   }
 
@@ -56,19 +71,40 @@ object PrintCFG {
       case block: CFGBlock => {
         doHeader(block)
         block.statements foreach {
-          case _: AssignStatement =>
-          case _: CompoundAssignStatement =>
-          case _: Increment =>
-          case _: Decrement =>
-          case _: UnaryOperation =>
-          case _: BinaryOperation =>
+          case assign: AssignStatement => {
+            assert(assign.loc.eval.isDefined)
+            println(s"Assign ${assign.loc.eval.get.cfgRep}, ${assign.value.cfgRep}")
+          }
+          case compoundAsg: CompoundAssignStatement => {
+            assert(compoundAsg.loc.eval.isDefined)
+            println(s"CompoundAssign ${compoundAsg.loc.eval.get.cfgRep}, ${compoundAsg.value.cfgRep}")
+          }
+          case inc: Increment => {
+            assert(inc.loc.eval.isDefined)
+            println(s"Inc ${inc.loc.eval.get.cfgRep}")
+          }
+          case dec: Decrement => {
+            assert(dec.loc.eval.isDefined)
+            println(s"Inc ${dec.loc.eval.get.cfgRep}")
+          }
+          case unary: UnaryOperation => {
+            assert(unary.expression.eval.isDefined)
+            println(s"Inc ${unary.expression.eval.get.cfgRep}")
+          }
+          case binary: BinaryOperation => {
+            assert(binary.eval.isDefined)
+            println(s"Binary ${binary.eval.get.cfgRep}= ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
+          }
           case _ => throw new NotImplementedError()
         }
+
+        prtNext(block)
+        goNext(block)
       }
 
       case conditional: CFGConditional => {
         doHeader(conditional)
-        println(s"cond: ${conditional.condition.rep}")
+        println(s"cond: ${conditional.condition.cfgRep}")
 
         prtFalse(conditional)
         prtNext(conditional)
@@ -82,14 +118,17 @@ object PrintCFG {
         print("param_List: ")
         method.params foreach { x => print(x.name + " ") }
         println()
-        prtNext(method)
-        goNext(method)
+        if (method.block.isDefined) {
+          println("Block " + method.block.get.label)
+          writer.write(s"${method.label} -> ${method.block.get.label};\n")
+          PrintCFG(method.block.get)
+        }
       }
 
       case call: CFGMethodCall => {
         doHeader(call)
         println("param_List: ")
-        call.params foreach { x => print(x.rep + " ") }
+        call.params foreach { x => print(x.cfgRep + " ") }
         println()
         println(call.declaration)
         println()
