@@ -84,6 +84,7 @@ case class CFGMethod(
     label: String,
     var block: Option[CFG],  // for preventing recursion
     params: Vector[FieldDeclaration],
+    method: MethodDeclaration,
     var next: Option[CFG] = None,  // no meaning
     parents: Set[CFG] = Set()) extends CFG { // where declared
       var spaceAllocated: Int = 0;

@@ -267,7 +267,7 @@ object DestructNew {
     val (start, end) = create(placeStr)
     val params = method.params
     val (blockSt, blockEd) = DestructNew(method.block)
-    val cfgMthd = CFGMethod(method.name, Option(blockSt), params)
+    val cfgMthd = CFGMethod(method.name, Option(blockSt), params, method)
 
     link(start, cfgMthd)
     link(cfgMthd, end)
