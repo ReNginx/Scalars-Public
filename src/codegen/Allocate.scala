@@ -44,6 +44,10 @@ object Allocate {
           statement match {
             case field: FieldDeclaration => allocateDecl(field)
             case assign: Assignment => allocateDecl(assign.loc.field.get)
+            case oper: Operation => {
+              if (oper.eval.get.isInstanceOf[Location])
+                allocateDecl(oper.eval.get.asInstanceOf[Location].field.get)
+            }
             case _ =>
           }
         }
@@ -55,8 +59,7 @@ object Allocate {
       case CFGConditional(_, condition, _, next, ifFalse, _) => {
         condition.eval.get match {
           case variable: VariableDeclaration => {
-            variable.offset = offset
-            offset -= sizeOfVar
+            allocateDecl(variable)
           }
           case literal: Literal =>
           case _ => throw new NotImplementedError()
@@ -69,8 +72,7 @@ object Allocate {
 
       case CFGMethod(_, block, params, _, _, _) => {
         for (param <- params) {
-          param.asInstanceOf[VariableDeclaration].offset = offset
-          offset -= sizeOfVar
+          allocateDecl(param.asInstanceOf[VariableDeclaration])
         }
 
         Allocate(block.get)
