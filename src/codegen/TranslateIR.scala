@@ -16,136 +16,139 @@ object TranslateIR {
           case op: Operation => {
             op match {
               case ury: UnaryOperation => {
-                res += s"movq ${ury.eval.get.rep}, %rax"
+                res += s"\tmovq ${ury.eval.get.rep}, %rax"
 
                 ury match {
                   case not: Not => {
-                    res += s"not %rax"
+                    res += s"\tnot %rax"
                   }
 
                   case neg: Negate => {
-                    res += s"neg %rax"
+                    res += s"\tneg %rax"
                   }
                 }
               }
+
               case ari: ArithmeticOperation => {
-                res += s"movq ${ari.lhs.rep}, %rax"
+                res += s"\tmovq ${ari.lhs.rep}, %rax"
 
                 ari.operator match {
                   case Add => {
-                    res += s"addq ${ari.rhs.rep}, %rax"
+                    res += s"\taddq ${ari.rhs.rep}, %rax"
                   }
 
                   case Subtract => {
-                    res += s"subq ${ari.rhs.rep}, %rax"
+                    res += s"\tsubq ${ari.rhs.rep}, %rax"
                   }
 
                   case Divide => {
-                    res += s"idivq ${ari.rhs.rep}"
+                    res += s"\tidivq ${ari.rhs.rep}"
                   }
 
                   case Modulo => {
-                    res += s"idivq ${ari.rhs.rep}"
-                    res += s"movq %rdx, %rax"
+                    res += s"\tidivq ${ari.rhs.rep}"
+                    res += s"\tmovq %rdx, %rax"
                   }
 
                   case Multiply => {
-                    res += s"imulq ${ari.rhs.rep}"
+                    res += s"\timulq ${ari.rhs.rep}"
                   }
                 }
               }
 
               case log: LogicalOperation => {
-                res += s"movq ${log.lhs.rep}, %rdx"
-                res += s"movq ${log.rhs.rep}, %rax"
+                res += s"\tmovq ${log.lhs.rep}, %rdx"
+                res += s"\tmovq ${log.rhs.rep}, %rax"
 
                 log.operator match {
                   case Equal => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"sete %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsete %al"
                   }
 
                   case NotEqual => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"setne %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsetne %al"
                   }
 
                   case GreaterThan => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"setg %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsetg %al"
                   }
 
                   case GreaterThanOrEqual => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"setge %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsetge %al"
                   }
 
                   case LessThan => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"setl %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsetl %al"
                   }
 
                   case LessThanOrEqual => {
-                    res += s"cmpq %rax, %rdx"
-                    res += s"setle %al"
+                    res += s"\tcmpq %rax, %rdx"
+                    res += s"\tsetle %al"
                   }
+
+                  case _ => throw new NotImplementedError()
                 }
 
-                res += s"movzbl %al, %eax"
+                res += s"\tmovzbl %al, %eax"
               }
             }
           }
 
           case loc: Location => {
-            res += s"movq %rax, ${loc.rep}"
+            res += s"\tmovq %rax, ${loc.rep}"
           }
           case lit: Literal => {
-            res += s"movq %rax, ${lit.rep}"
+            res += s"\tmovq %rax, ${lit.rep}"
           }
         }
 
-        res += s"movq %rax, ${assign.loc.rep}"
+        res += s"\tmovq %rax, ${assign.loc.rep}"
       }
 
       case compAsg: CompoundAssignStatement => {
-        res += s"movq ${compAsg.loc.rep}, %rax"
+        res += s"\tmovq ${compAsg.loc.rep}, %rax"
         compAsg.operator match {
           case Add => {
-            res += s"addq ${compAsg.value.rep}, %rax"
+            res += s"\taddq ${compAsg.value.rep}, %rax"
           }
           case Subtract => {
-            res += s"subq ${compAsg.value.rep}, %rax"
+            res += s"\tsubq ${compAsg.value.rep}, %rax"
           }
         }
-        res += s"movq %rax, ${compAsg.value.rep}"
+        res += s"\tmovq %rax, ${compAsg.value.rep}"
       }
 
       case inc: Increment => {
         res ++= inc.loc.indexCheck
-        res += s"incq ${inc.loc.rep}"
+        res += s"\tincq ${inc.loc.rep}"
       }
 
       case dec: Decrement => {
         res ++= dec.loc.indexCheck
-        res += s"decq ${dec.loc.rep}"
+        res += s"\tdecq ${dec.loc.rep}"
       }
 
       case ret: Return => {
         if (ret.value.isDefined) {
-          res += s"movq, ${ret.value.get.rep}, %rax)"
+          res += s"\tmovq, ${ret.value.get.rep}, %rax)"
         }
-        res += s"leave"
-        res += s"ret"
+        res += s"\tleave"
+        res += s"\tret"
       }
 
       case variable: VariableDeclaration => {
           res += s"${variable.name}:"
-          res += s".zero 8"
+          res += s"\t.zero 8"
       }
 
       case array: ArrayDeclaration => {
         res += s"${array.name}:"
-        res += s".zero ${8*array.length.value}"
+        res += s"\t.zero ${8*array.length.value}"
       }
 
       case _ => throw new NotImplementedError
