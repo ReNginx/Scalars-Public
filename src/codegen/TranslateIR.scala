@@ -25,7 +25,7 @@ object TranslateIR {
             res += s"\tsubq ${compAsg.value.rep}, %rax"
           }
         }
-        res += s"\tmovq %rax, ${compAsg.value.rep}"
+        res += s"\tmovq %rax, ${compAsg.loc.rep}"
       }
 
       case inc: Increment => {
