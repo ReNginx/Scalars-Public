@@ -84,7 +84,7 @@ object Allocate {
       case CFGProgram(_, fields, methods, _, _) => {
         fields foreach {
           case array: ArrayDeclaration => array.isGlobal = true
-          case variable: ArrayDeclaration => variable.isGlobal = true
+          case variable: VariableDeclaration => variable.isGlobal = true
         }
 
         for (method <- methods) {
