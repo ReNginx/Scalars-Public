@@ -37,7 +37,7 @@ case class VariableDeclaration(
     else if (isReg)
       s"%${reg}"
     else
-      s"$$${offset}(%rsp)"
+      s"${offset}(%rsp)"
   }
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
