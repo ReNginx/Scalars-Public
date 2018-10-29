@@ -15,28 +15,20 @@ object PrettyPrint {
 
       // Assignment
 
-      case AssignStatement(line, col, loc, value, valueBlock) => {
+      case AssignStatement(line, col, loc, value) => {
         println(ir)
         println(leadingWS + "- location")
         PrettyPrint(loc, indentLevel + 1)
         println(leadingWS + "- value")
         PrettyPrint(value, indentLevel + 1)
-        if (!valueBlock.isEmpty) {
-          println(leadingWS + "- valueBlock")
-          PrettyPrint(valueBlock.get, indentLevel + 1)
-        }
       }
 
-      case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => {
+      case CompoundAssignStatement(line, col, loc, value, operator) => {
         println(ir)
         println(leadingWS + "- location")
         PrettyPrint(loc, indentLevel + 1)
         println(leadingWS + "- value")
         PrettyPrint(value, indentLevel + 1)
-        if (!valueBlock.isEmpty) {
-          println(leadingWS + "- valueBlock")
-          PrettyPrint(valueBlock.get, indentLevel + 1)
-        }
       }
 
       case Increment(line, col, loc) => {
@@ -53,7 +45,7 @@ object PrettyPrint {
 
       // Call
 
-      case MethodCall(line, col, name, params, paramBlocks, method) => {
+      case MethodCall(line, col, name, params, method) => {
         println(ir)
         println(leadingWS + "- params")
         params foreach { PrettyPrint(_, indentLevel + 1) }
@@ -68,7 +60,7 @@ object PrettyPrint {
         PrettyPrint(location)
       }
 
-      case Location(line, col, name, index, indexBlock, field) => {
+      case Location(line, col, name, index, field) => {
         println(ir)
         if (!index.isEmpty) {
           println(leadingWS + "- index")
@@ -120,7 +112,7 @@ object PrettyPrint {
 
       // Loop
 
-      case For(line, col, start, condition, conditionBlock, update, ifTrue) => {
+      case For(line, col, start, condition, update, ifTrue) => {
         println(ir)
         println(leadingWS + "- start")
         PrettyPrint(start, indentLevel + 1)
@@ -132,7 +124,7 @@ object PrettyPrint {
         PrettyPrint(ifTrue, indentLevel + 1)
       }
 
-      case While(line, col, condition, conditionBlock, ifTrue) => {
+      case While(line, col, condition, ifTrue) => {
         println(ir)
         println(leadingWS + "- condition")
         PrettyPrint(condition, indentLevel + 1)
@@ -276,7 +268,7 @@ object PrettyPrint {
         */
       }
 
-      case Return(line, col, value, valueBlock) => {
+      case Return(line, col, value) => {
         println(ir)
         if (!value.isEmpty) {
           println(leadingWS + "- value")
@@ -284,7 +276,7 @@ object PrettyPrint {
         }
       }
 
-      case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => {
+      case If(line, col, condition, ifTrue, ifFalse) => {
         println(ir)
         println(leadingWS + "- condition")
         PrettyPrint(condition, indentLevel + 1)

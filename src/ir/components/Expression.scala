@@ -31,7 +31,6 @@ case class Location(
                      col: Int,
                      name: String,
                      var index: Option[Expression], // lcoation or int linteral
-                     indexBlock: Option[Block],
                      var field: Option[FieldDeclaration] = None) extends Expression {
   self =>
 

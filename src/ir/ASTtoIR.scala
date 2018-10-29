@@ -75,7 +75,7 @@ object ASTtoIR {
 
       case DecafParserTokenTypes.METHOD_CALL => {
         val rhs = children(1).children map { ASTtoIR(_).asInstanceOf[Expression] }
-        MethodCall(lhsLoc.line, lhsLoc.col, lhsLoc.name, rhs, Vector())
+        MethodCall(lhsLoc.line, lhsLoc.col, lhsLoc.name, rhs, None)
       }
 
       case DecafParserTokenTypes.PROGRAM => {
@@ -215,9 +215,9 @@ object ASTtoIR {
         Block(line, col, fieldDecls, statements)
       }
 
-      case DecafParserTokenTypes.ASSIGN       => AssignStatement(line, col, lhsLoc, rhsExpr, None)
-      case DecafParserTokenTypes.PLUS_ASSIGN  => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, None, Add)
-      case DecafParserTokenTypes.MINUS_ASSIGN => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, None, Subtract)
+      case DecafParserTokenTypes.ASSIGN       => AssignStatement(line, col, lhsLoc, rhsExpr)
+      case DecafParserTokenTypes.PLUS_ASSIGN  => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Add)
+      case DecafParserTokenTypes.MINUS_ASSIGN => CompoundAssignStatement(line, col, lhsLoc, rhsExpr, Subtract)
 
       // CONDITION is just an expression
       case DecafParserTokenTypes.CONDITION => isVirtualNode
@@ -239,7 +239,7 @@ object ASTtoIR {
           }
         }
 
-        If(line, col, condition, None, ifTrue, ifFalse)
+        If(line, col, condition, ifTrue, ifFalse)
       }
 
       // FOR_START is just ASSIGN
@@ -260,23 +260,23 @@ object ASTtoIR {
       case DecafParserTokenTypes.TK_while => {
         val condition = lhsExpr
         val block = rhs.asInstanceOf[Block]
-        While(line, col, condition, None, block)
+        While(line, col, condition, block)
       }
       case DecafParserTokenTypes.TK_for => {
         val start = lhs.asInstanceOf[AssignStatement]
         val condition = rhsExpr
         val update = ASTtoIR(children(2)).asInstanceOf[Assignment]
         val block  = ASTtoIR(children(3)).asInstanceOf[Block]
-        For(line, col, start, condition, None, update, block)
+        For(line, col, start, condition, update, block)
       }
 
       case DecafParserTokenTypes.TK_len    => Length(line, col, lhsLoc)
       case DecafParserTokenTypes.TK_return => {
         if (children.size == 0) {
-          Return(line, col, None, None)
+          Return(line, col, None)
         }
         else {
-          Return(line, col, Option(lhsExpr), None)
+          Return(line, col, Option(lhsExpr))
         }
       }
 

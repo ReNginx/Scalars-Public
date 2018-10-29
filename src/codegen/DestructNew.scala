@@ -66,10 +66,10 @@ object DestructNew {
       case And => {
         val assignTrue = AssignStatement(expr.line, expr.col,
           expr.eval.get,
-          BoolLiteral(expr.line, expr.col, true), None)
+          BoolLiteral(expr.line, expr.col, true))
         val assignFalse = AssignStatement(expr.line, expr.col,
           expr.eval.get,
-          BoolLiteral(expr.line, expr.col, false), None)
+          BoolLiteral(expr.line, expr.col, false))
 
         val (trueSt, trueEd) = DestructNew(assignTrue)
         val (falseSt, falseEd) = DestructNew(assignFalse)
@@ -87,10 +87,10 @@ object DestructNew {
       case Or => {
         val assignTrue = AssignStatement(expr.line, expr.col,
           expr.eval.get,
-          BoolLiteral(expr.line, expr.col, true), None)
+          BoolLiteral(expr.line, expr.col, true))
         val assignFalse = AssignStatement(expr.line, expr.col,
           expr.eval.get,
-          BoolLiteral(expr.line, expr.col, false), None)
+          BoolLiteral(expr.line, expr.col, false))
 
         val (trueSt, trueEd) = DestructNew(assignTrue)
         val (falseSt, falseEd) = DestructNew(assignFalse)
@@ -305,8 +305,7 @@ object DestructNew {
       if (call.eval.isDefined) {
         val copy = AssignStatement(call.line, call.col,
           call.eval.get.asInstanceOf[Location],
-          Location(0,0,"rax",None,None,Option(Registers("rax"))),
-          None)
+          Location(0,0,"rax",None,Option(Registers("rax"))))
         val block = CFGBlock(placeStr+"_block", ArrayBuffer(copy))
         link(last, block)
         last = block
@@ -488,10 +487,10 @@ object DestructNew {
 
         val assignTrue = AssignStatement(expr.line, expr.col,
           ternaryOperation.eval.get,
-          ternaryOperation.ifTrue.eval.get, None)
+          ternaryOperation.ifTrue.eval.get)
         val assignFalse = AssignStatement(expr.line, expr.col,
           ternaryOperation.eval.get,
-          ternaryOperation.ifFalse.eval.get, None)
+          ternaryOperation.ifFalse.eval.get)
 
         val (trueSt, trueEd) = DestructNew(assignTrue)
         val (falseSt, falseEd) = DestructNew(assignFalse)

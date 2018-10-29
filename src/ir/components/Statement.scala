@@ -22,8 +22,7 @@ case class Continue(
 case class Return(
   line: Int,
   col: Int,
-  var value: Option[Expression],
-  valueBlock: Option[Block]) extends Statement {
+  var value: Option[Expression]) extends Statement {
   override def toString: String = s"[Return]  (${line}:${col})"
 }
 
@@ -31,7 +30,6 @@ case class If(
     line: Int,
     col: Int,
     condition: Expression,
-    conditionBlock: Option[Block],
     ifTrue: Block,
     ifFalse: Option[Block]) extends Statement {
 

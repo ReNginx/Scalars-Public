@@ -20,14 +20,14 @@ object IRto3Addr {
 
       // Assignment
 
-      case AssignStatement(line, col, loc, value, valueBlock) => {
+      case AssignStatement(line, col, loc, value) => {
         irModified = ir.asInstanceOf[AssignStatement].copy(
           loc = IRto3Addr(loc, iter).asInstanceOf[Location],
           value = IRto3Addr(value, iter).asInstanceOf[Expression]
         )
       }
 
-      case CompoundAssignStatement(line, col, loc, value, valueBlock, operator) => {
+      case CompoundAssignStatement(line, col, loc, value, operator) => {
         irModified = ir.asInstanceOf[CompoundAssignStatement].copy(
           loc = IRto3Addr(loc, iter).asInstanceOf[Location],
           value = IRto3Addr(value, iter).asInstanceOf[Expression]
@@ -48,7 +48,7 @@ object IRto3Addr {
 
       // Call
 
-      case MethodCall(line, col, name, params, paramBlocks, method) => {
+      case MethodCall(line, col, name, params, method) => {
         irModified = ir.asInstanceOf[MethodCall].copy(
           params = params.map(IRto3Addr(_, iter).asInstanceOf[Expression])
           // Do not recurse into method declaration
@@ -63,7 +63,7 @@ object IRto3Addr {
         )
       }
 
-      case Location(line, col, name, index, indexBlock, field) => {
+      case Location(line, col, name, index, field) => {
         irModified = ir.asInstanceOf[Location].copy(
           index = if (!index.isEmpty)
             Some(IRto3Addr(index.get, iter).asInstanceOf[Expression])
@@ -110,7 +110,7 @@ object IRto3Addr {
 
       // Loop
 
-      case For(line, col, start, condition, conditionBlock, update, ifTrue) => {
+      case For(line, col, start, condition, update, ifTrue) => {
         irModified = ir.asInstanceOf[For].copy(
           start = IRto3Addr(start, iter).asInstanceOf[AssignStatement],
           condition = IRto3Addr(condition, iter).asInstanceOf[Expression],
@@ -119,7 +119,7 @@ object IRto3Addr {
         )
       }
 
-      case While(line, col, condition, conditionBlock, ifTrue) => {
+      case While(line, col, condition, ifTrue) => {
         irModified = ir.asInstanceOf[While].copy(
           condition = IRto3Addr(condition, iter).asInstanceOf[Expression],
           ifTrue = IRto3Addr(ifTrue, iter).asInstanceOf[Block]
@@ -153,8 +153,8 @@ object IRto3Addr {
 
         expressionChild match {
           case
-            Location (_, _, _, _, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
@@ -171,8 +171,8 @@ object IRto3Addr {
 
         val varIndex = iter.next
         val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
-        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
-        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew)
         val blockNew = blockChild.asInstanceOf[Block].copy(
           declarations = blockChild.declarations :+ varNew,
           statements = blockChild.statements :+ statementNew
@@ -195,9 +195,9 @@ object IRto3Addr {
 
         expressionChild match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
@@ -215,8 +215,8 @@ object IRto3Addr {
 
         val varIndex = iter.next
         val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(IntType))
-        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
-        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew)
         val blockNew = blockChild.asInstanceOf[Block].copy(
           declarations = blockChild.declarations :+ varNew,
           statements = blockChild.statements :+ statementNew
@@ -242,9 +242,9 @@ object IRto3Addr {
 
         expressionLHS match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockLHS = Block(0, 0, Vector(), Vector())
@@ -262,9 +262,9 @@ object IRto3Addr {
 
         expressionRHS match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockRHS = Block(0, 0, Vector(), Vector())
@@ -282,8 +282,8 @@ object IRto3Addr {
 
         val varIndex = iter.next
         val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(IntType))
-        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
-        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew)
         val blockNew = blockLHS.asInstanceOf[Block].copy(
           declarations = blockLHS.declarations ++ blockRHS.declarations :+ varNew,
           statements = blockLHS.statements ++ blockRHS.statements :+ statementNew
@@ -309,9 +309,9 @@ object IRto3Addr {
 
         expressionLHS match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -330,9 +330,9 @@ object IRto3Addr {
 
         expressionRHS match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -351,8 +351,8 @@ object IRto3Addr {
 
         val varIndex = iter.next
         val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
-        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
-        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew)
         val blockNew = blockLHS.asInstanceOf[Block].copy(
           declarations = blockLHS.declarations ++ blockRHS.declarations :+ varNew,
           statements = blockLHS.statements ++ blockRHS.statements :+ statementNew
@@ -381,8 +381,8 @@ object IRto3Addr {
 
         expressionCond match {
           case
-            Location (_, _, _, _, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) => {
             blockCond = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
@@ -399,9 +399,9 @@ object IRto3Addr {
 
         expressionTrue match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -420,9 +420,9 @@ object IRto3Addr {
 
         expressionFalse match {
           case
-            Location (_, _, _, _, _, _) |
+            Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _, _) |
+            MethodCall (_, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -441,8 +441,8 @@ object IRto3Addr {
 
         val varIndex = iter.next
         val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
-        val evalNew = Location(0, 0, varNew.name, None, None, Some(varNew))
-        val statementNew = AssignStatement(0, 0, evalNew, exprNew, None)
+        val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+        val statementNew = AssignStatement(0, 0, evalNew, exprNew)
         val blockNew = blockCond.asInstanceOf[Block].copy(
           declarations = blockCond.declarations ++ blockTrue.declarations ++ blockFalse.declarations :+ varNew,
           statements = blockCond.statements ++ blockTrue.statements ++ blockFalse.statements :+ statementNew
@@ -494,7 +494,7 @@ object IRto3Addr {
         */
       }
 
-      case Return(line, col, value, valueBlock) => {
+      case Return(line, col, value) => {
         irModified = ir.asInstanceOf[Return].copy(
           value = if (!value.isEmpty)
             Some(IRto3Addr(value.get, iter).asInstanceOf[Expression])
@@ -502,7 +502,7 @@ object IRto3Addr {
         )
       }
 
-      case If(line, col, condition, conditionBlock, ifTrue, ifFalse) => {
+      case If(line, col, condition, ifTrue, ifFalse) => {
         irModified = ir.asInstanceOf[If].copy(
           condition = IRto3Addr(condition, iter).asInstanceOf[Expression],
           ifTrue = IRto3Addr(ifTrue, iter).asInstanceOf[Block],
