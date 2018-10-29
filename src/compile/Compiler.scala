@@ -2,6 +2,7 @@ package compile
 
 import java.io._
 import scala.Console
+import sys.process._
 
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
 import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
@@ -178,6 +179,10 @@ object Compiler {
     TranslateCFG.close()
 
     if (debugSwitch) {
+      println("\nPrinting execution result\n")
+      "gcc -o output output.s".!
+      "./output".!
+
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree view:")
       PrettyPrint(irModified)

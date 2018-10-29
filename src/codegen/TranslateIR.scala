@@ -12,7 +12,7 @@ object TranslateIR {
     ir match {
       case assign: AssignStatement => { // assume that
         res ++= assign.loc.indexCheck
-        res ++= Helper.outputMov(assign.loc.rep, assign.value.rep)
+        res ++= Helper.outputMov(assign.value.rep, assign.loc.rep)
       }
 
       case compAsg: CompoundAssignStatement => {
@@ -85,16 +85,20 @@ object TranslateIR {
               }
 
               case Divide => {
-                res += s"\tidivq ${ari.rhs.rep}"
+                res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
+                res += s"cqto"
+                res += s"\tidivq %rsi"
               }
 
               case Modulo => {
-                res += s"\tidivq ${ari.rhs.rep}"
+                res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
+                res += s"\tidivq %rsi"
+                res += s"cqto"
                 res += s"\tmovq %rdx, %rax"
               }
 
               case Multiply => {
-                res += s"\timulq ${ari.rhs.rep}"
+                res += s"\timul ${ari.rhs.rep}, %rax"
               }
             }
           }

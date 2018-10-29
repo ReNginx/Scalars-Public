@@ -128,9 +128,10 @@ object TranslateCFG {
       case CFGMethodCall(_, params, declaration, next, _) => {
         val sizePushedToStack = paramCopy(params)
         //we call this function
+        output(s"\txor %rax, %rax")
         output(s"\tcall ${declaration}")
         // destroy used params
-        output(s"\taddq %rsp ${sizePushedToStack}")
+        output(s"\taddq $$${sizePushedToStack}, %rsp")
 
         if (next.isDefined)
           TranslateCFG(next.get)
@@ -174,7 +175,7 @@ object TranslateCFG {
         output("noReturn:")
         output("\tmovq $-2, %rdi")
         output("\tcall exit")
-        output("\toutOfBound:")
+        output("outOfBound:")
         output("\tmovq $-1, %rdi")
         output("\tcall exit")
 

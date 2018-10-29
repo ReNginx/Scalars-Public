@@ -2,6 +2,12 @@ import printf;
 int i;
 
 void main () {
-    i = 1 + 2;
+    // i = 1 + 2 * 3;
+    // printf("%d\n", i);
+    i = 8 / 2;
     printf("%d\n", i);
+    // i = 7 % 2 + 3;
+    // printf("%d\n", i);
+    // i = 10 - 200 / 5;
+    // printf("%d\n", i);
 }
