@@ -85,7 +85,7 @@ object TranslateCFG {
 
   def apply(cfg: CFG, untilBlock: Option[CFG] = None): Unit = {
     if (cfg.isTranslated || Option(cfg) == untilBlock) {
-      output("jmp " + cfg.label)
+      output("\tjmp " + cfg.label)
       return
     }
 
@@ -115,7 +115,7 @@ object TranslateCFG {
         output(label + ":")
         output(s"\tmovq ${condition.eval.get.rep}, %rax")
         output(s"\ttest %rax, %rax")
-        output(s"jne ${ifFalse.get.label}")
+        output(s"\tjne ${ifFalse.get.label}")
 
         if (next.isDefined) {
           TranslateCFG(next.get, end)
