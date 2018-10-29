@@ -61,19 +61,25 @@ case class Location(
     assert(field.isDefined)
     field.get match {
       case variable: VariableDeclaration => {
-        assert(!variable.isGlobal || variable.isReg || variable.offset != 0)
-        variable.rep
+        assert(variable.isGlobal || variable.isReg || variable.offset != 0)
+        if (variable.isGlobal)
+          s"${variable.name}"
+        else if (variable.isReg)
+          s"%${variable.reg}"
+        else
+          s"$$${variable.offset}(%rsp)"
       }
       case ary: ArrayDeclaration => {
         assert(!ary.isGlobal || ary.offset != 0)
         if (ary.isGlobal)
-          return s"${ary.name}(, ${index.get.rep}, 8)"
+          s"${ary.name}(, ${index.get.rep}, 8)"
         else
-          return s"${ary.offset}(%rbp, ${index.get.rep}, 8)"
+          s"${ary.offset}(%rbp, ${index.get.rep}, 8)"
       }
-      case _ =>
+      case reg: Registers => {
+        s"%${reg.reg}"
+      }
     }
-    ""
   }
 
   def indexCheck: Vector[String] = {

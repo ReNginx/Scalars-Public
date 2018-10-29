@@ -31,7 +31,6 @@ case class VariableDeclaration(
   var isReg: Boolean = false
   var reg: String = ""
   var offset: Int = 0
-  def rep = s"$${offset.toString}(%rbp)"
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 

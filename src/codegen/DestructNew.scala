@@ -341,6 +341,7 @@ object DestructNew {
 
     assignment match {
       case asg: AssignStatement => {
+        println("Asghere") // DEBUG
         val (exprSt, exprEd) = DestructNew(asg.value)
         link(last, exprSt)
         asg.value = asg.value.eval.get
@@ -529,6 +530,7 @@ object DestructNew {
         counter += 1;
         val placeStr = s"emptyBlock${counter}"
         val (start, end) = create(placeStr)
+        link(start, end)
         (start, end)
       }
       case _ => throw new NotImplementedError()
