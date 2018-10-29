@@ -21,8 +21,14 @@ object TranslateCFG {
     writer.close()
   }
 
-  private def outputMov(from: String, to: String): Unit = {
-    outputVec(Helper.outputMov(from, to))
+  private def outputMov(from: String, to: String) = {
+    if (from(0) == '%' || to(0) == '%') {
+      output(s"\tmovq ${from}, ${to}")
+    }
+    else {
+      output(s"\tmovq ${from}, %rax")
+      output(s"\tmovq %rax, ${to}")
+    }
   }
 
   private def outputVec(strs: Vector[String]) = {

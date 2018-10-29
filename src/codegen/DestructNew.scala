@@ -57,7 +57,7 @@ object DestructNew {
     * @param expr : the expression to destruct
     */
   private def destructLogicalOperation(expr: LogicalOperation): (CFG, CFG) = {
-    val placeStr = s"r${expr.line},c${expr.col},Logical"
+    val placeStr = s"r${expr.line}_c${expr.col}_Logical"
     val (start, end) = create(placeStr)
     val (lhsSt, lhsEd) = DestructNew(expr.lhs)
     val (rhsSt, rhsEd) = DestructNew(expr.rhs)
@@ -128,7 +128,7 @@ object DestructNew {
   private def destructBlock(block: Block,
                             loopStart: Option[CFG] = None,
                             loopEnd: Option[CFG] = None): (CFG, CFG) = {
-    val placeStr = s"r${block.line},c${block.col},Block"
+    val placeStr = s"r${block.line}_c${block.col}_Block"
     val (start, end) = create(placeStr)
     var last = start
 
@@ -176,7 +176,7 @@ object DestructNew {
   private def destructIf(ifstmt: If,
                          loopStart: Option[CFG] = None,
                          loopEnd: Option[CFG] = None): (CFG, CFG) = {
-    val placeStr = s"r${ifstmt.line},c${ifstmt.col},If"
+    val placeStr = s"r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(ifstmt.condition)
     val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
@@ -218,7 +218,7 @@ object DestructNew {
     * loop end is ifFalse branch of test
     */
   private def destructFor(forstmt: For): (CFG, CFG) = {
-    val placeStr = s"r${forstmt.line},c${forstmt.col},For"
+    val placeStr = s"r${forstmt.line}_c${forstmt.col}_For"
     val (start, end) = create(placeStr)
     val (initSt, initEd) = DestructNew(forstmt.start)
     val (condSt, condEd) = DestructNew(forstmt.condition)
@@ -240,7 +240,7 @@ object DestructNew {
     * pretty much the same as the previous one.
     */
   private def destructWhile(whilestmt: While): (CFG, CFG) = {
-    val placeStr = s"r${whilestmt.line},c${whilestmt.col},While"
+    val placeStr = s"r${whilestmt.line}_c${whilestmt.col}_While"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(whilestmt.condition)
     val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
@@ -263,7 +263,7 @@ object DestructNew {
     * @return
     */
   private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG) = {
-    val placeStr = s"r${method.line},c${method.col},Method"
+    val placeStr = s"r${method.line}_c${method.col}_Method"
     val (start, end) = create(placeStr)
     val params = method.params
     val (blockSt, blockEd) = DestructNew(method.block)
@@ -281,7 +281,7 @@ object DestructNew {
     * @return (start, end, loc) where loc holds the
     */
   private def destructMethodCall(call: MethodCall): (CFG, CFG) = {
-    val placeStr = s"r${call.line},c${call.col},Call"
+    val placeStr = s"r${call.line}_c${call.col}_call"
     val (start, end) = create(placeStr)
     val paramList = ArrayBuffer[Expression]()
     var last = start
@@ -300,10 +300,7 @@ object DestructNew {
     last = mthdCal
 
     if (call.method.get.typ != Option(VoidType)) {
-      assert(call.block.isDefined)
-      val (st, ed) = DestructNew(call.block.get)
-      link(last, st)
-      last = ed
+      assert(call.eval.isDefined)
     }
 
     link(last, end)
@@ -332,7 +329,7 @@ object DestructNew {
     * assignment.loc.index = None or literal or location.
     */
   private def destructAssignment(assignment: Assignment): (CFG, CFG) = {
-    val placeStr = s"r${assignment.line},c${assignment.col},Assign"
+    val placeStr = s"r${assignment.line}_c${assignment.col}_Assign"
     val (start, end) = create(placeStr)
     val (locSt, locEd) = DestructNew(assignment.loc)
     var last = locEd
@@ -389,7 +386,7 @@ object DestructNew {
     * @return (start, end)
     */
   private def destructLocation(loc: Location): (CFG, CFG) = {
-    val placeStr = s"r${loc.line},c${loc.col},Loc"
+    val placeStr = s"r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
     if (loc.index.isDefined) {
       val (indexSt, indexEd) = DestructNew(loc.index.get)
@@ -413,7 +410,7 @@ object DestructNew {
     * @return
     */
   private def destructOperation(expr: Operation): (CFG, CFG) = {
-    val placeStr = s"r${expr.line},c${expr.col},Oper"
+    val placeStr = s"r${expr.line}_c${expr.col}_Oper"
     val (start, end) = create(placeStr)
 
     expr match {
