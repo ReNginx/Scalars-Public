@@ -1,5 +1,7 @@
+import printf;
 int i;
 
 void main () {
-    i = 1 + 2 * 3;
+    i = 1 + 2;
+    printf("%d\n", i);
 }

@@ -67,7 +67,7 @@ object TranslateCFG {
         }
 
         case str: StringLiteral => {
-          val name = s"str_r${str.line},c${str.col}";
+          val name = s"str_r${str.line}_c${str.col}";
           strs += Tuple2(name, str.value)
           output(s"\tmovq $$.${name}, ${regs}")
           output(s"\tpushq %rax")
