@@ -233,6 +233,7 @@ object DestructNew {
     link(initEd, condSt)
     link(condEd, cfgCond)
     link(bodyEd, updSt)
+    link(updEd, condSt)
 
     (start, end)
   }
@@ -525,6 +526,7 @@ object DestructNew {
              loopStart: Option[CFG] = None,
              loopEnd: Option[CFG] = None): (CFG, CFG) = {
     counter += 1;
+    //println(ir.getClass.toString) //DEBUG
     ir match {
       // assignment
       case block: Block => destructBlock(block, loopStart, loopEnd) // break and continue only appears here.

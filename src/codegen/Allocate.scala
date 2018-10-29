@@ -34,13 +34,16 @@ object Allocate {
       return
     cfg.isAllocated = true
 
+    //println(cfg.label) //DEBUG
+
     cfg match {
       case VirtualCFG(_, _, next) => {
         if (next.isDefined)
           Allocate(next.get)
       }
 
-      case CFGBlock(_, statements, next, _) => {
+      case CFGBlock(label, statements, next, _) => {
+        //println(label) //DEBUG
         for (statement <- statements) {
           statement match {
             case field: FieldDeclaration => allocateDecl(field)
@@ -54,7 +57,7 @@ object Allocate {
                 case _ => throw new NotImplementedError()
               }
             }
-            case _ =>
+            case _ => throw new NotImplementedError()
           }
         }
 
@@ -62,7 +65,7 @@ object Allocate {
             Allocate(next.get)
       }
 
-      case CFGConditional(_, condition, _, next, ifFalse, _) => {
+      case CFGConditional(_, condition, next, ifFalse, _, _) => {
         condition.eval.get match {
           case location: Location => {
             assert(location.field.isDefined)
@@ -71,10 +74,14 @@ object Allocate {
           case literal: Literal =>
           case _ => throw new NotImplementedError()
         }
-        if (next.isDefined)
+        if (next.isDefined) {
+          //println(next.get.label) //DEBUG
           Allocate(next.get)
-        if (ifFalse.isDefined)
+        }
+        if (ifFalse.isDefined) {
+          //println(ifFalse.get.label) //DEBUG
           Allocate(ifFalse.get)
+        }
       }
 
       case CFGMethod(_, block, params, _, _, _) => {
@@ -103,7 +110,7 @@ object Allocate {
         }
       }
 
-      case _ =>
+      case _ => throw new NotImplementedError()
     }
   }
 }

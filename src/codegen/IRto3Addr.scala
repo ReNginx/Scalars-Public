@@ -58,9 +58,10 @@ object IRto3Addr {
       // Expression
 
       case Length(line, col, location) => {
-        irModified = ir.asInstanceOf[Length].copy(
-          location = IRto3Addr(location, iter).asInstanceOf[Location]
-        )
+//        irModified = ir.asInstanceOf[Length].copy(
+//          location = IRto3Addr(location, iter).asInstanceOf[Location]
+//        )
+        irModified = ir.asInstanceOf[Length].location.field.get.asInstanceOf[ArrayDeclaration].length
       }
 
       case Location(line, col, name, index, field) => {
