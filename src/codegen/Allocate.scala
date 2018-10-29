@@ -46,8 +46,12 @@ object Allocate {
             case field: FieldDeclaration => allocateDecl(field)
             case assign: Assignment => allocateDecl(assign.loc.field.get)
             case oper: Operation => {
-              if (oper.eval.get.isInstanceOf[Location]) {
-                allocateDecl(oper.eval.get.asInstanceOf[Location].field.get)
+              oper.eval.get match {
+                case location: Location => {
+                  assert(location.field.isDefined)
+                  allocateDecl(location.field.get)
+                }
+                case _ => throw new NotImplementedError()
               }
             }
             case _ =>
@@ -60,8 +64,9 @@ object Allocate {
 
       case CFGConditional(_, condition, _, next, ifFalse, _) => {
         condition.eval.get match {
-          case variable: VariableDeclaration => {
-            allocateDecl(variable)
+          case location: Location => {
+            assert(location.field.isDefined)
+            allocateDecl(location.field.get)
           }
           case literal: Literal =>
           case _ => throw new NotImplementedError()
