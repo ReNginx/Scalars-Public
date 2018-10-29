@@ -301,6 +301,13 @@ object DestructNew {
 
     if (call.method.get.typ != Option(VoidType)) {
       assert(call.eval.isDefined)
+      val copy = AssignStatement(call.line, call.col,
+        call.eval.get.asInstanceOf[Location],
+        Location(0,0,"rax",None,None,Option(Registers("rax"))),
+        None)
+      val block = CFGBlock(placeStr+"_block", ArrayBuffer(copy))
+      link(last, block)
+      last = block
     }
 
     link(last, end)
