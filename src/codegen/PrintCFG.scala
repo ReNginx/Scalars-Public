@@ -9,6 +9,7 @@ import scala.collection.mutable.{ArrayBuffer, HashSet, Map, Set}
 object PrintCFG {
   var fileName: String = "cfg.dot"
   lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
+
   def init(): Unit = {
     writer.write("digraph ER { \n")
   }

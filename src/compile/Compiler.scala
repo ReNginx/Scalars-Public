@@ -174,6 +174,9 @@ object Compiler {
     val irModified = IRto3Addr(ir, iter)
 
     val (start, end) = DestructNew(irModified)
+
+    PeepHole(start)
+
     PrintCFG.init()
     PrintCFG(start)
     PrintCFG.close()

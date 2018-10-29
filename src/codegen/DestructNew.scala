@@ -57,7 +57,7 @@ object DestructNew {
     * @param expr : the expression to destruct
     */
   private def destructLogicalOperation(expr: LogicalOperation): (CFG, CFG) = {
-    val placeStr = s"r${expr.line}_c${expr.col}_Logical"
+    val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Logical"
     val (start, end) = create(placeStr)
     val (lhsSt, lhsEd) = DestructNew(expr.lhs)
     val (rhsSt, rhsEd) = DestructNew(expr.rhs)
@@ -128,7 +128,7 @@ object DestructNew {
   private def destructBlock(block: Block,
                             loopStart: Option[CFG] = None,
                             loopEnd: Option[CFG] = None): (CFG, CFG) = {
-    val placeStr = s"r${block.line}_c${block.col}_Block"
+    val placeStr = s"_${counter}_r${block.line}_c${block.col}_Block"
     val (start, end) = create(placeStr)
     var last = start
 
@@ -176,7 +176,7 @@ object DestructNew {
   private def destructIf(ifstmt: If,
                          loopStart: Option[CFG] = None,
                          loopEnd: Option[CFG] = None): (CFG, CFG) = {
-    val placeStr = s"r${ifstmt.line}_c${ifstmt.col}_If"
+    val placeStr = s"_${counter}_r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(ifstmt.condition)
     val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
@@ -193,6 +193,7 @@ object DestructNew {
       cfgCond.ifFalse = Option(end)
     }
     link(start, condSt)
+    link(nextEd, end)
 
     (start, end)
   }
@@ -218,7 +219,7 @@ object DestructNew {
     * loop end is ifFalse branch of test
     */
   private def destructFor(forstmt: For): (CFG, CFG) = {
-    val placeStr = s"r${forstmt.line}_c${forstmt.col}_For"
+    val placeStr = s"_${counter}_r${forstmt.line}_c${forstmt.col}_For"
     val (start, end) = create(placeStr)
     val (initSt, initEd) = DestructNew(forstmt.start)
     val (condSt, condEd) = DestructNew(forstmt.condition)
@@ -240,7 +241,7 @@ object DestructNew {
     * pretty much the same as the previous one.
     */
   private def destructWhile(whilestmt: While): (CFG, CFG) = {
-    val placeStr = s"r${whilestmt.line}_c${whilestmt.col}_While"
+    val placeStr = s"_${counter}_r${whilestmt.line}_c${whilestmt.col}_While"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(whilestmt.condition)
     val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
@@ -263,7 +264,7 @@ object DestructNew {
     * @return
     */
   private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG) = {
-    val placeStr = s"r${method.line}_c${method.col}_Method"
+    val placeStr = s"_${counter}_r${method.line}_c${method.col}_Method"
     val (start, end) = create(placeStr)
     val params = method.params
     val (blockSt, blockEd) = DestructNew(method.block)
@@ -281,7 +282,7 @@ object DestructNew {
     * @return (start, end, loc) where loc holds the
     */
   private def destructMethodCall(call: MethodCall): (CFG, CFG) = {
-    val placeStr = s"r${call.line}_c${call.col}_call"
+    val placeStr = s"_${counter}_r${call.line}_c${call.col}_call"
     val (start, end) = create(placeStr)
     val paramList = ArrayBuffer[Expression]()
     var last = start
@@ -338,7 +339,7 @@ object DestructNew {
     * assignment.loc.index = None or literal or location.
     */
   private def destructAssignment(assignment: Assignment): (CFG, CFG) = {
-    val placeStr = s"r${assignment.line}_c${assignment.col}_Assign"
+    val placeStr = s"_${counter}_r${assignment.line}_c${assignment.col}_Assign"
     val (start, end) = create(placeStr)
     val (locSt, locEd) = DestructNew(assignment.loc)
     var last = locEd
@@ -395,7 +396,7 @@ object DestructNew {
     * @return (start, end)
     */
   private def destructLocation(loc: Location): (CFG, CFG) = {
-    val placeStr = s"r${loc.line}_c${loc.col}_Loc"
+    val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
     if (loc.index.isDefined) {
       val (indexSt, indexEd) = DestructNew(loc.index.get)
@@ -419,7 +420,7 @@ object DestructNew {
     * @return
     */
   private def destructOperation(expr: Operation): (CFG, CFG) = {
-    val placeStr = s"r${expr.line}_c${expr.col}_Oper"
+    val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Oper"
     val (start, end) = create(placeStr)
 
     expr match {
@@ -466,15 +467,18 @@ object DestructNew {
       case logicalOperation: LogicalOperation => {
         val (exprSt, exprEd) = destructLogicalOperation(logicalOperation)
         link(start, exprSt)
+        link(exprEd, end)
+//        link(start, exprSt)
+//
+//        assert(logicalOperation.lhs.eval.isDefined)
+//        assert(logicalOperation.rhs.eval.isDefined)
+//        logicalOperation.lhs = logicalOperation.lhs.eval.get
+//        logicalOperation.rhs = logicalOperation.rhs.eval.get
+//
+//        val self = CFGBlock(placeStr + "_expr", ArrayBuffer(logicalOperation))
+//        link(exprEd, self)
+//        link(self, end)
 
-        assert(logicalOperation.lhs.eval.isDefined)
-        assert(logicalOperation.rhs.eval.isDefined)
-        logicalOperation.lhs = logicalOperation.lhs.eval.get
-        logicalOperation.rhs = logicalOperation.rhs.eval.get
-
-        val self = CFGBlock(placeStr + "_expr", ArrayBuffer(logicalOperation))
-        link(exprEd, self)
-        link(self, end)
       }
 
       case ternaryOperation: TernaryOperation => {
@@ -521,6 +525,7 @@ object DestructNew {
              ir: IR, // the end node of CFGProgram has no meaning
              loopStart: Option[CFG] = None,
              loopEnd: Option[CFG] = None): (CFG, CFG) = {
+    counter += 1;
     ir match {
       // assignment
       case block: Block => destructBlock(block, loopStart, loopEnd) // break and continue only appears here.
@@ -534,7 +539,6 @@ object DestructNew {
       case loc: Location => destructLocation(loc) // could only be array location
       case assign: Assignment => destructAssignment(assign)
       case literal: Literal => {
-        counter += 1;
         val placeStr = s"emptyBlock${counter}"
         val (start, end) = create(placeStr)
         link(start, end)
