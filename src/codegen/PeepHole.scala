@@ -43,6 +43,10 @@ object PeepHole {
           PeepHole(conditional.next.get)
         if (conditional.ifFalse.isDefined)
           PeepHole(conditional.ifFalse.get)
+        assert(conditional.end.isDefined)
+        for (parent <- conditional.end.get.parents) {
+          conditional.end = parent.next
+        }
       }
 
       case method: CFGMethod => {
