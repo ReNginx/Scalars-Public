@@ -1,3 +1,4 @@
+import printf;
 int x;
 int y;
 int z;
@@ -5,4 +6,5 @@ int a[10];
 
 void main () {
      z = x + y;
+     printf("%d", z);
 }

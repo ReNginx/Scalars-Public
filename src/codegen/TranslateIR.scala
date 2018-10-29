@@ -86,14 +86,14 @@ object TranslateIR {
 
               case Divide => {
                 res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
-                res += s"cqto"
+                res += s"\tcqto"
                 res += s"\tidivq %rsi"
               }
 
               case Modulo => {
                 res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
+                res += s"\tcqto"
                 res += s"\tidivq %rsi"
-                res += s"cqto"
                 res += s"\tmovq %rdx, %rax"
               }
 
