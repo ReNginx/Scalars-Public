@@ -1,113 +1,18 @@
 package codegen
 
-import scala.collection.mutable.{HashSet, Set, ArrayBuffer}
-import scala.collection.immutable.Map
-
 import ir.components._
-import ir.PrettyPrint
+
+import scala.collection.mutable.ArrayBuffer
 
 object TranslateIR {
   def apply(ir: IR): Vector[String] = { // assuming here we only have
     val res: ArrayBuffer[String] = ArrayBuffer()
+    println(ir.getClass.toString)
+
     ir match {
       case assign: AssignStatement => { // assume that
         res ++= assign.loc.indexCheck
-        assign.value match {
-          case op: Operation => {
-            op match {
-              case ury: UnaryOperation => {
-                res += s"\tmovq ${ury.eval.get.rep}, %rax"
-
-                ury match {
-                  case not: Not => {
-                    res += s"\tnot %rax"
-                  }
-
-                  case neg: Negate => {
-                    res += s"\tneg %rax"
-                  }
-                }
-              }
-
-              case ari: ArithmeticOperation => {
-                res += s"\tmovq ${ari.lhs.rep}, %rax"
-
-                ari.operator match {
-                  case Add => {
-                    res += s"\taddq ${ari.rhs.rep}, %rax"
-                  }
-
-                  case Subtract => {
-                    res += s"\tsubq ${ari.rhs.rep}, %rax"
-                  }
-
-                  case Divide => {
-                    res += s"\tidivq ${ari.rhs.rep}"
-                  }
-
-                  case Modulo => {
-                    res += s"\tidivq ${ari.rhs.rep}"
-                    res += s"\tmovq %rdx, %rax"
-                  }
-
-                  case Multiply => {
-                    res += s"\timulq ${ari.rhs.rep}"
-                  }
-                }
-              }
-
-              case log: LogicalOperation => {
-                res += s"\tmovq ${log.lhs.rep}, %rdx"
-                res += s"\tmovq ${log.rhs.rep}, %rax"
-
-                log.operator match {
-                  case Equal => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsete %al"
-                  }
-
-                  case NotEqual => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsetne %al"
-                  }
-
-                  case GreaterThan => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsetg %al"
-                  }
-
-                  case GreaterThanOrEqual => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsetge %al"
-                  }
-
-                  case LessThan => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsetl %al"
-                  }
-
-                  case LessThanOrEqual => {
-                    res += s"\tcmpq %rax, %rdx"
-                    res += s"\tsetle %al"
-                  }
-
-                  case _ => throw new NotImplementedError()
-                }
-
-                res += s"\tmovzbl %al, %eax"
-              }
-            }
-          }
-
-          case loc: Location => {
-            res += s"\tmovq %rax, ${loc.rep}"
-          }
-          case lit: Literal => {
-            res += s"\tmovq %rax, ${lit.rep}"
-          }
-        }
-
-        res += s"\tmovq %rax, ${assign.loc.rep}"
+        res ++= Helper.outputMov(assign.loc.rep, assign.value.rep)
       }
 
       case compAsg: CompoundAssignStatement => {
@@ -142,13 +47,100 @@ object TranslateIR {
       }
 
       case variable: VariableDeclaration => {
-          res += s"${variable.name}:"
-          res += s"\t.zero 8"
+        res += s"${variable.name}:"
+        res += s"\t.zero 8"
       }
 
       case array: ArrayDeclaration => {
         res += s"${array.name}:"
-        res += s"\t.zero ${8*array.length.value}"
+        res += s"\t.zero ${8 * array.length.value}"
+      }
+
+      case op: Operation => {
+        op match {
+          case ury: UnaryOperation => {
+            res ++= Helper.outputMov(ury.expression.rep, "rdx")
+
+            ury match {
+              case not: Not => {
+                res += s"\tnot %rax"
+              }
+
+              case neg: Negate => {
+                res += s"\tneg %rax"
+              }
+            }
+          }
+
+          case ari: ArithmeticOperation => {
+            res ++= Helper.outputMov(ari.lhs.rep, "rdx")
+
+            ari.operator match {
+              case Add => {
+                res += s"\taddq ${ari.rhs.rep}, %rax"
+              }
+
+              case Subtract => {
+                res += s"\tsubq ${ari.rhs.rep}, %rax"
+              }
+
+              case Divide => {
+                res += s"\tidivq ${ari.rhs.rep}"
+              }
+
+              case Modulo => {
+                res += s"\tidivq ${ari.rhs.rep}"
+                res += s"\tmovq %rdx, %rax"
+              }
+
+              case Multiply => {
+                res += s"\timulq ${ari.rhs.rep}"
+              }
+            }
+          }
+
+          case log: LogicalOperation => {
+            res ++= Helper.outputMov(log.lhs.rep, "rdx")
+            res ++= Helper.outputMov(log.rhs.rep, "rax")
+
+            log.operator match {
+              case Equal => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsete %al"
+              }
+
+              case NotEqual => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsetne %al"
+              }
+
+              case GreaterThan => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsetg %al"
+              }
+
+              case GreaterThanOrEqual => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsetge %al"
+              }
+
+              case LessThan => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsetl %al"
+              }
+
+              case LessThanOrEqual => {
+                res += s"\tcmpq %rax, %rdx"
+                res += s"\tsetle %al"
+              }
+
+              case _ => throw new NotImplementedError()
+            }
+
+            res += s"\tmovzbl %al, %eax"
+          }
+        }
+        res ++= Helper.outputMov("%rax", op.eval.get.rep)
       }
 
       case _ => throw new NotImplementedError

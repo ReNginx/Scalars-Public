@@ -21,14 +21,8 @@ object TranslateCFG {
     writer.close()
   }
 
-  private def outputMov(from: String, to: String) = {
-    if (from(0) == '%' || to(0) == '%') {
-      output(s"\tmovq ${from}, ${to}")
-    }
-    else {
-      output(s"\tmovq ${from}, %rax")
-      output(s"\tmovq %rax, ${to}")
-    }
+  private def outputMov(from: String, to: String): Unit = {
+    outputVec(Helper.outputMov(from, to))
   }
 
   private def outputVec(strs: Vector[String]) = {
@@ -146,7 +140,7 @@ object TranslateCFG {
         for ((param, i) <- method.params.zipWithIndex) { // params are decl
           val from = param.asInstanceOf[VariableDeclaration].rep
           val to = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
-          outputMov(from, to);
+          outputMov(from, to)
         }
         if (method.block.isDefined) {
           TranslateCFG(method.block.get)

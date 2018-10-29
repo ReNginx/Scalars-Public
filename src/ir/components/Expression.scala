@@ -61,7 +61,7 @@ case class Location(
     assert(field.isDefined)
     field.get match {
       case variable: VariableDeclaration => {
-        assert(variable.isGlobal || variable.isReg || variable.offset != 0)
+        assert(variable.isGlobal || variable.isReg || (variable.offset != 0))
         variable.rep
       }
       case ary: ArrayDeclaration => {

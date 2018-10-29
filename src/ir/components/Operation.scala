@@ -5,7 +5,9 @@ trait Operation extends Expression{
   def col: Int
 }
 
-trait UnaryOperation extends Expression with Operation
+trait UnaryOperation extends Expression with Operation {
+  def expression: Expression
+}
 
 case class Not(
     line: Int,
