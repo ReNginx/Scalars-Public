@@ -24,6 +24,10 @@ trait CFG {
   var isAllocated: Boolean = false
   var next: Option[CFG]
   override def hashCode: Int = label.hashCode
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[CFG] &&
+    obj.hashCode == this.hashCode
+  }
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
  */
