@@ -13,7 +13,7 @@
 
 ### Universal
 
-for a location specified below, it should either be a Variable, or a Array, whose `index` is a literal or a variable. This assumption is not handled properly at this moment. **WE MAY HAVE A BUG HERE**
+for a location specified below, it should either be a Variable, or a Array, whose `index` is a literal or a Register. This assumption is not handled properly at this moment. **WE MAY HAVE A BUG HERE**
 
 ### CFGConditional
 
