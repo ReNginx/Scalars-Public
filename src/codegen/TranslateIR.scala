@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 object TranslateIR {
   def apply(ir: IR): Vector[String] = { // assuming here we only have
     val res: ArrayBuffer[String] = ArrayBuffer()
-    println(ir.getClass.toString)
+    //println(ir.getClass.toString)
 
     ir match {
       case assign: AssignStatement => { // assume that
@@ -16,7 +16,7 @@ object TranslateIR {
       }
 
       case compAsg: CompoundAssignStatement => {
-        res += s"\tmovq ${compAsg.loc.rep}, %rax"
+        res ++= Helper.outputMov(compAsg.loc.rep, "%rax")
         compAsg.operator match {
           case Add => {
             res += s"\taddq ${compAsg.value.rep}, %rax"
@@ -59,7 +59,7 @@ object TranslateIR {
       case op: Operation => {
         op match {
           case ury: UnaryOperation => {
-            res ++= Helper.outputMov(ury.expression.rep, "rdx")
+            res ++= Helper.outputMov(ury.expression.rep, "%rax")
 
             ury match {
               case not: Not => {
@@ -73,7 +73,7 @@ object TranslateIR {
           }
 
           case ari: ArithmeticOperation => {
-            res ++= Helper.outputMov(ari.lhs.rep, "rdx")
+            res ++= Helper.outputMov(ari.lhs.rep, "%rax")
 
             ari.operator match {
               case Add => {
@@ -100,8 +100,8 @@ object TranslateIR {
           }
 
           case log: LogicalOperation => {
-            res ++= Helper.outputMov(log.lhs.rep, "rdx")
-            res ++= Helper.outputMov(log.rhs.rep, "rax")
+            res ++= Helper.outputMov(log.lhs.rep, "%rdx")
+            res ++= Helper.outputMov(log.rhs.rep, "%rax")
 
             log.operator match {
               case Equal => {

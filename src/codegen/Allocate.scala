@@ -13,14 +13,15 @@ object Allocate {
   def allocateDecl(decl: FieldDeclaration): Unit = {
     decl match {
       case variable: VariableDeclaration => {
-        if (!variable.isGlobal && variable.offset != 0) {
+        if (!variable.isGlobal && !variable.isReg && variable.offset == 0) {
           variable.offset = offset
           offset -= sizeOfVar
         }
       }
 
       case array: ArrayDeclaration => {
-        if (!array.isGlobal && array.offset != 0) {
+        assert(!array.isReg)
+        if (!array.isGlobal && !array.isReg && array.offset == 0) {
           array.offset = offset
           offset -= array.length.value.toInt * sizeOfVar
         }
@@ -45,8 +46,9 @@ object Allocate {
             case field: FieldDeclaration => allocateDecl(field)
             case assign: Assignment => allocateDecl(assign.loc.field.get)
             case oper: Operation => {
-              if (oper.eval.get.isInstanceOf[Location])
+              if (oper.eval.get.isInstanceOf[Location]) {
                 allocateDecl(oper.eval.get.asInstanceOf[Location].field.get)
+              }
             }
             case _ =>
           }

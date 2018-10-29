@@ -341,10 +341,11 @@ object DestructNew {
 
     assignment match {
       case asg: AssignStatement => {
-        println("Asghere") // DEBUG
+        //println("Asghere") // DEBUG
         val (exprSt, exprEd) = DestructNew(asg.value)
         link(last, exprSt)
         asg.value = asg.value.eval.get
+        //println(asg.value.asInstanceOf[FieldDeclaration].name) //DEBUG
         val block = CFGBlock(placeStr + "_assign", ArrayBuffer(asg))
         link(exprEd, block)
         last = block

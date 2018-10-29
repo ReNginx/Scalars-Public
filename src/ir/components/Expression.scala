@@ -59,9 +59,10 @@ case class Location(
 
   override def rep: String = {
     assert(field.isDefined)
+    //println(field.get.name)
     field.get match {
       case variable: VariableDeclaration => {
-        assert(variable.isGlobal || variable.isReg || (variable.offset != 0))
+        assert(variable.isGlobal || variable.isReg || variable.offset != 0)
         variable.rep
       }
       case ary: ArrayDeclaration => {
