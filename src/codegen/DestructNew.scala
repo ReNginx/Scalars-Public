@@ -74,8 +74,8 @@ object DestructNew {
         val (trueSt, trueEd) = DestructNew(assignTrue)
         val (falseSt, falseEd) = DestructNew(assignFalse)
 
-        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt))
-        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt))
+        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
+        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt), Option(end))
 
         link(start, lhsSt)
         link(lhsEd, cond1)
@@ -95,8 +95,8 @@ object DestructNew {
         val (trueSt, trueEd) = DestructNew(assignTrue)
         val (falseSt, falseEd) = DestructNew(assignFalse)
 
-        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt))
-        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt))
+        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
+        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt), Option(end))
 
         link(start, lhsSt)
         link(lhsEd, cond1)
@@ -180,7 +180,7 @@ object DestructNew {
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(ifstmt.condition)
     val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
-    val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt))
+    val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
 
     link(condEd, cfgCond)
 
@@ -227,7 +227,7 @@ object DestructNew {
     val (bodySt, bodyEd) = DestructNew(forstmt.ifTrue, Option(updSt), Option(end))
 
     assert(forstmt.condition.eval.isDefined)
-    val cfgCond = CFGConditional(placeStr + "_cond", forstmt.condition.eval.get, Option(bodySt), Option(end))
+    val cfgCond = CFGConditional(placeStr + "_cond", forstmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
 
     link(start, initSt)
     link(initEd, condSt)
@@ -247,7 +247,7 @@ object DestructNew {
     val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
 
     assert(whilestmt.condition.eval.isDefined)
-    val cfgCond = CFGConditional(placeStr + "_cond", whilestmt.condition.eval.get, Option(bodySt), Option(end))
+    val cfgCond = CFGConditional(placeStr + "_cond", whilestmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
 
     link(start, condSt)
     link(condEd, cfgCond)

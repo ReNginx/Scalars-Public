@@ -95,7 +95,7 @@ object TranslateCFG {
       case VirtualCFG(label, _, next) => {
         output(label + ":")
         if (next.isDefined)
-          TranslateCFG(next.get)
+          TranslateCFG(next.get, untilBlock)
       }
 
       case CFGBlock(label, statements, next, _) => {
@@ -106,7 +106,7 @@ object TranslateCFG {
         }
 
         if (next.isDefined)
-            TranslateCFG(next.get)
+            TranslateCFG(next.get, untilBlock)
       }
 
       case CFGConditional(label, condition, next, ifFalse, end, _) => {
@@ -117,12 +117,15 @@ object TranslateCFG {
         output(s"\ttest %rax, %rax")
         output(s"\tjne ${ifFalse.get.label}")
 
+        assert(end.isDefined)
         if (next.isDefined) {
           TranslateCFG(next.get, end)
         }
         if (ifFalse.isDefined) {
-          TranslateCFG(ifFalse.get)
+          TranslateCFG(ifFalse.get, end)
         }
+        assert(end.isDefined)
+        TranslateCFG(end.get, untilBlock)
       }
 
       case CFGMethodCall(_, params, declaration, next, _) => {
@@ -134,7 +137,7 @@ object TranslateCFG {
         output(s"\taddq $$${sizePushedToStack}, %rsp")
 
         if (next.isDefined)
-          TranslateCFG(next.get)
+          TranslateCFG(next.get, untilBlock)
         // for now we don't restore regs, rather we copy them to stack at beginning of a method..
       }
 
