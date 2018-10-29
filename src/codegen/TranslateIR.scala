@@ -60,13 +60,6 @@ object TranslateIR {
                 res += s"movq ${log.rhs.rep}, %rax"
 
                 log.operator match {
-                  case And => {
-                    //TODO
-                  }
-                  case Or => {
-                    // TODO
-                  }
-
                   case Equal => {
                     res += s"cmpq %rax, %rdx"
                     res += s"sete %al"
