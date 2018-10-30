@@ -47,6 +47,14 @@ object PrintCFG {
     }
   }
 
+  def prtEnd(cfg: CFGConditional): Unit = {
+    if (cfg.end.isDefined) {
+      println("End " + cfg.end.get.label)
+      println("\n\n")
+      writer.write(s"${cfg.label} -> ${cfg.end.get.label}[style=dashed];\n")
+    }
+  }
+
   def goFalse(cfg: CFGConditional): Unit = {
     if (cfg.ifFalse.isDefined) {
       PrintCFG(cfg.ifFalse.get)
@@ -117,6 +125,7 @@ object PrintCFG {
 
         prtFalse(conditional)
         prtNext(conditional)
+        prtEnd(conditional)
 
         goNext(conditional)
         goFalse(conditional)

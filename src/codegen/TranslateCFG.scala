@@ -117,7 +117,7 @@ object TranslateCFG {
         output(s"\tje ${ifFalse.get.label}")
 
         assert(end.isDefined)
-        if (next.isDefined && next != end) {
+        if (next.isDefined) {
           TranslateCFG(next.get, end)
         }
         if (ifFalse.isDefined) {
