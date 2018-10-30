@@ -305,7 +305,7 @@ object DestructNew {
       //assert(call.eval.isDefined)
       if (call.eval.isDefined) {
         val copy = AssignStatement(call.line, call.col,
-          call.eval.get.asInstanceOf[Location],
+          call.eval.get,
           Location(0,0,"rax",None,Option(Registers("rax"))))
         val block = CFGBlock(placeStr+"_block", ArrayBuffer(copy))
         link(last, block)

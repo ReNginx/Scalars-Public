@@ -72,7 +72,7 @@ case class Registers(
 
   val isGlobal: Boolean = false
   val isReg: Boolean = true
-  var reg: String = ""
+  def reg: String = name
   val offset: Int = 0
-  def rep = s"%{name}"
+  def rep = s"%${name}"
 }

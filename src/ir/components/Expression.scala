@@ -74,7 +74,7 @@ case class Location(
           s"${ary.offset}(%rbp, ${index.get.rep}, 8)"
       }
       case reg: Registers => {
-        s"%${reg.reg}"
+        s"${reg.rep}"
       }
     }
   }
