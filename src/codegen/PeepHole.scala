@@ -6,61 +6,77 @@ object PeepHole {
 
   val set: Set[CFG] = Set[CFG]()
 
-  def apply(cfg: CFG) {
+  def apply(cfg: CFG): Option[CFG] = {
     if (set.contains(cfg))
-      return
+      return cfg.next
     set.add(cfg)
 
     cfg match {
       case virtualCFG: VirtualCFG => {
-        if (virtualCFG.next.isDefined) {
-          for (parent <- virtualCFG.parents) {
-            parent.next = virtualCFG.next
-            virtualCFG.next.get.parents.add(parent)
+        virtualCFG.next match {
+          case Some(next) => {
+            for (parent <- virtualCFG.parents) {
+              next.parents.add(parent)
+              next.parents.remove(virtualCFG)
+            }
+            virtualCFG.next = PeepHole(next)
+            virtualCFG.next
           }
-          PeepHole(virtualCFG.next.get)
+          case None => None
         }
       }
 
       case block: CFGBlock => {
         if (block.parents.size == 1) {
           for (parent <- block.parents) {
-            if (parent.isInstanceOf[CFGBlock]) {
-              parent.next = block.next
-              if (block.next.isDefined)
-                block.next.get.parents.add(parent)
-              parent.asInstanceOf[CFGBlock].statements ++= block.statements
+            parent match {
+              case prevBlock: CFGBlock => {
+                prevBlock.statements ++= block.statements
+                block.next match {
+                  case Some(next) => {
+                    next.parents.add(parent)
+                    next.parents.remove(block)
+                    block.next = PeepHole(next)
+                    return block.next
+                  }
+                  case None => None
+                }
+              }
+              case _ =>
             }
           }
         }
 
         if (block.next.isDefined)
-          PeepHole(block.next.get)
+          block.next = PeepHole(block.next.get)
+        Option(block)
       }
 
       case conditional: CFGConditional => {
+        if (conditional.end.isDefined)
+          conditional.end = PeepHole(conditional.end.get)
         if (conditional.next.isDefined)
-          PeepHole(conditional.next.get)
+          conditional.next = PeepHole(conditional.next.get)
         if (conditional.ifFalse.isDefined)
-          PeepHole(conditional.ifFalse.get)
-        assert(conditional.end.isDefined)
-        for (parent <- conditional.end.get.parents) {
-          conditional.end = parent.next
-        }
+          conditional.ifFalse = PeepHole(conditional.ifFalse.get)
+        Option(conditional)
       }
 
       case method: CFGMethod => {
         if (method.block.isDefined)
-          PeepHole(method.block.get)
+          method.block = PeepHole(method.block.get)
+        Option(method)
       }
 
       case call: CFGMethodCall => {
         if (call.next.isDefined)
-          PeepHole(call.next.get)
+          call.next = PeepHole(call.next.get)
+        Option(call)
       }
 
       case program: CFGProgram => {
         program.methods foreach { x => PeepHole(x) }
+        Option(program)
       }
     }
   }

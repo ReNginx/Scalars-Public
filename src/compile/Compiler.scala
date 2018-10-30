@@ -175,14 +175,14 @@ object Compiler {
 
     val (start, end) = DestructNew(irModified)
 
-    //PeepHole(start)
+    val _st = PeepHole(start).get
 
     PrintCFG.init()
-    PrintCFG(start)
+    PrintCFG(_st)
     PrintCFG.close()
 
-    Allocate(start)
-    TranslateCFG(start)
+    Allocate(_st)
+    TranslateCFG(_st)
     TranslateCFG.close()
 
     if (debugSwitch) {
