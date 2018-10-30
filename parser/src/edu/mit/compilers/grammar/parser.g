@@ -267,11 +267,11 @@ stand_alone_expr: (  // stand-alone expression
 );
 mul_op_expr: (
   stand_alone_expr
-  ( options{greedy=true;}: (MULTIPLY^ | DIVIDE^ | MOD^) mul_op_expr )?
+  ( options{greedy=true;}: (MULTIPLY^ | DIVIDE^ | MOD^) mul_op_expr )*
 );
 add_op_expr: (
   mul_op_expr
-  ( options{greedy=true;}: (PLUS^ | MINUS^) add_op_expr )?
+  ( options{greedy=true;}: (PLUS^ | MINUS^) add_op_expr )*
 );
 comparison_expr: (
   add_op_expr
@@ -285,12 +285,16 @@ equality_expr: (
   comparison_expr
   ( options{greedy=true;}: (NEQUAL^ | EQUAL^) equality_expr )?
 );
-logical_operator: (
+and_operator: (
   equality_expr
-  ( options{greedy=true;}: (AND^ | OR^) logical_operator )?
+  ( options{greedy=true;}: (AND^) and_operator )?
+);
+or_operator: (
+  and_operator
+  ( options{greedy=true;}: (OR^) or_operator )?
 );
 expr: (
-  logical_operator
+  or_operator
   ( options{greedy=true;}: QUESTION^ if_yes COLON! if_no )?
 );
 protected if_yes: (
