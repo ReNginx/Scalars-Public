@@ -1,0 +1,9 @@
+import printf;
+int x, y;
+void main() {
+  for (x = 0; x < 10; x += 1) {
+    printf("%d\n", x);
+    y = x + 1;
+    printf("y is %d\n", y * 2);
+  }
+}

@@ -105,36 +105,37 @@ object TranslateIR {
 
           case log: LogicalOperation => {
             res ++= Helper.outputMov(log.lhs.rep, "%rdx")
-            res ++= Helper.outputMov(log.rhs.rep, "%rax")
-
+            res ++= Helper.outputMov(log.rhs.rep, "%rdi")
+            res += s"\txor %rax, %rax"
+            
             log.operator match {
               case Equal => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsete %al"
               }
 
               case NotEqual => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetne %al"
               }
 
               case GreaterThan => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetg %al"
               }
 
               case GreaterThanOrEqual => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetge %al"
               }
 
               case LessThan => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetl %al"
               }
 
               case LessThanOrEqual => {
-                res += s"\tcmpq %rax, %rdx"
+                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetle %al"
               }
 

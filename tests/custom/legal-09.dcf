@@ -1,0 +1,13 @@
+import printf;
+int x, y;
+
+void foo(int y) {
+  printf("%d\n\n\n", (y + 10 * 2)/3);
+}
+
+void main() {
+  for (x = 0; x < 10; x += 1) {
+    foo(x);
+    printf("%d\n", x);
+  }
+}

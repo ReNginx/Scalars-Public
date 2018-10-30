@@ -1,0 +1,7 @@
+import printf;
+
+void main() {
+    int x;
+    x = 30 - 30 - 30;
+    printf("%d\n", x);
+}

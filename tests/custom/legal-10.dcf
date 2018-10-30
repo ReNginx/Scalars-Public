@@ -1,0 +1,10 @@
+import printf;
+
+void main() {
+    int x, y, v, w;
+    x = 30;
+    y = 2600;
+    v = x % 16;
+    w = y / 100;
+    printf("%d %d\n", v, w);
+}

@@ -148,8 +148,8 @@ object TranslateCFG {
         // copy params from regs and stacks
         val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
         for ((param, i) <- method.params.zipWithIndex) { // params are decl
-          val from = param.asInstanceOf[VariableDeclaration].rep
-          val to = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
+          val from = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
+          val to = param.asInstanceOf[VariableDeclaration].rep
           outputMov(from, to)
         }
         if (method.block.isDefined) {

@@ -271,27 +271,27 @@ mul_op_expr: (
 );
 add_op_expr: (
   mul_op_expr
-  ( options{greedy=true;}: (PLUS^ | MINUS^) add_op_expr )*
+  ( options{greedy=true;}: (PLUS^ | MINUS^) mul_op_expr )*
 );
 comparison_expr: (
   add_op_expr
   (
     options{greedy=true;}:
     (LESS_THAN^ | LESS_THAN_OR_EQ^ | GREATER_THAN^ | GREATER_THAN_OR_EQ^)
-    comparison_expr
-  )?
+    add_op_expr
+  )*
 );
 equality_expr: (
   comparison_expr
-  ( options{greedy=true;}: (NEQUAL^ | EQUAL^) equality_expr )?
+  ( options{greedy=true;}: (NEQUAL^ | EQUAL^) comparison_expr )*
 );
 and_operator: (
   equality_expr
-  ( options{greedy=true;}: (AND^) and_operator )?
+  ( options{greedy=true;}: (AND^) equality_expr )*
 );
 or_operator: (
   and_operator
-  ( options{greedy=true;}: (OR^) or_operator )?
+  ( options{greedy=true;}: (OR^) and_operator )*
 );
 expr: (
   or_operator

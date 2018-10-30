@@ -186,13 +186,13 @@ object Compiler {
     TranslateCFG.close()
 
     if (debugSwitch) {
-      println("\n\n\n\nPrinting execution result\n")
-      "gcc -o output output.s".!
-      "./output".!
-
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree view:")
       PrettyPrint(irModified)
+
+      println("\n\n\n\nPrinting execution result\n")
+      "gcc -o output output.s".!
+      "./output".!
     }
 
     irModified
