@@ -57,6 +57,7 @@ object Allocate {
                 case _ => throw new NotImplementedError()
               }
             }
+            case _: Return => 
             case _ => throw new NotImplementedError()
           }
         }

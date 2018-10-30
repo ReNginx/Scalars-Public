@@ -151,10 +151,11 @@ object DestructNew {
             val (valSt, valEd) = DestructNew(ret.value.get)
             link(last, valSt)
             ret.value = ret.value.get.eval
-            val cfg = CFGBlock(placeStr + "_ret", ArrayBuffer(ret))
-            link(valEd, cfg)
-            last = cfg
+            last = valEd
           }
+          val cfg = CFGBlock(placeStr + "_ret", ArrayBuffer(ret))
+          link(last, cfg)
+          last = cfg
         }
         case _ => {
           val (stmtSt, stmtEd) = DestructNew(stmt)

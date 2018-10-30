@@ -51,7 +51,7 @@ object TranslateCFG {
         }
 
         case lit: Literal => {
-          outputMov("$"+lit.rep, reg)
+          outputMov(lit.rep, reg)
         }
 
         case _ => throw new NotImplementedError()
@@ -74,7 +74,7 @@ object TranslateCFG {
         }
 
         case lit: Literal => {
-          output(s"\tmovq $$${lit.rep}, %rax")
+          output(s"\tmovq ${lit.rep}, %rax")
           output(s"\tpushq %rax")
         }
       }

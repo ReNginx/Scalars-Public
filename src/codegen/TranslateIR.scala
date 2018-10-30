@@ -40,7 +40,7 @@ object TranslateIR {
 
       case ret: Return => {
         if (ret.value.isDefined) {
-          res += s"\tmovq, ${ret.value.get.rep}, %rax)"
+          res += s"\tmovq ${ret.value.get.rep}, %rax"
         }
         res += s"\tleave"
         res += s"\tret"
@@ -107,7 +107,7 @@ object TranslateIR {
             res ++= Helper.outputMov(log.lhs.rep, "%rdx")
             res ++= Helper.outputMov(log.rhs.rep, "%rdi")
             res += s"\txor %rax, %rax"
-            
+
             log.operator match {
               case Equal => {
                 res += s"\tcmpq %rdi, %rdx"

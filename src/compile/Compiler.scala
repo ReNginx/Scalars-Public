@@ -175,7 +175,7 @@ object Compiler {
 
     val (start, end) = DestructNew(irModified)
 
-    PeepHole(start)
+    //PeepHole(start)
 
     PrintCFG.init()
     PrintCFG(start)

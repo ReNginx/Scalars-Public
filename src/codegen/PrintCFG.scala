@@ -96,6 +96,14 @@ object PrintCFG {
             assert(binary.eval.isDefined)
             println(s"Binary ${binary.eval.get.cfgRep}= ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
           }
+          case ret: Return => {
+            if (ret.value.isDefined) {
+              println(s"Return ${ret.value.get.cfgRep}")
+            }
+            else {
+              println(s"Return")
+            }
+          }
           case _ => throw new NotImplementedError()
         }
 

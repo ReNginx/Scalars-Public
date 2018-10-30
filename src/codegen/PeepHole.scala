@@ -56,7 +56,7 @@ object PeepHole {
 
       case call: CFGMethodCall => {
         if (call.next.isDefined)
-          apply(call.next.get)
+          PeepHole(call.next.get)
       }
 
       case program: CFGProgram => {
