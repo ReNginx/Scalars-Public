@@ -1,0 +1,11 @@
+import printf;
+
+int foo(int x) {
+  return x * 2 + 1;
+}
+void main() {
+    int x, y;
+    x = 100;
+    y = foo(x);
+    printf("%d\n", y);
+}

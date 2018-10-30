@@ -15,8 +15,10 @@ object DestructNew {
     * @return
     */
   private def link(from: CFG, to: CFG) = {
-    from.next = Some(to)
-    to.parents.add(from)
+    if (from.next.isEmpty) {
+      from.next = Some(to)
+      to.parents.add(from)
+    }
   }
 
   /**
@@ -110,9 +112,9 @@ object DestructNew {
         link(lhsEd, rhsSt)
         expr.lhs = expr.lhs.eval.get
         expr.rhs = expr.rhs.eval.get
-        val self = CFGBlock(placeStr+"_body", ArrayBuffer(expr))
-        link(rhsEd, self)
-        link(self, end)
+        val body = CFGBlock(placeStr+"_body", ArrayBuffer(expr))
+        link(rhsEd, body)
+        link(body, end)
       }
     }
 
@@ -158,7 +160,7 @@ object DestructNew {
           last = cfg
         }
         case _ => {
-          val (stmtSt, stmtEd) = DestructNew(stmt)
+          val (stmtSt, stmtEd) = DestructNew(stmt, loopStart, loopEnd)
           link(last, stmtSt)
           last = stmtEd
         }
@@ -182,13 +184,13 @@ object DestructNew {
     val placeStr = s"_${counter}_r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = DestructNew(ifstmt.condition)
-    val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue)
+    val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue, loopStart, loopEnd)
     val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
 
     link(condEd, cfgCond)
 
     if (ifstmt.ifFalse.isDefined) {
-      val (ifFalseSt, ifFalseEd) = DestructNew(ifstmt.ifFalse.get)
+      val (ifFalseSt, ifFalseEd) = DestructNew(ifstmt.ifFalse.get, loopStart, loopEnd)
       cfgCond.ifFalse = Option(ifFalseSt)
       link(ifFalseEd, end)
     }
@@ -471,17 +473,6 @@ object DestructNew {
         val (exprSt, exprEd) = destructLogicalOperation(logicalOperation)
         link(start, exprSt)
         link(exprEd, end)
-//        link(start, exprSt)
-//
-//        assert(logicalOperation.lhs.eval.isDefined)
-//        assert(logicalOperation.rhs.eval.isDefined)
-//        logicalOperation.lhs = logicalOperation.lhs.eval.get
-//        logicalOperation.rhs = logicalOperation.rhs.eval.get
-//
-//        val self = CFGBlock(placeStr + "_expr", ArrayBuffer(logicalOperation))
-//        link(exprEd, self)
-//        link(self, end)
-
       }
 
       case ternaryOperation: TernaryOperation => {

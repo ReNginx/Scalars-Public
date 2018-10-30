@@ -22,7 +22,7 @@ object PeepHole {
             virtualCFG.next = PeepHole(next)
             virtualCFG.next
           }
-          case None => None
+          case None => Option(virtualCFG)
         }
       }
 

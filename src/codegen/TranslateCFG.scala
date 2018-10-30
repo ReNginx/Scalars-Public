@@ -111,7 +111,6 @@ object TranslateCFG {
 
       case CFGConditional(label, condition, next, ifFalse, end, _) => {
         assert(ifFalse.isDefined)
-
         output(label + ":")
         output(s"\tmovq ${condition.eval.get.rep}, %rax")
         output(s"\ttest %rax, %rax")
@@ -128,7 +127,8 @@ object TranslateCFG {
         TranslateCFG(end.get, untilBlock)
       }
 
-      case CFGMethodCall(_, params, declaration, next, _) => {
+      case CFGMethodCall(label, params, declaration, next, _) => {
+        output(label + ":")
         val sizePushedToStack = paramCopy(params)
         //we call this function
         output(s"\txor %rax, %rax")
@@ -154,13 +154,13 @@ object TranslateCFG {
         }
         if (method.block.isDefined) {
           TranslateCFG(method.block.get)
-          if (method.method.typ == Option(VoidType)) {
-            output(s"\tleave")
-            output(s"\tret")
-          }
-          else {
-            output(s"\tjmp noReturn")
-          }
+        }
+        if (method.method.typ == Option(VoidType)) {
+          output(s"\tleave")
+          output(s"\tret")
+        }
+        else {
+          output(s"\tjmp noReturn")
         }
       }
 
