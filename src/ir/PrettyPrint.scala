@@ -45,7 +45,7 @@ object PrettyPrint {
 
       // Call
 
-      case MethodCall(line, col, name, params, method) => {
+      case MethodCall(line, col, name, params, method, _) => {
         println(ir)
         println(leadingWS + "- params")
         params foreach { PrettyPrint(_, indentLevel + 1) }

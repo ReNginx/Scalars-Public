@@ -8,7 +8,8 @@ case class MethodCall(
     col: Int,
     name: String,
     params: Vector[Expression],
-    var method: Option[MethodDeclaration] = None
+    var method: Option[MethodDeclaration] = None,
+    override val eval: Option[Location] = None
     ) extends Call {
 
   def typ: Option[Type] = method match {

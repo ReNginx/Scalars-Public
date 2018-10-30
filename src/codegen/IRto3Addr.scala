@@ -48,11 +48,23 @@ object IRto3Addr {
 
       // Call
 
-      case MethodCall(line, col, name, params, method) => {
-        irModified = ir.asInstanceOf[MethodCall].copy(
-          params = params.map(IRto3Addr(_, iter).asInstanceOf[Expression])
-          // Do not recurse into method declaration
-        )
+      case MethodCall(line, col, name, params, method, eval) => {
+        method.get.typ.get match {
+          case VoidType => {
+            irModified = ir.asInstanceOf[MethodCall].copy(
+              params = params.map(IRto3Addr(_, iter).asInstanceOf[Expression])
+            )
+          }
+          case _ => {
+            val varIndex = iter.next
+            val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(BoolType))
+            val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+            irModified = ir.asInstanceOf[MethodCall].copy(
+              params = params.map(IRto3Addr(_, iter).asInstanceOf[Expression]),
+              eval = Option(evalNew)
+            )
+          }
+        }
       }
 
       // Expression
@@ -155,7 +167,7 @@ object IRto3Addr {
         expressionChild match {
           case
             Location (_, _, _, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
@@ -198,7 +210,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockChild = Block(0, 0, Vector(), Vector())
@@ -245,7 +257,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockLHS = Block(0, 0, Vector(), Vector())
@@ -265,7 +277,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
             blockRHS = Block(0, 0, Vector(), Vector())
@@ -312,7 +324,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -333,7 +345,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -383,7 +395,7 @@ object IRto3Addr {
         expressionCond match {
           case
             Location (_, _, _, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) => {
             blockCond = Block(0, 0, Vector(), Vector())
             exprNew = exprNew.copy(
@@ -402,7 +414,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
@@ -423,7 +435,7 @@ object IRto3Addr {
           case
             Location (_, _, _, _, _) |
             Length (_, _, _) |
-            MethodCall (_, _, _, _, _) |
+            MethodCall (_, _, _, _, _, _) |
             BoolLiteral (_, _, _) |
             IntLiteral (_, _, _) |
             CharLiteral (_, _, _) => {
