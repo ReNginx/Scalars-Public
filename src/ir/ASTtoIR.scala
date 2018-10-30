@@ -17,7 +17,7 @@ object ASTtoIR {
    * @param ast the ScalarAST to convert
    * @param positive true if arithmetic value is positive, false otherwise
    * @param parLine line number of the parent, which is used if parent is a virtual node
-   * @param parCol col number of the parent, which is used if parent is a virtual node 
+   * @param parCol col number of the parent, which is used if parent is a virtual node
    */
   def apply(ast: ScalarAST, positive: Boolean=true, parLine: Int=0, parCol: Int=0): IR = {
     val children = ast.children
@@ -180,7 +180,7 @@ object ASTtoIR {
       case DecafParserTokenTypes.DECREMENT => Decrement(line, col, lhsLoc)
 
       // for example, 'a' is stored as a string with 3 chars, so we want the second char
-      case DecafParserTokenTypes.CHAR_LITERAL => CharLiteral(line, col, name(1))
+      case DecafParserTokenTypes.CHAR_LITERAL => IntLiteral(line, col, name(1).toInt)
       case DecafParserTokenTypes.STR_LITERAL => StringLiteral(line, col, name)
       case DecafParserTokenTypes.TK_true  => BoolLiteral(line, col, true)
       case DecafParserTokenTypes.TK_false => BoolLiteral(line, col, false)

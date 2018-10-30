@@ -57,7 +57,7 @@ object Allocate {
                 case _ => throw new NotImplementedError()
               }
             }
-            case _: Return => 
+            case _: Return =>
             case _ => throw new NotImplementedError()
           }
         }
@@ -93,7 +93,14 @@ object Allocate {
         Allocate(block.get)
       }
 
-      case CFGMethodCall(_, _, _, next, _) => {
+      case CFGMethodCall(_, params, _, next, _) => {
+        for (param <- params) {
+          param match {
+            case location: Location => allocateDecl(location.field.get)
+            case _: Literal =>
+            case _ => throw new NotImplementedError()
+          }
+        }
         if (next.isDefined)
           Allocate(next.get)
       }
