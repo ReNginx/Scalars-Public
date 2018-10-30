@@ -2,7 +2,7 @@ package codegen
 
 import ir.components._
 
-import scala.collection.mutable.{ArrayBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 object DestructNew {
   var counter = 0
@@ -151,7 +151,9 @@ object DestructNew {
             val (valSt, valEd) = DestructNew(ret.value.get)
             link(last, valSt)
             ret.value = ret.value.get.eval
-            last = valEd
+            val cfg = CFGBlock(placeStr + "_ret", ArrayBuffer(ret))
+            link(valEd, cfg)
+            last = cfg
           }
         }
         case _ => {
