@@ -193,6 +193,8 @@ object DestructNew {
       val (ifFalseSt, ifFalseEd) = DestructNew(ifstmt.ifFalse.get, loopStart, loopEnd)
       cfgCond.ifFalse = Option(ifFalseSt)
       link(ifFalseEd, end)
+      if (ifFalseEd.next == loopEnd)
+        cfgCond.end = loopEnd
     }
     else {
       cfgCond.ifFalse = Option(end)
@@ -200,6 +202,8 @@ object DestructNew {
     link(start, condSt)
     link(nextEd, end)
 
+    if (nextEd.next == loopEnd)
+      cfgCond.end = loopEnd
     (start, end)
   }
 
