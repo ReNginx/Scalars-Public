@@ -191,7 +191,7 @@ object Compiler {
       PrettyPrint(irModified)
 
       println("\n\n\n\nPrinting execution result\n")
-      "gcc -o output output.s".!
+      "gcc -o output output.s -no-pie".! // Hardened compile chain workaround
       "./output".!
     }
 
