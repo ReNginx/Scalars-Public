@@ -1,0 +1,10 @@
+import printf;
+
+int i;
+
+void main () {
+    while (i < 5) {
+        printf("Iteration!\n");
+        i++;
+    }
+}

@@ -1,0 +1,9 @@
+import printf;
+
+int i;
+
+void main () {
+    for (i=0; i < 5; i++) {
+        printf("Iteration!\n");
+    }
+}

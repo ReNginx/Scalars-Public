@@ -1,0 +1,9 @@
+import printf;
+
+int i;
+
+void main () {
+    printf("i is initialized to %d\n", i);
+    i += 1;
+    printf("i becomes %d\n", i);
+}

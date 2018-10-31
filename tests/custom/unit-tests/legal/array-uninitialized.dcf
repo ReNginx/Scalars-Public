@@ -1,0 +1,7 @@
+import printf;
+
+int i[100];
+
+void main () {
+    printf("i[50] is %d", i[50]);
+}

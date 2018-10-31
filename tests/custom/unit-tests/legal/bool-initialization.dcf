@@ -1,0 +1,32 @@
+import printf;
+
+bool i;
+
+void main () {
+    printf("i is initialized to %d\n", i);
+    i = !i;
+    printf("i becomes %d\n", i);
+    i = !i;
+    printf("i becomes %d again\n", i);
+    printf("Is i a real Boolean value?\n");
+    if (i) {
+        printf("You shouldn't see this.\n");
+    }
+    else {
+        printf("You should see this.\n");
+    }
+    i = !i;
+    if (i) {
+        printf("You should see this.\n");
+    }
+    else {
+        printf("You shouldn't see this.\n");
+    }
+    if (i && !i) {
+        printf("This is always false.\n");
+    }
+    if (i || !i) {
+        printf("This is always true.\n");
+    }
+    // printf(i ? "true" : "false");
+}

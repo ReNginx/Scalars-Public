@@ -1,0 +1,14 @@
+import printf;
+
+int i[100];
+int j;
+
+void main () {
+    for (j = 0; j < 100; j++) {
+        i[j] = 1;
+    }
+    for (j = 99; j > 0; j--) {
+        i[j-1] += i[j];
+    }
+    printf("Gauss says %d\n", i[0]);
+}
