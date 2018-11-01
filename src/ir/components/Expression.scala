@@ -11,6 +11,12 @@ trait Expression extends IR {
 
   def rep: String = "" //only location and literal would have this.
 
+  /*
+    In the return, Vector[String] contains the additional asm for array,
+    and String is just your basic rep.
+  */
+  def getRep (baseReg: String): (Vector[String], String) = (Vector(), rep)
+
   def cfgRep: String = ""
 }
 
@@ -60,7 +66,6 @@ case class Location(
 
   override def rep: String = {
     assert(field.isDefined)
-    println(field.get.name)
     field.get match {
       case variable: VariableDeclaration => {
         assert(variable.isGlobal || variable.isReg || variable.offset != 0)
@@ -77,6 +82,36 @@ case class Location(
         s"${reg.rep}"
       }
     }
+  }
+
+  override def getRep (baseReg: String): (Vector[String], String) = {
+    var resVec: ArrayBuffer[String] = ArrayBuffer()
+    var resStr: String = ""
+    field.get match {
+      case ary: ArrayDeclaration => {
+        resVec ++= makeArrayRep(baseReg)
+        resStr = baseReg
+      }
+      case _ => {
+        resStr = rep
+      }
+    }
+    (resVec.toVector, resStr)
+  }
+
+  private def makeArrayRep (baseReg: String): Vector[String] = {
+    assert(baseReg(0) == '%') // sanity check
+    assert(!field.isEmpty)
+    val ary = field.get
+    assert(ary.isInstanceOf[ArrayDeclaration])
+    assert(ary.isGlobal || ary.offset != 0)
+    val res: ArrayBuffer[String] = ArrayBuffer()
+    res += s"\tmovq ${index.get.rep}, ${baseReg}"
+    if (ary.isGlobal)
+      res += s"movq ${ary.name}(, ${baseReg}, 8) ${baseReg}"
+    else
+      res += s"movq ${ary.offset}(%rbp, ${baseReg}, 8) ${baseReg}"
+    res.toVector
   }
 
   override def cfgRep: String = {

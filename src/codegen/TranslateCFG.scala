@@ -21,6 +21,7 @@ object TranslateCFG {
     writer.close()
   }
 
+  /*
   private def outputMov(from: String, to: String) = {
     if (from(0) == '%' || to(0) == '%') {
       output(s"\tmovq ${from}, ${to}")
@@ -30,6 +31,7 @@ object TranslateCFG {
       output(s"\tmovq %rax, ${to}")
     }
   }
+  */
 
   private def outputVec(strs: Vector[String]) = {
     strs foreach {output(_)}
@@ -41,17 +43,17 @@ object TranslateCFG {
     for ((param, reg) <- params zip regs) { // first six go to regs
       param match {
         case loc: Location => {
-          outputMov(loc.rep, reg)
+          Helper.outputMov(loc.rep, reg) foreach {output(_)}
         }
 
         case str: StringLiteral => {
           val name = s"str_r${str.line}_c${str.col}";
           strs += Tuple2(name, str.value)
-          outputMov("$"+name, reg)
+          Helper.outputMov("$"+name, reg) foreach {output(_)}
         }
 
         case lit: Literal => {
-          outputMov(lit.rep, reg)
+          Helper.outputMov(lit.rep, reg) foreach {output(_)}
         }
 
         case _ => throw new NotImplementedError()
@@ -150,7 +152,7 @@ object TranslateCFG {
         for ((param, i) <- method.params.zipWithIndex) { // params are decl
           val from = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
           val to = param.asInstanceOf[VariableDeclaration].rep
-          outputMov(from, to)
+          Helper.outputMov(from, to) foreach {output(_)}
         }
         if (method.block.isDefined) {
           TranslateCFG(method.block.get)

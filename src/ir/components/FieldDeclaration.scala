@@ -18,19 +18,11 @@ case class FieldList(
 
 
 trait FieldDeclaration extends MemberDeclaration {
-  def typ: Option[Type]
-}
-
-case class VariableDeclaration(
-    line: Int,
-    col: Int,
-    name: String,
-    typ: Option[Type]) extends FieldDeclaration {
-
+  val isReg: Boolean = false
   var isGlobal: Boolean = false
-  var isReg: Boolean = false
   var reg: String = ""
   var offset: Int = 0
+  def typ: Option[Type]
   def rep = {
     if (isGlobal)
       s"${name}"
@@ -39,6 +31,14 @@ case class VariableDeclaration(
     else
       s"${offset}(%rbp)"
   }
+}
+
+case class VariableDeclaration(
+    line: Int,
+    col: Int,
+    name: String,
+    typ: Option[Type]) extends FieldDeclaration {
+
   override def toString: String = s"[VariableDeclaration] ${typ.get} ${name}  (${line}:${col})"
 }
 
@@ -48,11 +48,6 @@ case class ArrayDeclaration(
     name: String,
     length: IntLiteral,
     typ: Option[Type]) extends FieldDeclaration {
-
-  var isGlobal: Boolean = false
-  val isReg: Boolean = false
-  val reg: String = ""
-  var offset: Int = 0
 
   override def toString: String = s"[ArrayDeclaration] ${typ.get} ${name}[${length}]  (${line}:${col})"
 }
@@ -70,9 +65,5 @@ case class Registers(
      col: Int = 0,
      typ: Option[Type] = None) extends FieldDeclaration {
 
-  val isGlobal: Boolean = false
-  val isReg: Boolean = true
-  def reg: String = name
-  val offset: Int = 0
-  def rep = s"%${name}"
+  override val isReg: Boolean = true
 }

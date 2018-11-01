@@ -5,9 +5,17 @@ int i;
 int j;
 
 void main () {
+    int k;
+    int B[5];
     i = 1;
     j = 2;
-    i = i + j * j;
-    i = A[i + j];
+    k = j * j;
+    printf("CP2\n");
+    A[A[k + j] + 1] = j;
+    B[0] = 1;
+    printf("CP3\n");
+    i = A[1];
+    printf("CP4\n");
+    printf("B[0] is %d\n", B[0]);
     printf("A[i + j] is %d\n", i);
 }

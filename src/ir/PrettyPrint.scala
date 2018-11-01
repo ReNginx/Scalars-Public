@@ -66,6 +66,9 @@ object PrettyPrint {
           println(leadingWS + "- index")
           PrettyPrint(index.get, indentLevel + 1)
         }
+        // println(leadingWS + "- rep")
+        // println(leadingWS + s"  ${ir.asInstanceOf[Location].rep}")
+
         /*
         if (!field.isEmpty) {
           println(leadingWS + "- field")
@@ -84,10 +87,14 @@ object PrettyPrint {
 
       case VariableDeclaration(line, col, name, typ) => {
         println(ir)
+        println(leadingWS + "- rep")
+        println(leadingWS + s"  ${ir.asInstanceOf[VariableDeclaration].rep}")
       }
 
       case ArrayDeclaration(line, col, name, length, typ) => {
         println(ir)
+        println(leadingWS + "- rep")
+        println(leadingWS + s"  ${ir.asInstanceOf[ArrayDeclaration].rep}")
       }
 
       // Literal
@@ -289,10 +296,7 @@ object PrettyPrint {
       }
 
       // Catchall
-
-      case _ => {
-        println("Undefined for PrettyPrint!")
-      }
+      case _ => throw new NotImplementedError()
     }
 	} 
 }

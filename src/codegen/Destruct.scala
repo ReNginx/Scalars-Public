@@ -4,7 +4,7 @@ import ir.components._
 
 import scala.collection.mutable.ArrayBuffer
 
-object DestructNew {
+object Destruct {
   var counter = 0
 
   /**
@@ -61,8 +61,8 @@ object DestructNew {
   private def destructLogicalOperation(expr: LogicalOperation): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Logical"
     val (start, end) = create(placeStr)
-    val (lhsSt, lhsEd) = DestructNew(expr.lhs)
-    val (rhsSt, rhsEd) = DestructNew(expr.rhs)
+    val (lhsSt, lhsEd) = Destruct(expr.lhs)
+    val (rhsSt, rhsEd) = Destruct(expr.rhs)
 
     expr.operator match {
       case And => {
@@ -73,8 +73,8 @@ object DestructNew {
           expr.eval.get,
           BoolLiteral(expr.line, expr.col, false))
 
-        val (trueSt, trueEd) = DestructNew(assignTrue)
-        val (falseSt, falseEd) = DestructNew(assignFalse)
+        val (trueSt, trueEd) = Destruct(assignTrue)
+        val (falseSt, falseEd) = Destruct(assignFalse)
 
         val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
         val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt), Option(end))
@@ -94,8 +94,8 @@ object DestructNew {
           expr.eval.get,
           BoolLiteral(expr.line, expr.col, false))
 
-        val (trueSt, trueEd) = DestructNew(assignTrue)
-        val (falseSt, falseEd) = DestructNew(assignFalse)
+        val (trueSt, trueEd) = Destruct(assignTrue)
+        val (falseSt, falseEd) = Destruct(assignFalse)
 
         val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
         val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt), Option(end))
@@ -150,7 +150,7 @@ object DestructNew {
         }
         case ret: Return => {
           if (ret.value.isDefined) {
-            val (valSt, valEd) = DestructNew(ret.value.get)
+            val (valSt, valEd) = Destruct(ret.value.get)
             link(last, valSt)
             ret.value = ret.value.get.eval
             last = valEd
@@ -160,7 +160,7 @@ object DestructNew {
           last = cfg
         }
         case _ => {
-          val (stmtSt, stmtEd) = DestructNew(stmt, loopStart, loopEnd)
+          val (stmtSt, stmtEd) = Destruct(stmt, loopStart, loopEnd)
           link(last, stmtSt)
           last = stmtEd
         }
@@ -183,14 +183,14 @@ object DestructNew {
                          loopEnd: Option[CFG] = None): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
-    val (condSt, condEd) = DestructNew(ifstmt.condition)
-    val (nextSt, nextEd) = DestructNew(ifstmt.ifTrue, loopStart, loopEnd)
+    val (condSt, condEd) = Destruct(ifstmt.condition)
+    val (nextSt, nextEd) = Destruct(ifstmt.ifTrue, loopStart, loopEnd)
     val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
 
     link(condEd, cfgCond)
 
     if (ifstmt.ifFalse.isDefined) {
-      val (ifFalseSt, ifFalseEd) = DestructNew(ifstmt.ifFalse.get, loopStart, loopEnd)
+      val (ifFalseSt, ifFalseEd) = Destruct(ifstmt.ifFalse.get, loopStart, loopEnd)
       cfgCond.ifFalse = Option(ifFalseSt)
       link(ifFalseEd, end)
       if (ifFalseEd.next == loopEnd)
@@ -230,10 +230,10 @@ object DestructNew {
   private def destructFor(forstmt: For): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${forstmt.line}_c${forstmt.col}_For"
     val (start, end) = create(placeStr)
-    val (initSt, initEd) = DestructNew(forstmt.start)
-    val (condSt, condEd) = DestructNew(forstmt.condition)
-    val (updSt, updEd) = DestructNew(forstmt.update)
-    val (bodySt, bodyEd) = DestructNew(forstmt.ifTrue, Option(updSt), Option(end))
+    val (initSt, initEd) = Destruct(forstmt.start)
+    val (condSt, condEd) = Destruct(forstmt.condition)
+    val (updSt, updEd) = Destruct(forstmt.update)
+    val (bodySt, bodyEd) = Destruct(forstmt.ifTrue, Option(updSt), Option(end))
 
     assert(forstmt.condition.eval.isDefined)
     val cfgCond = CFGConditional(placeStr + "_cond", forstmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
@@ -253,8 +253,8 @@ object DestructNew {
   private def destructWhile(whilestmt: While): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${whilestmt.line}_c${whilestmt.col}_While"
     val (start, end) = create(placeStr)
-    val (condSt, condEd) = DestructNew(whilestmt.condition)
-    val (bodySt, bodyEd) = DestructNew(whilestmt.ifTrue, Option(condSt), Option(end))
+    val (condSt, condEd) = Destruct(whilestmt.condition)
+    val (bodySt, bodyEd) = Destruct(whilestmt.ifTrue, Option(condSt), Option(end))
 
     assert(whilestmt.condition.eval.isDefined)
     val cfgCond = CFGConditional(placeStr + "_cond", whilestmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
@@ -277,7 +277,7 @@ object DestructNew {
     val placeStr = s"_${counter}_r${method.line}_c${method.col}_Method"
     val (start, end) = create(placeStr)
     val params = method.params
-    val (blockSt, blockEd) = DestructNew(method.block)
+    val (blockSt, blockEd) = Destruct(method.block)
     val cfgMthd = CFGMethod(method.name, Option(blockSt), params, method)
 
     link(start, cfgMthd)
@@ -298,7 +298,7 @@ object DestructNew {
     var last = start
 
     for (param <- call.params) {
-      val (st, ed) = DestructNew(param)
+      val (st, ed) = Destruct(param)
       link(last, st)
       last = ed
       assert(param.eval.isDefined)
@@ -329,7 +329,7 @@ object DestructNew {
   private def destructProgram(program: Program): (CFG, CFG) = {
     val (start, end) = create("")
     val fields = program.fields
-    val methods = program.methods map (DestructNew(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
+    val methods = program.methods map (Destruct(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
     val cfg = CFGProgram("program", fields, methods)
     link(start, cfg)
     link(cfg, end)
@@ -350,7 +350,7 @@ object DestructNew {
   private def destructAssignment(assignment: Assignment): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${assignment.line}_c${assignment.col}_Assign"
     val (start, end) = create(placeStr)
-    val (locSt, locEd) = DestructNew(assignment.loc)
+    val (locSt, locEd) = Destruct(assignment.loc)
     var last = locEd
 
     link(start, locSt)
@@ -358,7 +358,7 @@ object DestructNew {
     assignment match {
       case asg: AssignStatement => {
         //println("Asghere") // DEBUG
-        val (exprSt, exprEd) = DestructNew(asg.value)
+        val (exprSt, exprEd) = Destruct(asg.value)
         link(last, exprSt)
         asg.value = asg.value.eval.get
         //println(asg.value.asInstanceOf[FieldDeclaration].name) //DEBUG
@@ -368,7 +368,7 @@ object DestructNew {
       }
 
       case cAsg: CompoundAssignStatement => {
-        val (exprSt, exprEd) = DestructNew(cAsg.value)
+        val (exprSt, exprEd) = Destruct(cAsg.value)
         link(last, exprSt)
         cAsg.value = cAsg.value.eval.get
         val block = CFGBlock(placeStr + "_assign", ArrayBuffer(cAsg))
@@ -408,7 +408,7 @@ object DestructNew {
     val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
     if (loc.index.isDefined) {
-      val (indexSt, indexEd) = DestructNew(loc.index.get)
+      val (indexSt, indexEd) = Destruct(loc.index.get)
       loc.index = loc.index.get.eval
       link(start, indexSt)
       link(indexEd, end)
@@ -434,7 +434,7 @@ object DestructNew {
 
     expr match {
       case not: Not => {
-        val (exprSt, exprEd) = DestructNew(not.expression)
+        val (exprSt, exprEd) = Destruct(not.expression)
         link(start, exprSt)
 
         assert(not.expression.eval.isDefined)
@@ -446,7 +446,7 @@ object DestructNew {
       }
 
       case negate: Negate => {
-        val (exprSt, exprEd) = DestructNew(negate.expression)
+        val (exprSt, exprEd) = Destruct(negate.expression)
         link(start, exprSt)
 
         assert(negate.expression.eval.isDefined)
@@ -458,8 +458,8 @@ object DestructNew {
       }
 
       case arithmeticOperation: ArithmeticOperation => {
-        val (lhsSt, lhsEd) = DestructNew(arithmeticOperation.lhs)
-        val (rhsSt, rhsEd) = DestructNew(arithmeticOperation.rhs)
+        val (lhsSt, lhsEd) = Destruct(arithmeticOperation.lhs)
+        val (rhsSt, rhsEd) = Destruct(arithmeticOperation.rhs)
         link(start, lhsSt)
         link(lhsEd, rhsSt)
 
@@ -480,9 +480,9 @@ object DestructNew {
       }
 
       case ternaryOperation: TernaryOperation => {
-        val (condSt, condEd) = DestructNew(ternaryOperation.condition)
-        val (ifTrueSt, ifTrueEd) = DestructNew(ternaryOperation.ifTrue)
-        val (ifFalseSt, ifFalseEd) = DestructNew(ternaryOperation.ifFalse)
+        val (condSt, condEd) = Destruct(ternaryOperation.condition)
+        val (ifTrueSt, ifTrueEd) = Destruct(ternaryOperation.ifTrue)
+        val (ifFalseSt, ifFalseEd) = Destruct(ternaryOperation.ifFalse)
 
         val assignTrue = AssignStatement(expr.line, expr.col,
           ternaryOperation.eval.get,
@@ -491,8 +491,8 @@ object DestructNew {
           ternaryOperation.eval.get,
           ternaryOperation.ifFalse.eval.get)
 
-        val (trueSt, trueEd) = DestructNew(assignTrue)
-        val (falseSt, falseEd) = DestructNew(assignFalse)
+        val (trueSt, trueEd) = Destruct(assignTrue)
+        val (falseSt, falseEd) = Destruct(assignFalse)
 
         link(ifTrueEd, trueSt)
         link(ifFalseEd, falseSt)

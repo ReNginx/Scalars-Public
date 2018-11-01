@@ -5,17 +5,25 @@ import ir.components._
 import scala.collection.mutable.ArrayBuffer
 
 object TranslateIR {
+  val aryIdxPtr1: String = "%r10" // use %r10 for array indexing
+  val aryIdxPtr2: String = "%r11" // use %r11 when both sides are assignment
+  
   def apply(ir: IR): Vector[String] = { // assuming here we only have
     val res: ArrayBuffer[String] = ArrayBuffer()
     //println(ir.getClass.toString)
 
     ir match {
       case assign: AssignStatement => { // assume that
+        // index checking
         res ++= assign.loc.indexCheck
+        if (assign.value.isInstanceOf[Location]) {
+          res ++= assign.value.asInstanceOf[Location].indexCheck
+        }
         res ++= Helper.outputMov(assign.value.rep, assign.loc.rep)
       }
 
       case compAsg: CompoundAssignStatement => {
+        res ++= compAsg.loc.indexCheck
         res ++= Helper.outputMov(compAsg.loc.rep, "%rax")
         compAsg.operator match {
           case Add => {

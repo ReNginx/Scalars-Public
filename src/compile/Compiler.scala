@@ -175,19 +175,27 @@ object Compiler {
 
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
-      println("Low-level IR tree view:")
+      println("Low-level IR tree:")
       PrettyPrint(irModified)
     }
 
-    val (start, end) = DestructNew(irModified)
+    val (start, end) = Destruct(irModified)
 
     val _st = PeepHole(start).get
 
+    /*
     PrintCFG.init()
     PrintCFG(_st)
     PrintCFG.close()
+    */
 
     Allocate(_st)
+
+    if (debugSwitch) {
+      println("\nLow-level IR tree after destruct, peephole and allocate:")
+      PrettyPrint(irModified)
+    }
+
     TranslateCFG(_st)
     TranslateCFG.close()
 
