@@ -8,6 +8,9 @@ import java.io._
 
 
 object TranslateCFG {
+  val aryIdxReg1: String = "%r10" // use %r10 for array indexing
+  val aryIdxReg2: String = "%r11" // use %r11 when both sides are assignments
+
   val strs: ArrayBuffer[Tuple2[String, String]] = ArrayBuffer() // all string literals go here.
   var fileName: String = "output.s"
   lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
@@ -43,17 +46,20 @@ object TranslateCFG {
     for ((param, reg) <- params zip regs) { // first six go to regs
       param match {
         case loc: Location => {
-          Helper.outputMov(loc.rep, reg) foreach {output(_)}
+          outputVec(loc.indexCheck)
+          val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
+          outputVec(repVec)
+          outputVec(Helper.outputMov(repStr, reg))
         }
 
         case str: StringLiteral => {
           val name = s"str_r${str.line}_c${str.col}";
           strs += Tuple2(name, str.value)
-          Helper.outputMov("$"+name, reg) foreach {output(_)}
+          outputVec(Helper.outputMov("$"+name, reg))
         }
 
         case lit: Literal => {
-          Helper.outputMov(lit.rep, reg) foreach {output(_)}
+          outputVec(Helper.outputMov(lit.rep, reg)) // .rep is safe for literals
         }
 
         case _ => throw new NotImplementedError()
@@ -64,7 +70,10 @@ object TranslateCFG {
       val param = params(i)
       param match {
         case loc: Location => {
-          output(s"\tmovq ${loc.rep}, %rax")
+          outputVec(loc.indexCheck)
+          val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
+          outputVec(repVec)
+          output(s"\tmovq ${repStr}, %rax")
           output(s"\tpushq %rax")
         }
 
@@ -114,7 +123,14 @@ object TranslateCFG {
       case CFGConditional(label, condition, next, ifFalse, end, _) => {
         assert(ifFalse.isDefined)
         output(label + ":")
-        output(s"\tmovq ${condition.eval.get.rep}, %rax")
+        condition.eval.get match {
+          case loc: Location => {
+            outputVec(loc.indexCheck)
+          }
+        }
+        val (repVec: Vector[String], repStr: String) = condition.eval.get.getRep(aryIdxReg1)
+        outputVec(repVec)
+        output(s"\tmovq ${repStr}, %rax")
         output(s"\ttest %rax, %rax")
         output(s"\tje ${ifFalse.get.label}")
 
@@ -151,8 +167,8 @@ object TranslateCFG {
         val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
         for ((param, i) <- method.params.zipWithIndex) { // params are decl
           val from = if (i < 6) regs(i) else s"${16 + 8*(i-6)}(%rbp)"
-          val to = param.asInstanceOf[VariableDeclaration].rep
-          Helper.outputMov(from, to) foreach {output(_)}
+          val to = param.asInstanceOf[VariableDeclaration].rep // .rep is safe for VariableDeclaration
+          outputVec(Helper.outputMov(from, to))
         }
         if (method.block.isDefined) {
           TranslateCFG(method.block.get)

@@ -89,8 +89,9 @@ case class Location(
     var resStr: String = ""
     field.get match {
       case ary: ArrayDeclaration => {
-        resVec ++= makeArrayRep(baseReg)
-        resStr = baseReg
+        val (resStmt, resStrAry) = makeArrayRep(baseReg)
+        resVec += resStmt
+        resStr = resStrAry
       }
       case _ => {
         resStr = rep
@@ -99,19 +100,20 @@ case class Location(
     (resVec.toVector, resStr)
   }
 
-  private def makeArrayRep (baseReg: String): Vector[String] = {
+  private def makeArrayRep (baseReg: String): (String, String) = {
     assert(baseReg(0) == '%') // sanity check
     assert(!field.isEmpty)
     val ary = field.get
     assert(ary.isInstanceOf[ArrayDeclaration])
     assert(ary.isGlobal || ary.offset != 0)
-    val res: ArrayBuffer[String] = ArrayBuffer()
-    res += s"movq ${index.get.rep}, ${baseReg}"
-    if (ary.isGlobal)
-      res += s"movq ${ary.name}(, ${baseReg}, 8) ${baseReg}"
-    else
-      res += s"movq ${ary.offset}(%rbp, ${baseReg}, 8) ${baseReg}"
-    res.toVector
+    val resStmt = s"\tmovq ${index.get.rep}, ${baseReg}"
+    var resStr = ""
+    if (ary.isGlobal) {
+      resStr = s"${ary.name}(, ${baseReg}, 8)"
+    } else {
+      resStr = s"${ary.offset}(%rbp, ${baseReg}, 8)"
+    }
+    (resStmt, resStr)
   }
 
   override def cfgRep: String = {

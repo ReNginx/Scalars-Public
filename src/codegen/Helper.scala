@@ -12,7 +12,6 @@ object Helper {
       array += s"\tmovq ${from}, %rax"
       array += s"\tmovq %rax, ${to}"
     }
-
     array.toVector
   }
 }

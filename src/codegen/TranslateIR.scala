@@ -5,8 +5,8 @@ import ir.components._
 import scala.collection.mutable.ArrayBuffer
 
 object TranslateIR {
-  val aryIdxPtr1: String = "%r10" // use %r10 for array indexing
-  val aryIdxPtr2: String = "%r11" // use %r11 when both sides are assignment
+  val aryIdxReg1: String = "%r10" // use %r10 for array indexing
+  val aryIdxReg2: String = "%r11" // use %r11 when both sides are assignments
   
   def apply(ir: IR): Vector[String] = { // assuming here we only have
     val res: ArrayBuffer[String] = ArrayBuffer()
@@ -19,21 +19,32 @@ object TranslateIR {
         if (assign.value.isInstanceOf[Location]) {
           res ++= assign.value.asInstanceOf[Location].indexCheck
         }
-        res ++= Helper.outputMov(assign.value.rep, assign.loc.rep)
+        val (repVecLoc: Vector[String], repStrLoc: String) = assign.loc.getRep(aryIdxReg1)
+        val (repVecValue: Vector[String], repStrValue: String) = assign.value.getRep(aryIdxReg2)
+        res ++= repVecLoc
+        res ++= repVecValue
+        res ++= Helper.outputMov(repStrValue, repStrLoc)
       }
 
       case compAsg: CompoundAssignStatement => {
         res ++= compAsg.loc.indexCheck
-        res ++= Helper.outputMov(compAsg.loc.rep, "%rax")
+        if (compAsg.value.isInstanceOf[Location]) {
+          res ++= compAsg.value.asInstanceOf[Location].indexCheck
+        }
+        val (repVecLoc: Vector[String], repStrLoc: String) = compAsg.loc.getRep(aryIdxReg1)
+        val (repVecValue: Vector[String], repStrValue: String) = compAsg.value.getRep(aryIdxReg1)
+        res ++= repVecLoc
+        res ++= Helper.outputMov(repStrLoc, "%rax")
+        res ++= repVecValue
         compAsg.operator match {
           case Add => {
-            res += s"\taddq ${compAsg.value.rep}, %rax"
+            res += s"\taddq ${repStrValue}, %rax"
           }
           case Subtract => {
-            res += s"\tsubq ${compAsg.value.rep}, %rax"
+            res += s"\tsubq ${repStrValue}, %rax"
           }
         }
-        res += s"\tmovq %rax, ${compAsg.loc.rep}"
+        res += s"\tmovq %rax, ${repStrLoc}"
       }
 
       case inc: Increment => {
