@@ -1,0 +1,11 @@
+import printf;
+
+void main () {
+    int A[5];
+    int i;
+    int j;
+    // j = 0;
+    i = j;
+    // A[0] = i;
+    printf("i is %d\n", i);
+}

@@ -1,0 +1,19 @@
+import printf;
+
+int i;
+int j;
+
+int get (int i, int j, bool k) {
+    if (k) {
+        return i + j;
+    } else {
+        return i - j;
+    }
+}
+
+void main () {
+    i = 2;
+    j = 1;
+    printf("i + j + 10 = %d\n", get(i, j, true) + 10);
+    printf("i - j - 10 = %d\n", get(i, j, false) - 10);
+}

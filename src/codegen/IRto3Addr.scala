@@ -526,11 +526,7 @@ object IRto3Addr {
       }
 
       // Catchall
-      /*
-      case _ => {
-        println("Undefined for IRto3Addr!")
-      }
-      */
+      case _ => throw new NotImplementedError()
     }
     irModified
 	}

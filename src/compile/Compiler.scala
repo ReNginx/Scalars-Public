@@ -173,6 +173,12 @@ object Compiler {
 
     val irModified = IRto3Addr(ir, iter)
 
+    if (debugSwitch) {
+      println("\nPrinting debug info for Assembly:\n")
+      println("Low-level IR tree view:")
+      PrettyPrint(irModified)
+    }
+
     val (start, end) = DestructNew(irModified)
 
     val _st = PeepHole(start).get
@@ -186,13 +192,13 @@ object Compiler {
     TranslateCFG.close()
 
     if (debugSwitch) {
-      println("\nPrinting debug info for Assembly:\n")
-      println("Low-level IR tree view:")
-      PrettyPrint(irModified)
-
       println("\n\n\n\nPrinting execution result\n")
-      "gcc -o output output.s -no-pie".! // Hardened compile chain workaround
-      "./output".!
+      val compileRet = "gcc -o output output.s -no-pie".! // Hardened compile chain workaround
+      println(s"\nCompilation returns ${compileRet}\n");
+      if (compileRet == 0) {
+        val runRet = "./output".!
+        println(s"\nProgram returns ${runRet}\n");
+      }
     }
 
     irModified

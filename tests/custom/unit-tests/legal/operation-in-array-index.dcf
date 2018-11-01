@@ -1,0 +1,13 @@
+import printf;
+
+int A[10];
+int i;
+int j;
+
+void main () {
+    i = 1;
+    j = 2;
+    i = i + j * j;
+    i = A[i + j];
+    printf("A[i + j] is %d\n", i);
+}
