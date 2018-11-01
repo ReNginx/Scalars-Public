@@ -155,7 +155,7 @@ object Compiler {
     if (debugSwitch) {
       println("\nPrinting debug info for IR:\n")
       println("IR tree view:")
-      PrettyPrint(ir)
+      PrettyPrint(ir, 0)
     }
 
     ir
@@ -176,7 +176,7 @@ object Compiler {
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree:")
-      PrettyPrint(irModified)
+      PrettyPrint(irModified, 1)
     }
 
     val (start, end) = Destruct(irModified)
@@ -193,7 +193,7 @@ object Compiler {
 
     if (debugSwitch) {
       println("\nLow-level IR tree after destruct, peephole and allocate:")
-      PrettyPrint(irModified)
+      PrettyPrint(irModified, 2)
     }
 
     TranslateCFG(_st)
