@@ -106,7 +106,7 @@ case class Location(
     assert(ary.isInstanceOf[ArrayDeclaration])
     assert(ary.isGlobal || ary.offset != 0)
     val res: ArrayBuffer[String] = ArrayBuffer()
-    res += s"\tmovq ${index.get.rep}, ${baseReg}"
+    res += s"movq ${index.get.rep}, ${baseReg}"
     if (ary.isGlobal)
       res += s"movq ${ary.name}(, ${baseReg}, 8) ${baseReg}"
     else
