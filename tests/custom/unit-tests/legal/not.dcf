@@ -1,0 +1,15 @@
+import printf;
+
+void main () {
+    bool a, b, c;
+    a = true;
+    // b = false;
+    c = !a;
+    printf("a is %d, b is %d, c is %d\n", a, b, c);
+    if (a) {
+        printf("Good!!\n");
+    }
+    if (c) {
+        printf("Bad!!\n");
+    }
+}

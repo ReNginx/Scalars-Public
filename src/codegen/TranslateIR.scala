@@ -108,11 +108,12 @@ object TranslateIR {
 
             ury match {
               case not: Not => {
-                res += s"\tnot %rax"
+                res += s"\tmovq $$1, ${aryIdxReg1}" // logical not workaround
+                res += s"\txorq ${aryIdxReg1}, %rax"
               }
 
               case neg: Negate => {
-                res += s"\tneg %rax"
+                res += s"\tnegq %rax"
               }
             }
           }
