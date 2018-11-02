@@ -17,6 +17,8 @@ case $OS in
     $ROOT/semantics-hidden/test.sh;
     echo "Codegen Tests";
     $ROOT/codegen/test.sh;
+    echo "Codegen Hidden Tests";
+    $ROOT/codegen-hidden/test.sh;
     ;;
   CYGWIN*|Windows*)
     cd $ROOT;
@@ -30,10 +32,12 @@ case $OS in
     bash parser-hidden/test.sh;
     echo "Semantic Tests";
     bash semantics/test.sh;
-    echo "Semantic Tests";
+    echo "Semantic Hidden Tests";
     bash semantics-hidden/test.sh;
-    echo "Semantic Tests";
+    echo "Codegen Tests";
     bash codegen/test.sh;
+    echo "Codegen Hidden Tests";
+    bash codegen-hidden/test.sh;
     ;;
   *)
     echo "Error: Unknown $OS";
