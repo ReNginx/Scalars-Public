@@ -118,6 +118,7 @@ object Compiler {
       if (debugSwitch) {
         println("Parser tree view:")
         ast.prettyPrint()
+        println()
       }
       ast
     } catch {
@@ -156,6 +157,7 @@ object Compiler {
       println("\nPrinting debug info for IR:\n")
       println("IR tree view:")
       PrettyPrint(ir, 0)
+      println()
     }
 
     ir
@@ -177,6 +179,7 @@ object Compiler {
       println("\nPrinting debug info for Assembly:\n")
       println("Low-level IR tree:")
       PrettyPrint(irModified, 1)
+      println()
     }
 
     val (start, end) = Destruct(irModified)
@@ -192,15 +195,27 @@ object Compiler {
     Allocate(_st)
 
     if (debugSwitch) {
-      println("\nLow-level IR tree after destruct, peephole and allocate:")
+      println("Low-level IR tree after destruct, peephole and allocate:")
       PrettyPrint(irModified, 2)
+      println()
+    }
+
+    if (debugSwitch) {
+      println("x86-64 assembly:")
     }
 
     TranslateCFG(_st)
-    TranslateCFG.close()
+    // TranslateCFG.close
 
+    /*
     if (debugSwitch) {
-      println("\n\n\n\nPrinting execution result\n")
+      println()
+    }
+    */
+
+    /*
+    if (debugSwitch) {
+      println("Execution result:")
       val compileRet = "gcc -o output output.s -no-pie".! // Hardened compile chain workaround
       println(s"\nCompilation returns ${compileRet}\n");
       if (compileRet == 0) {
@@ -208,6 +223,7 @@ object Compiler {
         println(s"\nProgram returns ${runRet}\n");
       }
     }
+    */
 
     irModified
   }

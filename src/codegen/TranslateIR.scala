@@ -171,7 +171,7 @@ object TranslateIR {
               }
               case _ =>
             }
-            ari.rhs match {
+            log.rhs match {
               case loc: Location => {
                 res ++= loc.indexCheck
               }

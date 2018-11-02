@@ -12,17 +12,20 @@ object TranslateCFG {
   val aryIdxReg2: String = "%r11" // use %r11 when both sides are assignments
 
   val strs: ArrayBuffer[Tuple2[String, String]] = ArrayBuffer() // all string literals go here.
-  var fileName: String = "output.s"
-  lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
+  // var fileName: String = "output/output.s"
+  // lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
+  val writer : PrintWriter = new PrintWriter(System.out);
 
   def output(str: String) = {
     writer.write(str + "\n")
     println(str)
   }
 
+  /*
   def close() = {
     writer.close()
   }
+  */ // don't close stdout
 
   /*
   private def outputMov(from: String, to: String) = {
