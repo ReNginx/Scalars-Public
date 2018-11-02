@@ -209,23 +209,24 @@ object Compiler {
     TranslateCFG(_st, output, debugSwitch)
     TranslateCFG.closeOutput
 
-    /*
     if (debugSwitch) {
       println()
     }
-    */
 
-    /*
-    if (debugSwitch) {
+    if (debugSwitch && !output.isEmpty) {
       println("Execution result:")
-      val compileRet = "gcc -o output output.s -no-pie".! // Hardened compile chain workaround
-      println(s"\nCompilation returns ${compileRet}\n");
+      val asmFileVec = outFile.split("\\.")
+      val binFileVec = asmFileVec.slice(0, asmFileVec.length - 1)
+      val binFile = binFileVec.mkString(".")
+      val compileRet = s"gcc -o ${binFile} ${outFile} -no-pie".! // Hardened compile chain workaround
+      println()
+      println(s"Compilation returns ${compileRet}\n");
       if (compileRet == 0) {
-        val runRet = "./output".!
-        println(s"\nProgram returns ${runRet}\n");
+        val runRet = s"${binFile}".!
+        println()
+        println(s"Program returns ${runRet}\n");
       }
     }
-    */
 
     irModified
   }
