@@ -66,4 +66,6 @@ case class Registers(
      typ: Option[Type] = None) extends FieldDeclaration {
 
   override val isReg: Boolean = true
+
+  override def rep = s"%${name}"
 }

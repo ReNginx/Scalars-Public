@@ -16,8 +16,11 @@ object TranslateIR {
       case assign: AssignStatement => { // assume that
         // index checking
         res ++= assign.loc.indexCheck
-        if (assign.value.isInstanceOf[Location]) {
-          res ++= assign.value.asInstanceOf[Location].indexCheck
+        assign.value match {
+          case loc: Location => {
+            res ++= loc.asInstanceOf[Location].indexCheck
+          }
+          case _ =>
         }
         val (repVecLoc: Vector[String], repStrLoc: String) = assign.loc.getRep(aryIdxReg1)
         val (repVecValue: Vector[String], repStrValue: String) = assign.value.getRep(aryIdxReg2)
@@ -28,8 +31,11 @@ object TranslateIR {
 
       case compAsg: CompoundAssignStatement => {
         res ++= compAsg.loc.indexCheck
-        if (compAsg.value.isInstanceOf[Location]) {
-          res ++= compAsg.value.asInstanceOf[Location].indexCheck
+        compAsg.value match {
+          case loc: Location => {
+            res ++= loc.asInstanceOf[Location].indexCheck
+          }
+          case _ =>
         }
         val (repVecLoc: Vector[String], repStrLoc: String) = compAsg.loc.getRep(aryIdxReg1)
         val (repVecValue: Vector[String], repStrValue: String) = compAsg.value.getRep(aryIdxReg1)
@@ -49,17 +55,29 @@ object TranslateIR {
 
       case inc: Increment => {
         res ++= inc.loc.indexCheck
-        res += s"\tincq ${inc.loc.rep}"
+        val (repVec: Vector[String], repStr: String) = inc.loc.getRep(aryIdxReg1)
+        res ++= repVec
+        res += s"\tincq ${repStr}"
       }
 
       case dec: Decrement => {
         res ++= dec.loc.indexCheck
-        res += s"\tdecq ${dec.loc.rep}"
+        val (repVec: Vector[String], repStr: String) = dec.loc.getRep(aryIdxReg1)
+        res ++= repVec
+        res += s"\tdecq ${repStr}"
       }
 
       case ret: Return => {
         if (ret.value.isDefined) {
-          res += s"\tmovq ${ret.value.get.rep}, %rax"
+          ret.value.get match {
+            case loc: Location => {
+              res ++= loc.indexCheck
+            }
+            case _ =>
+          }
+          val (repVec: Vector[String], repStr: String) = ret.value.get.getRep(aryIdxReg1)
+          res ++= repVec
+          res += s"\tmovq ${repStr}, %rax"
         }
         res += s"\tleave"
         res += s"\tret"
@@ -78,7 +96,15 @@ object TranslateIR {
       case op: Operation => {
         op match {
           case ury: UnaryOperation => {
-            res ++= Helper.outputMov(ury.expression.rep, "%rax")
+            ury.expression match {
+              case loc: Location => {
+                res ++= loc.indexCheck
+              }
+              case _ =>
+            }
+            val (repVec: Vector[String], repStr: String) = ury.expression.getRep(aryIdxReg1)
+            res ++= repVec
+            res ++= Helper.outputMov(s"${repStr}", "%rax")
 
             ury match {
               case not: Not => {
@@ -92,39 +118,71 @@ object TranslateIR {
           }
 
           case ari: ArithmeticOperation => {
-            res ++= Helper.outputMov(ari.lhs.rep, "%rax")
+            ari.lhs match {
+              case loc: Location => {
+                res ++= loc.indexCheck
+              }
+              case _ =>
+            }
+            ari.rhs match {
+              case loc: Location => {
+                res ++= loc.indexCheck
+              }
+              case _ =>
+            }
+            val (repVecLHS: Vector[String], repStrLHS: String) = ari.lhs.getRep(aryIdxReg1)
+            val (repVecRHS: Vector[String], repStrRHS: String) = ari.rhs.getRep(aryIdxReg2)
+            res ++= repVecLHS
+            res ++= repVecRHS
+            res ++= Helper.outputMov(s"${repStrLHS}", "%rax")
 
             ari.operator match {
               case Add => {
-                res += s"\taddq ${ari.rhs.rep}, %rax"
+                res += s"\taddq ${repStrRHS}, %rax"
               }
 
               case Subtract => {
-                res += s"\tsubq ${ari.rhs.rep}, %rax"
+                res += s"\tsubq ${repStrRHS}, %rax"
               }
 
               case Divide => {
-                res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
+                res ++= Helper.outputMov(s"${repStrRHS}", "%rsi")
                 res += s"\tcqto"
                 res += s"\tidivq %rsi"
               }
 
               case Modulo => {
-                res ++= Helper.outputMov(ari.rhs.rep, "%rsi")
+                res ++= Helper.outputMov(s"${repStrRHS}", "%rsi")
                 res += s"\tcqto"
                 res += s"\tidivq %rsi"
                 res += s"\tmovq %rdx, %rax"
               }
 
               case Multiply => {
-                res += s"\timul ${ari.rhs.rep}, %rax"
+                res += s"\timul ${repStrRHS}, %rax"
               }
             }
           }
 
           case log: LogicalOperation => {
-            res ++= Helper.outputMov(log.lhs.rep, "%rdx")
-            res ++= Helper.outputMov(log.rhs.rep, "%rdi")
+            log.lhs match {
+              case loc: Location => {
+                res ++= loc.indexCheck
+              }
+              case _ =>
+            }
+            ari.rhs match {
+              case loc: Location => {
+                res ++= loc.indexCheck
+              }
+              case _ =>
+            }
+            val (repVecLHS: Vector[String], repStrLHS: String) = log.lhs.getRep(aryIdxReg1)
+            val (repVecRHS: Vector[String], repStrRHS: String) = log.rhs.getRep(aryIdxReg2)
+            res ++= repVecLHS
+            res ++= repVecRHS
+            res ++= Helper.outputMov(s"${repStrLHS}", "%rdx")
+            res ++= Helper.outputMov(s"${repStrRHS}", "%rdi")
             res += s"\txor %rax, %rax"
 
             log.operator match {
