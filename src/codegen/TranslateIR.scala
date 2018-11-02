@@ -104,7 +104,7 @@ object TranslateIR {
             }
             val (repVec: Vector[String], repStr: String) = ury.expression.getRep(aryIdxReg1)
             res ++= repVec
-            res ++= Helper.outputMov(s"${repStr}", "%rax")
+            res ++= Helper.outputMov(repStr, "%rax")
 
             ury match {
               case not: Not => {
@@ -135,7 +135,7 @@ object TranslateIR {
             val (repVecRHS: Vector[String], repStrRHS: String) = ari.rhs.getRep(aryIdxReg2)
             res ++= repVecLHS
             res ++= repVecRHS
-            res ++= Helper.outputMov(s"${repStrLHS}", "%rax")
+            res ++= Helper.outputMov(repStrLHS, "%rax")
 
             ari.operator match {
               case Add => {
@@ -147,13 +147,13 @@ object TranslateIR {
               }
 
               case Divide => {
-                res ++= Helper.outputMov(s"${repStrRHS}", "%rsi")
+                res ++= Helper.outputMov(repStrRHS, "%rsi")
                 res += s"\tcqto"
                 res += s"\tidivq %rsi"
               }
 
               case Modulo => {
-                res ++= Helper.outputMov(s"${repStrRHS}", "%rsi")
+                res ++= Helper.outputMov(repStrRHS, "%rsi")
                 res += s"\tcqto"
                 res += s"\tidivq %rsi"
                 res += s"\tmovq %rdx, %rax"
@@ -182,8 +182,8 @@ object TranslateIR {
             val (repVecRHS: Vector[String], repStrRHS: String) = log.rhs.getRep(aryIdxReg2)
             res ++= repVecLHS
             res ++= repVecRHS
-            res ++= Helper.outputMov(s"${repStrLHS}", "%rdx")
-            res ++= Helper.outputMov(s"${repStrRHS}", "%rdi")
+            res ++= Helper.outputMov(repStrLHS, "%rdx")
+            res ++= Helper.outputMov(repStrRHS, "%rdi")
             res += s"\txor %rax, %rax"
 
             log.operator match {
@@ -223,7 +223,7 @@ object TranslateIR {
             res += s"\tmovzbl %al, %eax"
           }
         }
-        res ++= Helper.outputMov("%rax", op.eval.get.rep)
+        res ++= Helper.outputMov("%rax", op.eval.get.rep) // safe
       }
 
       case _ => throw new NotImplementedError

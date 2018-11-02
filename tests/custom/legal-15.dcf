@@ -1,0 +1,10 @@
+import printf;
+int x[10];
+int y[20];
+int i;
+void main ( ) {
+  // x[4] = 10;
+  // y[10] = 1;
+  i = y[x[4]];
+  printf ("y[x[4]]: %d\n", i);
+}
