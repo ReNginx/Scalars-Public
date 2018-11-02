@@ -125,13 +125,13 @@ case class Location(
     field.get match {
       case array: ArrayDeclaration => {
         val res: ArrayBuffer[String] = ArrayBuffer()
-        res += s"movq ${index.get.rep}, %rax"
-        res += s"cmpq %rax, $$ 0"
-        res += s"jle outOfBound"
-        res += s"cmpq %rax, $$${array.length.value}"
-        res += s"jg outofBound"
+        res += s"\tmovq ${index.get.rep}, %rax"
+        res += s"\tcmpq %rax, $$0"
+        res += s"\tjle outOfBound"
+        res += s"\tcmpq %rax, $$${array.length.value}"
+        res += s"\tjg outofBound"
         res.toVector
-        Vector[String]()
+        //Vector[String]()
       }
       case _ => Vector()
     }
