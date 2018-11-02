@@ -202,9 +202,11 @@ object TranslateCFG {
         }
 
         //deal with runtime check.
+        output(".globl noReturn")
         output("noReturn:")
         output("\tmovq $-2, %rdi")
         output("\tcall exit")
+        output(".globl outOfBound")
         output("outOfBound:")
         output("\tmovq $-1, %rdi")
         output("\tcall exit")

@@ -126,12 +126,12 @@ case class Location(
       case array: ArrayDeclaration => {
         val res: ArrayBuffer[String] = ArrayBuffer()
         res += s"\tmovq ${index.get.rep}, %rax"
-        res += s"\tmovq $$0, %rdi"
-        res += s"\tcmpq %rax, %rdi"
-        res += s"\tjle outOfBound"
-        res += s"\tmovq $$${array.length.value}, %rdi"
-        res += s"\tcmpq %rax, %rdi"
-        res += s"\tjg outofBound"
+        res += s"\tmovq $$0, %r15"
+        res += s"\tcmpq %r15, %rax"
+        res += s"\tjl outOfBound"
+        res += s"\tmovq $$${array.length.value}, %r15"
+        res += s"\tcmpq %r15, %rax"
+        res += s"\tjge outOfBound"
         res.toVector
         //Vector[String]()
       }
