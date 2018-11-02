@@ -18,5 +18,5 @@ local.environment
 # misc
 cfg.dot
 cfg.png
-output/output.s
-output/output
+output.s
+output
