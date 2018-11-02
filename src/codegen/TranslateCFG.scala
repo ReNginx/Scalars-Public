@@ -169,6 +169,9 @@ object TranslateCFG {
         output(s".globl ${method.label}")
         output(method.label + ":")
         output(s"\tenter $$${method.spaceAllocated}, $$0")
+        for (i <- 1 to (-method.spaceAllocated / 8)) {
+            output(s"\tmovq $$0, ${-i*8}(%rbp)")
+        }
         // copy params from regs and stacks
         val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
         for ((param, i) <- method.params.zipWithIndex) { // params are decl
