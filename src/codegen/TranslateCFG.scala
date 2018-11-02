@@ -12,32 +12,27 @@ object TranslateCFG {
   val aryIdxReg2: String = "%r11" // use %r11 when both sides are assignments
 
   val strs: ArrayBuffer[Tuple2[String, String]] = ArrayBuffer() // all string literals go here.
-  // var fileName: String = "output/output.s"
-  // lazy val writer: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName)))
-  val writer : PrintWriter = new PrintWriter(System.out);
+  var fileName: Option[String] = None
+  var debug: Boolean = false
+  lazy val fileWriter: BufferedWriter = new BufferedWriter(new FileWriter(new File(fileName.get)))
+  lazy val printWriter: PrintWriter = new PrintWriter(System.out)
 
-  def output(str: String) = {
-    writer.write(str + "\n")
-    println(str)
-  }
-
-  /*
-  def close() = {
-    writer.close()
-  }
-  */ // don't close stdout
-
-  /*
-  private def outputMov(from: String, to: String) = {
-    if (from(0) == '%' || to(0) == '%') {
-      output(s"\tmovq ${from}, ${to}")
-    }
-    else {
-      output(s"\tmovq ${from}, %rax")
-      output(s"\tmovq %rax, ${to}")
+  def closeOutput() = {
+    if (!fileName.isEmpty) {
+      fileWriter.close
+    } else {
+      printWriter.close
     }
   }
-  */
+
+  private def output(str: String) = {
+    if (!fileName.isEmpty) {
+      fileWriter.write(str + "\n")
+      if (debug) println(str)
+    } else {
+      printWriter.write(str + "\n")
+    }
+  }
 
   private def outputVec(strs: Vector[String]) = {
     strs foreach {output(_)}
@@ -97,7 +92,15 @@ object TranslateCFG {
     math.max(0, (params.length - 6)*8) // params pushed to stack
   }
 
-  def apply(cfg: CFG, untilBlock: Option[CFG] = None): Unit = {
+  def apply(
+            cfg: CFG,
+            outFile: Option[String],
+            debugSwitch: Boolean,
+            untilBlock: Option[CFG] = None): Unit = {
+
+    fileName = outFile
+    debug = debugSwitch
+
     if (cfg.isTranslated || Option(cfg) == untilBlock) {
       output("\tjmp " + cfg.label)
       return
@@ -109,7 +112,7 @@ object TranslateCFG {
       case VirtualCFG(label, _, next) => {
         output(label + ":")
         if (next.isDefined)
-          TranslateCFG(next.get, untilBlock)
+          TranslateCFG(next.get, fileName, debug, untilBlock)
       }
 
       case CFGBlock(label, statements, next, _) => {
@@ -120,7 +123,7 @@ object TranslateCFG {
         }
 
         if (next.isDefined)
-            TranslateCFG(next.get, untilBlock)
+            TranslateCFG(next.get, fileName, debug, untilBlock)
       }
 
       case CFGConditional(label, condition, next, ifFalse, end, _) => {
@@ -139,13 +142,13 @@ object TranslateCFG {
 
         assert(end.isDefined)
         if (next.isDefined) {
-          TranslateCFG(next.get, end)
+          TranslateCFG(next.get, fileName, debug, end)
         }
         if (ifFalse.isDefined) {
-          TranslateCFG(ifFalse.get, end)
+          TranslateCFG(ifFalse.get, fileName, debug, end)
         }
         assert(end.isDefined)
-        TranslateCFG(end.get, untilBlock)
+        TranslateCFG(end.get, fileName, debug, untilBlock)
       }
 
       case CFGMethodCall(label, params, declaration, next, _) => {
@@ -158,7 +161,7 @@ object TranslateCFG {
         output(s"\taddq $$${sizePushedToStack}, %rsp")
 
         if (next.isDefined)
-          TranslateCFG(next.get, untilBlock)
+          TranslateCFG(next.get, fileName, debug, untilBlock)
         // for now we don't restore regs, rather we copy them to stack at beginning of a method..
       }
 
@@ -174,7 +177,7 @@ object TranslateCFG {
           outputVec(Helper.outputMov(from, to))
         }
         if (method.block.isDefined) {
-          TranslateCFG(method.block.get)
+          TranslateCFG(method.block.get, fileName, debug)
         }
         if (method.method.typ == Option(VoidType)) {
           output(s"\tleave")
@@ -192,7 +195,7 @@ object TranslateCFG {
         //functions goes here.
         output(".text")
         for (mthd <- methods) {
-          TranslateCFG(mthd)// methods is a map, iterate through its value
+          TranslateCFG(mthd, fileName, debug)// methods is a map, iterate through its value
         }
 
         //deal with runtime check.

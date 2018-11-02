@@ -35,9 +35,10 @@ object Compiler {
         System.exit(1)
       }
     } else if (CLI.target == CLI.Action.ASSEMBLY) {
-      if (assembly(CLI.infile) == null) {
+      if (assembly(CLI.infile, CLI.outfile) == null) {
         System.exit(1)
       }
+      
     }
     System.exit(0)
   }
@@ -163,8 +164,9 @@ object Compiler {
     ir
   }
 
-  def assembly(fileName: String, debugSwitch: Boolean = CLI.debug) : IR = {
-    val optIR = Option(inter(fileName, false))
+  def assembly(inFile: String, outFile: String, debugSwitch: Boolean = CLI.debug) : IR = {
+    val optIR = Option(inter(inFile, false))
+    val output = if (outFile == null) None else Some(outFile)
     // parsing failed
     if (optIR.isEmpty) {
       System.exit(1)
@@ -204,8 +206,8 @@ object Compiler {
       println("x86-64 assembly:")
     }
 
-    TranslateCFG(_st)
-    // TranslateCFG.close
+    TranslateCFG(_st, output, debugSwitch)
+    TranslateCFG.closeOutput
 
     /*
     if (debugSwitch) {
