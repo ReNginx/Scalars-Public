@@ -43,7 +43,7 @@ case class Location(
   var evalLoc: Option[Expression] = None
   var blockLoc: Option[Block] = None
 
-  override def eval: Option[Expression] = if (!evalLoc.isEmpty) evalLoc else Some(self)
+  override def eval: Option[Expression] = Some(self)
   override def block: Option[Block] = if (!blockLoc.isEmpty) blockLoc else None
 
   override def typ: Option[Type] = {
