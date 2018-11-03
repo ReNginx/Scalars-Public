@@ -1,0 +1,16 @@
+import printf;
+int i;
+
+void func1 ( ) {
+  int A[3];
+  for ( i = 0; i < 3; i += 1 ) {
+    A[i] = 1;
+    // printf("Looped! i = %d\n", i);
+  }
+}
+
+
+void main ( ) {
+  func1 ( );
+  printf("Got here!");
+}
