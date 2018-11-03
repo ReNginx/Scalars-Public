@@ -26,9 +26,21 @@ Throughout the recursive flattening process, we keep a global iterator that incr
 
 A control-flow graph is generated from the low-level IR. The processes is separated into 3 stages.
 \begin{enumerate}
-    \item Short-circuiting logical expressions.
     \item Destructuring logical constructs.
-    \item Joining adjacent blocks.
+    \item Short-circuiting logical expressions.
+    \item Peephole optimization.
+\end{enumerate}
+
+\subsubsection{Destructuring}
+
+Logical constructs are destructured as outlined in the lecture notes. We scan for adjacent blocks of declarations and 3-address statements, and join them into a single node in the CFG. After this process, every node in the CFG is represented by one of the following 6 categories:
+\begin{enumerate}
+    \item |VirtualCFG|: Start and end nodes that do not contain statements.
+    \item |CFGBlock|: Basic block in CFG that does not contain conditional statements.
+    \item |CFGConditional|: Basic block in CFG that represents a single conditional statement.
+    \item |CFGMethod|: Basic block in CFG that represents a method declaration.
+    \item |CFGMethodCall|: Basic block in CFG that represents a method call.
+    \item |CFGProgram|: Basic block in CFG that represents a program.
 \end{enumerate}
 
 \subsubsection{Short-Circuiting}
@@ -41,25 +53,13 @@ Given a logical expression |t| that has a depth $d \geq 2$, the short-circuiting
     \item Once all conditionals are filled in a CFG snippet |s|, add |s| to its parent snippet by replacing |s|'s corresponding conditional in the parent snippet with |s|. Connect the inbound/outbound edges of |s| with its parent's edges as necessary.
 \end{enumerate}
 
-\subsubsection{Destructuring}
+\subsubsection{Peephole Optimization}
 
-Logical constructs are destructured as outlined in the lecture notes.
-
-\subsubsection{Joining Adjacent Blocks}
-
-We scan for adjacent blocks of declarations and 3-address statements, and join them into a single node in the CFG. After this process, every node in the CFG is represented by one of the following 6 categories:
-\begin{enumerate}
-    \item |VirtualCFG|: Start and end nodes that do not contain statements.
-    \item |CFGBlock|: Basic block in CFG that does not contain conditional statements.
-    \item |CFGConditional|: Basic block in CFG that represents a single conditional statement.
-    \item |CFGMethod|: Basic block in CFG that represents a method declaration.
-    \item |CFGMethodCall|: Basic block in CFG that represents a method call.
-    \item |CFGProgram|: Basic block in CFG that represents a program.
-\end{enumerate}
+Peephole optimization is performed to eliminate |nop| nodes in the CFG.
 
 \subsection{\lstinline{x86-64} Assembly Generation}
 
-The CFG is linearized, and from which |x86-64| assembly is generated. When generating code for method calls, the Linux/GCC |x86-64| calling convention is used.
+The CFG is linearized, and from which |x86-64| assembly is generated. When generating code for method calls, the Linux/GCC |x86-64| calling convention is used. We start with generating code for the CFG structure. Upon encountering each IR element, we recurse and generate code for the IR element.
 
 \newpage
 
@@ -90,25 +90,23 @@ SCALA_HOME=/mit/scala/scala/scala-2.11.2/
 \begin{enumerate}
     \item It is challenging to design and implement an effective expression tree flattening scheme. An important aspect of expression tree flattening is to maintain information necessary in generating the CFG, especially for short-circuiting and destructuring. In our final solution, each node |t| of an expression tree contains all 3-address code and temporary variable declarations needed to compute the subtree rooted at |t|. This design choice borrows from the idea of persistent data structures, and it allows us to augment the IR with flattened code, rather than replacing it. Hence we are able to retain the original expression tree structure for short-circuiting and destructuring.
     \item Performing short-circuiting in CFG generation.
+    \item Array allocation and array indexing.
 \end{enumerate}
 
 \newpage
 
 \section{Contribution}
 
-\subsection{Jack}
-\begin{enumerate}
-    \item Designed and implemented control-flow graph generation.
-\end{enumerate}
-
 \subsection{Allen}
 \begin{enumerate}
-    \item Designed and implemented expression tree flattening.
-    \item Added command line interface for |--target=assembly| switch and its |--debug| variant. Added pretty-printing. Created and maintained run and build scripts.
+    \item Designed and implemented expression tree flattening and part of code generation.
+    \item Created and maintained debugging/execution infrastructure.
     \item Completed documentation.
+    \item Debugging.
 \end{enumerate}
 
 \subsection{Hanxiang}
 \begin{enumerate}
-    \item Designed and implemented |x86-64| assembly generation.
+    \item Re-designed and implemented CFG generation and the majority of code generation.
+    \item Debugging.
 \end{enumerate}
