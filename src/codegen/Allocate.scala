@@ -22,8 +22,8 @@ object Allocate {
       case array: ArrayDeclaration => {
         assert(!array.isReg)
         if (!array.isGlobal && !array.isReg && array.offset == 0) {
-          array.offset = offset
           offset -= array.length.value.toInt * sizeOfVar
+          array.offset = offset + sizeOfVar
         }
       }
 

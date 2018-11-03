@@ -112,8 +112,11 @@ case class Location(
     if (ary.isGlobal) {
       resStr = s"${ary.name}(, ${baseReg}, 8)"
     } else {
+      /*
       resVec += s"\taddq $$${-ary.offset}, ${baseReg}"
       resStr = s"(%rbp, ${baseReg}, 8)"
+      */
+      resStr = s"${ary.offset}(%rbp, ${baseReg}, 8)"
     }
     (resVec.toVector, resStr)
   }
