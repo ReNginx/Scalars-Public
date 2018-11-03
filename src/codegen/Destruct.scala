@@ -408,10 +408,22 @@ object Destruct {
     val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
     if (loc.index.isDefined) {
-      val (indexSt, indexEd) = Destruct(loc.index.get)
-      loc.index = loc.index.get.eval
-      link(start, indexSt)
-      link(indexEd, end)
+      loc.index.get match {
+        case location: Location => {
+          val (indexSt, indexEd) = Destruct(loc.index.get)
+          link(start, indexSt)
+          loc.index = loc.index.get.eval
+          val self = CFGBlock(placeStr + "_index", ArrayBuffer(loc))
+          link(indexEd, self)
+          link(self, end)
+        }
+        case _ => {
+          val (indexSt, indexEd) = Destruct(loc.index.get)
+          loc.index = loc.index.get.eval
+          link(start, indexSt)
+          link(indexEd, end)
+        }
+      }
     }
     else {
       link(start, end)

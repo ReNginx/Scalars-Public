@@ -226,6 +226,18 @@ object TranslateIR {
         res ++= Helper.outputMov("%rax", op.eval.get.rep) // safe
       }
 
+      case loc: Location => {
+        loc.index.get match {
+          case indexLoc: Location => {
+            res ++= indexLoc.indexCheck
+          }
+          case _ =>
+        }
+        val (repVec: Vector[String], repStr: String) = loc.index.get.getRep(aryIdxReg1)
+        res ++= repVec
+        res ++= Helper.outputMov(repStr, "%rax")
+      }
+
       case _ => throw new NotImplementedError
     }
     res.toVector
