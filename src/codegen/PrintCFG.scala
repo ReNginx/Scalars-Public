@@ -94,15 +94,15 @@ object PrintCFG {
           }
           case dec: Decrement => {
             assert(dec.loc.eval.isDefined)
-            println(s"Inc ${dec.loc.eval.get.cfgRep}")
+            println(s"Dec ${dec.loc.eval.get.cfgRep}")
           }
           case unary: UnaryOperation => {
             assert(unary.expression.eval.isDefined)
-            println(s"Inc ${unary.expression.eval.get.cfgRep}")
+            println(s"Unary ${unary.eval.get.cfgRep} = ${unary.expression.eval.get.cfgRep}")
           }
           case binary: BinaryOperation => {
             assert(binary.eval.isDefined)
-            println(s"Binary ${binary.eval.get.cfgRep}= ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
+            println(s"Binary ${binary.eval.get.cfgRep} = ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
           }
           case ret: Return => {
             if (ret.value.isDefined) {

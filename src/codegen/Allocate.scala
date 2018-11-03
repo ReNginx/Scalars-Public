@@ -26,7 +26,37 @@ object Allocate {
           offset -= array.length.value.toInt * sizeOfVar
         }
       }
+
+      case regs: Registers =>
+
+      case _ => throw new NotImplementedError()
     }
+  }
+
+  def allocateExpr(expr: Expression): Unit = {
+      expr match {
+        case loc: Location => {
+          assert(loc.field.isDefined)
+          allocateDecl(loc.field.get)
+          if (loc.index.isDefined) {
+            allocateExpr(loc.index.get)
+          }
+        }
+
+        case unary: UnaryOperation => {
+          allocateExpr(unary.eval.get)
+          allocateExpr(unary.expression)
+        }
+
+        case binary: BinaryOperation => {
+          allocateExpr(binary.eval.get)
+          allocateExpr(binary.lhs)
+          allocateExpr(binary.rhs)
+        }
+
+        case literal: Literal =>
+        case _ => throw new NotImplementedError()
+      }
   }
 
   def apply(cfg: CFG): Unit = {
@@ -38,8 +68,9 @@ object Allocate {
 
     cfg match {
       case VirtualCFG(_, _, next) => {
-        if (next.isDefined)
+        if (next.isDefined) {
           Allocate(next.get)
+        }
       }
 
       case CFGBlock(label, statements, next, _) => {
@@ -47,17 +78,26 @@ object Allocate {
         for (statement <- statements) {
           statement match {
             case field: FieldDeclaration => allocateDecl(field)
-            case assign: Assignment => allocateDecl(assign.loc.field.get)
-            case oper: Operation => {
-              oper.eval.get match {
-                case location: Location => {
-                  assert(location.field.isDefined)
-                  allocateDecl(location.field.get)
-                }
-                case _ => throw new NotImplementedError()
-              }
+            case assign: AssignStatement => {
+              allocateExpr(assign.loc)
+              allocateExpr(assign.value)
             }
-            case _: Return =>
+            case compAsg: CompoundAssignStatement => {
+              allocateExpr(compAsg.loc)
+              allocateExpr(compAsg.value)
+            }
+            case inc: Increment => {
+              allocateExpr(inc.loc)
+            }
+            case dec: Decrement => {
+              allocateExpr(dec.loc)
+            }
+
+            case expr: Expression => allocateExpr(expr)
+            case ret: Return => {
+              if (ret.value.isDefined)
+                allocateExpr(ret.value.get)
+            }
             case _ => throw new NotImplementedError()
           }
         }
@@ -67,14 +107,15 @@ object Allocate {
       }
 
       case CFGConditional(_, condition, next, ifFalse, _, _) => {
-        condition.eval.get match {
-          case location: Location => {
-            assert(location.field.isDefined)
-            allocateDecl(location.field.get)
-          }
-          case literal: Literal =>
-          case _ => throw new NotImplementedError()
-        }
+         allocateExpr(condition)
+        // condition.eval.get match {
+        //   case location: Location => {
+        //     assert(location.field.isDefined)
+        //     allocateDecl(location.field.get)
+        //   }
+        //   case literal: Literal =>
+        //   case _ => throw new NotImplementedError()
+        // }
         if (next.isDefined) {
           //println(next.get.label) //DEBUG
           Allocate(next.get)

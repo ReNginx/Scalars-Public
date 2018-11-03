@@ -2,13 +2,12 @@ import printf;
 
 void main() {
   int i;
+  bool k;
+  k = true;
   for (i = 0; i < 10; i++) {
     if (i == 5) {
       break;
     }
-    else {
-      break;
-    }
-    printf("%d\n", i);
+    printf("%d '%d'\n", i, k);
   }
 }
