@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 object TranslateIR {
   val aryIdxReg1: String = "%r10" // use %r10 for array indexing
   val aryIdxReg2: String = "%r11" // use %r11 when both sides are assignments
-  
+
   def apply(ir: IR): Vector[String] = { // assuming here we only have
     val res: ArrayBuffer[String] = ArrayBuffer()
     //println(ir.getClass.toString)
@@ -226,17 +226,17 @@ object TranslateIR {
         res ++= Helper.outputMov("%rax", op.eval.get.rep) // safe
       }
 
-      case loc: Location => {
-        loc.index.get match {
-          case indexLoc: Location => {
-            res ++= indexLoc.indexCheck
-          }
-          case _ =>
-        }
-        val (repVec: Vector[String], repStr: String) = loc.index.get.getRep(aryIdxReg1)
-        res ++= repVec
-        res ++= Helper.outputMov(repStr, "%rax")
-      }
+      // case loc: Location => {
+      //   loc.index.get match {
+      //     case indexLoc: Location => {
+      //       res ++= indexLoc.indexCheck
+      //     }
+      //     case _ =>
+      //   }
+      //   val (repVec: Vector[String], repStr: String) = loc.index.get.getRep(aryIdxReg1)
+      //   res ++= repVec
+      //   res ++= Helper.outputMov(repStr, "%rax")
+      // }
 
       case _ => throw new NotImplementedError
     }
