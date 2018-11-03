@@ -182,7 +182,12 @@ object TranslateCFG {
         if (method.block.isDefined) {
           TranslateCFG(method.block.get, fileName, debug)
         }
-        if (method.method.typ == Option(VoidType)) {
+        if (method.method.name == "main") {
+          output("\tmovq $0, %rax")
+          output(s"\tleave")
+          output(s"\tret")
+        }
+        else if (method.method.typ == Option(VoidType)) {
           output(s"\tleave")
           output(s"\tret")
         }
