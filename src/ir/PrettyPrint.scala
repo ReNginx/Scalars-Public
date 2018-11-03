@@ -66,6 +66,14 @@ object PrettyPrint {
           println(leadingWS + "- index")
           PrettyPrint(index.get, level, indentLevel + 1)
         }
+        if (level >= 1) {
+          if (!ir.asInstanceOf[Location].block.isEmpty) {
+            println(leadingWS + "- eval")
+            PrettyPrint(ir.asInstanceOf[Location].eval.get, level, indentLevel + 1)
+            println(leadingWS + "- block")
+            PrettyPrint(ir.asInstanceOf[Location].block.get, level, indentLevel + 1)
+          }
+        }
         if (level >= 2) {
           val (repVec: Vector[String], repStr: String) = ir.asInstanceOf[Location].getRep("%dum")
           println(leadingWS + "- repVec with %dum baseReg")

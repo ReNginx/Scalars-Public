@@ -77,12 +77,33 @@ object IRto3Addr {
       }
 
       case Location(line, col, name, index, field) => {
-        irModified = ir.asInstanceOf[Location].copy(
-          index = if (!index.isEmpty)
-            Some(IRto3Addr(index.get, iter).asInstanceOf[Expression])
-            else index
-          // Do not recurse into field declaration
-        )
+        if (!index.isEmpty) {
+          irModified = ir.asInstanceOf[Location].copy(
+            index = Some(IRto3Addr(index.get, iter).asInstanceOf[Expression])
+          )
+          // Create additional temp variable if index itself is an array element
+          index.get match {
+            case indexLoc: Location => {
+              if (!indexLoc.index.isEmpty) { // index is an array element
+                var blockChild = Block(0, 0, Vector(), Vector())
+      
+                val varIndex = iter.next
+                val varNew = VariableDeclaration(0, 0, varIndex.toString + "_tmp", Some(IntType)) // only int is possible for array index
+                val evalNew = Location(0, 0, varNew.name, None, Some(varNew))
+                val statementNew = AssignStatement(0, 0, evalNew, indexLoc)
+                val blockNew = blockChild.asInstanceOf[Block].copy(
+                  declarations = blockChild.declarations :+ varNew,
+                  statements = blockChild.statements :+ statementNew
+                )
+                irModified.asInstanceOf[Location].evalLoc = Some(evalNew)
+                irModified.asInstanceOf[Location].blockLoc = Some(blockNew)
+              }
+            }
+            case _ =>
+          }  
+        } else {
+          irModified = ir
+        }
       }
 
       // FieldDeclaration

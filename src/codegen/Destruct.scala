@@ -303,6 +303,7 @@ object Destruct {
       last = ed
       assert(param.eval.isDefined)
       paramList += param.eval.get
+      println(param.cfgRep) //DEBUG
     }
 
     val mthdCal = CFGMethodCall(placeStr + "_call", paramList.toVector, call.method.get.name)
@@ -404,19 +405,66 @@ object Destruct {
     *
     * @return (start, end)
     */
+  // private def destructLocation(loc: Location): (CFG, CFG) = {
+  //   val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
+  //   val (start, end) = create(placeStr)
+  //   if (loc.index.isDefined) {
+  //     loc.index.get match {
+  //       case location: Location => {
+  //         //println(loc.field.get.name)
+  //         val (indexSt, indexEd) = Destruct(loc.index.get)
+  //         link(start, indexSt)
+  //         loc.index = loc.index.get.eval
+  //         val self = CFGBlock(placeStr + "_index", ArrayBuffer(loc))
+  //         link(indexEd, self)
+  //         link(self, end)
+  //       }
+  //       case _ => {
+  //         val (indexSt, indexEd) = Destruct(loc.index.get)
+  //         loc.index = loc.index.get.eval
+  //         link(start, indexSt)
+  //         link(indexEd, end)
+  //       }
+  //     }
+  //   }
+  //   else {
+  //     link(start, end)
+  //   }
+  //
+  //   (start, end)
+  // }
+
   private def destructLocation(loc: Location): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
+    var last = start
     if (loc.index.isDefined) {
       val (indexSt, indexEd) = Destruct(loc.index.get)
+      link(last, indexSt)
+      last = indexEd
       loc.index = loc.index.get.eval
-      link(start, indexSt)
-      link(indexEd, end)
+      loc.index.get match {
+        case indLoc: Location => {
+          if (indLoc.index.isDefined) {
+            println("I'm HRER")
+            println(loc.field.get.name)
+            val assign: AssignStatement = AssignStatement(indLoc.line, indLoc.col, loc.evalLoc.get.asInstanceOf[Location], indLoc)
+            val block = CFGBlock(placeStr + "_ind", ArrayBuffer(assign))
+            link(last, block)
+            last = block
+            loc.index = loc.evalLoc
+          }
+        }
+        case lit: Literal =>
+      }
+      link(last, end)
     }
     else {
       link(start, end)
     }
-
+    // val locSelf = CFGBlock(placeStr + "_self", ArrayBuffer(loc))
+    // link(last, locSelf)
+    // last = locSelf
     (start, end)
   }
 

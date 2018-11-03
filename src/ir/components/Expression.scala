@@ -33,16 +33,18 @@ case class Length(line: Int, col: Int, location: Location) extends Expression {
 }
 
 case class Location(
-                     line: Int,
-                     col: Int,
-                     name: String,
-                     var index: Option[Expression], // location or int linteral
-                     var field: Option[FieldDeclaration] = None) extends Expression {
+                    line: Int,
+                    col: Int,
+                    name: String,
+                    var index: Option[Expression], // location or int linteral
+                    var field: Option[FieldDeclaration] = None) extends Expression {
   self =>
 
-  override def eval: Option[Expression] = Some(self)
+  var evalLoc: Option[Expression] = None
+  var blockLoc: Option[Block] = None
 
-  override def block: Option[Block] = Some(Block(0, 0, Vector(), Vector()))
+  override def eval: Option[Expression] = Some(self)
+  override def block: Option[Block] = if (!blockLoc.isEmpty) blockLoc else None
 
   override def typ: Option[Type] = {
     if (field.isEmpty) {
