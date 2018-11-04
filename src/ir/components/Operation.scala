@@ -3,6 +3,7 @@ package ir.components
 trait Operation extends Expression{
   def line: Int
   def col: Int
+  var eval: Option[Location]
 }
 
 trait UnaryOperation extends Expression with Operation {
@@ -12,7 +13,7 @@ trait UnaryOperation extends Expression with Operation {
 case class Not(
     line: Int,
     col: Int,
-    override val eval: Option[Location],
+    var eval: Option[Location],
     override val block: Option[Block],
     var expression: Expression) extends UnaryOperation {
 
@@ -23,7 +24,7 @@ case class Not(
 case class Negate(
     line: Int,
     col: Int,
-    override val eval: Option[Location],
+    override var eval: Option[Location],
     override val block: Option[Block],
     var expression: Expression) extends UnaryOperation {
 
@@ -39,7 +40,7 @@ trait BinaryOperation extends Expression with Operation {
 case class ArithmeticOperation(
     line: Int,
     col: Int,
-    override val eval: Option[Location],
+    override var eval: Option[Location],
     override val block: Option[Block],
     operator: ArithmeticOperator,
     var lhs: Expression,
@@ -52,7 +53,7 @@ case class ArithmeticOperation(
 case class LogicalOperation(
     line: Int,
     col: Int,
-    override val eval: Option[Location],
+    override var eval: Option[Location],
     override val block: Option[Block],
     operator: LogicalOperator,
     var lhs: Expression,
@@ -65,7 +66,7 @@ case class LogicalOperation(
 case class TernaryOperation(
     line: Int,
     col: Int,
-    override val eval: Option[Location],
+    override var eval: Option[Location],
     override val block: Option[Block],
     condition: Expression,
     var ifTrue: Expression,

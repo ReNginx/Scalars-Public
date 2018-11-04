@@ -359,9 +359,24 @@ object Destruct {
     assignment match {
       case asg: AssignStatement => {
         //println("Asghere") // DEBUG
+
+        /* when we encouner assigning a temp to a non-temp,
+          this implies this temp comes from an operation. which means we  can safely swap
+          their place and won't cause any problem.
+        */
+        if (Helper.isTemp(asg.value.eval.get) &&
+            !Helper.isTemp(asg.loc) &&
+            asg.value.isInstanceOf[Operation]) {
+          val oper = asg.value.asInstanceOf[Operation]
+          val tmp = oper.eval.get
+          asg.value.asInstanceOf[Operation].eval = Option(asg.loc)
+          asg.loc = tmp.asInstanceOf[Location]
+        }
+
         val (exprSt, exprEd) = Destruct(asg.value)
         link(last, exprSt)
         asg.value = asg.value.eval.get
+
         //println(asg.value.asInstanceOf[FieldDeclaration].name) //DEBUG
         val block = CFGBlock(placeStr + "_assign", ArrayBuffer(asg))
         link(exprEd, block)
@@ -557,7 +572,10 @@ object Destruct {
       }
     }
 
-    (start, end)
+    // now eval is not always a temp anymore
+    val (evalSt, evalEd) = Destruct(expr.eval.get)
+    link(end, evalSt)
+    (start, evalEd)
   }
 
   /**

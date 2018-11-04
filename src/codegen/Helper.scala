@@ -1,6 +1,7 @@
 package codegen
 
 import scala.collection.mutable.ArrayBuffer
+import ir.components._
 
 object Helper {
   def outputMov(from: String, to: String): Vector[String] = {
@@ -13,5 +14,17 @@ object Helper {
       array += s"\tmovq %rax, ${to}"
     }
     array.toVector
+  }
+
+  /**
+  expr is a locaion or a literal
+  */
+  def isTemp(expr:Expression): Boolean = {
+    if (!expr.isInstanceOf[Location]) return false
+    assert(expr.asInstanceOf[Location].field.isDefined)
+    val name = expr.asInstanceOf[Location].field.get.name
+    if (name.length < 4) return false
+    if (name.slice(name.length-4, name.length) == "_tmp") return true
+    return false
   }
 }

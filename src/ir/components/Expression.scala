@@ -5,7 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 trait Expression extends IR {
   def typ: Option[Type]
 
-  def eval: Option[Expression] = None
+  def eval: Option[Expression]
 
   def block: Option[Block] = None
 

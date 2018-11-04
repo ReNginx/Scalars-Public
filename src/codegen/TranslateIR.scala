@@ -223,7 +223,9 @@ object TranslateIR {
             res += s"\tmovzbl %al, %eax"
           }
         }
-        res ++= Helper.outputMov("%rax", op.eval.get.rep) // safe
+        val (repVecEval: Vector[String], repStrEval: String) = op.eval.get.getRep(aryIdxReg1)
+        res ++= repVecEval
+        res ++= Helper.outputMov("%rax", repStrEval) // safe
       }
 
       // case loc: Location => {

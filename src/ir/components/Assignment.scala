@@ -11,7 +11,7 @@ trait AssignmentStatements extends Assignment {
 case class AssignStatement(
     line: Int,
     col: Int,
-    loc: Location,
+    var loc: Location,
     var value: Expression) extends Assignment with AssignmentStatements {
 
   def typ: Option[Type] = loc.typ
@@ -22,7 +22,7 @@ case class AssignStatement(
 case class CompoundAssignStatement(
     line: Int,
     col: Int,
-    loc: Location,
+    var loc: Location,
     var value: Expression,
     operator: ArithmeticOperator) extends Assignment with AssignmentStatements {
 
