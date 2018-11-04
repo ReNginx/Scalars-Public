@@ -2,9 +2,9 @@ package optimization
 
 import codegen.CFG
 
-object Dce {
+object CSE extends Optimization {
 
-  def apply(cfg: CFG): Unit = {
+  def apply(cfg: CFG): CFG = {
     throw new NotImplementedError()
   }
 

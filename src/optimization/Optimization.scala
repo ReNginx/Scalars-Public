@@ -1,0 +1,3 @@
+package optimization
+
+trait Optimization

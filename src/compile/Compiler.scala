@@ -2,12 +2,15 @@ package compile
 
 import java.io._
 import scala.Console
+import scala.collection.mutable.Map
+import scala.collection.breakOut
 import sys.process._
 
 import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
 import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
 import ir.components._
 import codegen._
+import optimization._
 import util.CLI
 
 object Compiler {
@@ -22,8 +25,15 @@ object Compiler {
   )
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
+  val optMap: Map[String, Optimization] = Map(
+                                              "cse" -> CSE,
+                                              "cp" -> CP,
+                                              "dce" -> DCE
+                                              )
+  val optAry: Array[String] = optMap.keys.toArray
+
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array[String]())
+    CLI.parse(args, optAry)
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
     } else if (CLI.target == CLI.Action.PARSE) {
@@ -35,7 +45,8 @@ object Compiler {
         System.exit(1)
       }
     } else if (CLI.target == CLI.Action.ASSEMBLY) {
-      if (assembly(CLI.infile, CLI.outfile) == null) {
+      val optFlagMap: Map[String, Boolean] = (optAry zip CLI.opts)(breakOut)
+      if (assembly(CLI.infile, CLI.outfile, optFlagMap) == null) {
         System.exit(1)
       }
       
@@ -164,7 +175,7 @@ object Compiler {
     ir
   }
 
-  def assembly(inFile: String, outFile: String, debugSwitch: Boolean = CLI.debug) : IR = {
+  def assembly(inFile: String, outFile: String, optFlagMap: Map[String, Boolean], debugSwitch: Boolean = CLI.debug) : IR = {
     val optIR = Option(inter(inFile, false))
     val output = if (outFile == null) None else Some(outFile)
     // parsing failed
@@ -179,6 +190,21 @@ object Compiler {
 
     if (debugSwitch) {
       println("\nPrinting debug info for Assembly:\n")
+    }
+
+    if (debugSwitch) {
+      println("Enabled optimizations:")
+      var opt: String = ""
+      for (opt <- optFlagMap.keys) {
+        if (optFlagMap(opt)) {
+          printf(opt)
+          printf(" ")
+        }
+      }
+      println()
+    }
+
+    if (debugSwitch) {
       println("Low-level IR tree:")
       PrettyPrint(irModified, 1)
       println()
@@ -194,7 +220,22 @@ object Compiler {
     PrintCFG.close()
     */
 
-    Allocate(_st)
+    var optCFG = _st
+
+    // Optimizations
+    if (optFlagMap("cse")) {
+      optCFG = CSE(optCFG)
+    }
+
+    if (optFlagMap("cse")) {
+      optCFG = CP(optCFG)
+    }
+
+    if (optFlagMap("cse")) {
+      optCFG = DCE(optCFG)
+    }
+    
+    Allocate(optCFG)
 
     if (debugSwitch) {
       println("Low-level IR tree after destruct, peephole and allocate:")
