@@ -46,6 +46,12 @@ case class Location(
   override def eval: Option[Expression] = Some(self)
   override def block: Option[Block] = if (!blockLoc.isEmpty) blockLoc else None
 
+  override def hashCode: Int = index.hashCode + field.hashCode
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[BoolLiteral] &&
+    obj.hashCode == this.hashCode
+  }
+
   override def typ: Option[Type] = {
     if (field.isEmpty) {
       return None
