@@ -34,10 +34,7 @@ trait CFG {
 case class VirtualCFG(
     label: String,
     parents: Set[CFG]=Set(),
-    var next: Option[CFG] = None) extends CFG {
-      if (next.isDefined)
-        parents.add(next.get)
-    }
+    var next: Option[CFG] = None) extends CFG
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
  *
@@ -56,10 +53,7 @@ case class CFGBlock(
     label: String,
     statements: ArrayBuffer[IR],
     var next: Option[CFG] = None,
-    parents: Set[CFG]=Set()) extends CFG {
-      if (next.isDefined)
-        parents.add(next.get)
-    }
+    parents: Set[CFG]=Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statement.
  *
@@ -79,12 +73,7 @@ case class CFGConditional(
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,
     var end: Option[CFG] = None,
-    parents: Set[CFG]=Set()) extends CFG {
-      if (next.isDefined)
-        parents.add(next.get)
-      if (ifFalse.isDefined)
-        parents.add(ifFalse.get)
-    }
+    parents: Set[CFG]=Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
@@ -120,10 +109,7 @@ case class CFGMethodCall(
     params: Vector[Expression],
     declaration: String,
     var next: Option[CFG] = None,
-    parents: Set[CFG] = Set()) extends CFG {
-      if (next.isDefined)
-        parents.add(next.get)
-    }
+    parents: Set[CFG] = Set()) extends CFG
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */

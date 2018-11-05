@@ -19,3 +19,4 @@ local.environment
 cfg.dot
 cfg.png
 output/
+test_alt.sh
