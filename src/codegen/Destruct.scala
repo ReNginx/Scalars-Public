@@ -303,7 +303,6 @@ object Destruct {
       last = ed
       assert(param.eval.isDefined)
       paramList += param.eval.get
-      println(param.cfgRep) //DEBUG
     }
 
     val mthdCal = CFGMethodCall(placeStr + "_call", paramList.toVector, call.method.get.name)
@@ -461,8 +460,6 @@ object Destruct {
       loc.index.get match {
         case indLoc: Location => {
           if (indLoc.index.isDefined) {
-            println("I'm HRER")
-            println(loc.field.get.name)
             val assign: AssignStatement = AssignStatement(indLoc.line, indLoc.col, loc.evalLoc.get.asInstanceOf[Location], indLoc)
             val block = CFGBlock(placeStr + "_ind", ArrayBuffer(assign))
             link(last, block)
