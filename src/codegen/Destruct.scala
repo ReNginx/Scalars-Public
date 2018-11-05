@@ -129,7 +129,8 @@ object Destruct {
     */
   private def destructBlock(block: Block,
                             loopStart: Option[CFG] = None,
-                            loopEnd: Option[CFG] = None): (CFG, CFG) = {
+                            loopEnd: Option[CFG] = None,
+                            funcEnd:Option[CFG] = None): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${block.line}_c${block.col}_Block"
     val (start, end) = create(placeStr)
     var last = start
@@ -157,10 +158,15 @@ object Destruct {
           }
           val cfg = CFGBlock(placeStr + "_ret", ArrayBuffer(ret))
           link(last, cfg)
+          if (funcEnd.isDefined) {
+            link(cfg, end)
+            link(end, funcEnd.get)
+            return (start, end)
+          }
           last = cfg
         }
         case _ => {
-          val (stmtSt, stmtEd) = Destruct(stmt, loopStart, loopEnd)
+          val (stmtSt, stmtEd) = Destruct(stmt, loopStart, loopEnd, funcEnd)
           link(last, stmtSt)
           last = stmtEd
         }
@@ -180,21 +186,23 @@ object Destruct {
     */
   private def destructIf(ifstmt: If,
                          loopStart: Option[CFG] = None,
-                         loopEnd: Option[CFG] = None): (CFG, CFG) = {
+                         loopEnd: Option[CFG] = None,
+                         funcEnd:Option[CFG] = None): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = Destruct(ifstmt.condition)
-    val (nextSt, nextEd) = Destruct(ifstmt.ifTrue, loopStart, loopEnd)
+    val (nextSt, nextEd) = Destruct(ifstmt.ifTrue, loopStart, loopEnd, funcEnd)
     val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
-
     link(condEd, cfgCond)
 
     if (ifstmt.ifFalse.isDefined) {
-      val (ifFalseSt, ifFalseEd) = Destruct(ifstmt.ifFalse.get, loopStart, loopEnd)
+      val (ifFalseSt, ifFalseEd) = Destruct(ifstmt.ifFalse.get, loopStart, loopEnd, funcEnd)
       cfgCond.ifFalse = Option(ifFalseSt)
       link(ifFalseEd, end)
       if (ifFalseEd.next == loopEnd)
         cfgCond.end = loopEnd
+      if (ifFalseEd.next == funcEnd)
+        cfgCond.end = funcEnd
     }
     else {
       cfgCond.ifFalse = Option(end)
@@ -204,6 +212,8 @@ object Destruct {
 
     if (nextEd.next == loopEnd)
       cfgCond.end = loopEnd
+    if (nextEd.next == funcEnd)
+      cfgCond.end = funcEnd
     (start, end)
   }
 
@@ -227,13 +237,13 @@ object Destruct {
     * loop start is start node of update. **after continue, you should first goto update rather than test**
     * loop end is ifFalse branch of test
     */
-  private def destructFor(forstmt: For): (CFG, CFG) = {
+  private def destructFor(forstmt: For, funcEnd:Option[CFG]=None): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${forstmt.line}_c${forstmt.col}_For"
     val (start, end) = create(placeStr)
     val (initSt, initEd) = Destruct(forstmt.start)
     val (condSt, condEd) = Destruct(forstmt.condition)
     val (updSt, updEd) = Destruct(forstmt.update)
-    val (bodySt, bodyEd) = Destruct(forstmt.ifTrue, Option(updSt), Option(end))
+    val (bodySt, bodyEd) = Destruct(forstmt.ifTrue, Option(updSt), Option(end), funcEnd)
 
     assert(forstmt.condition.eval.isDefined)
     val cfgCond = CFGConditional(placeStr + "_cond", forstmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
@@ -250,11 +260,11 @@ object Destruct {
   /** Destruct an while loop.
     * pretty much the same as the previous one.
     */
-  private def destructWhile(whilestmt: While): (CFG, CFG) = {
+  private def destructWhile(whilestmt: While, funcEnd:Option[CFG]=None): (CFG, CFG) = {
     val placeStr = s"_${counter}_r${whilestmt.line}_c${whilestmt.col}_While"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = Destruct(whilestmt.condition)
-    val (bodySt, bodyEd) = Destruct(whilestmt.ifTrue, Option(condSt), Option(end))
+    val (bodySt, bodyEd) = Destruct(whilestmt.ifTrue, Option(condSt), Option(end), funcEnd)
 
     assert(whilestmt.condition.eval.isDefined)
     val cfgCond = CFGConditional(placeStr + "_cond", whilestmt.condition.eval.get, Option(bodySt), Option(end), Option(end))
@@ -277,11 +287,11 @@ object Destruct {
     val placeStr = s"_${counter}_r${method.line}_c${method.col}_Method"
     val (start, end) = create(placeStr)
     val params = method.params
-    val (blockSt, blockEd) = Destruct(method.block)
+    val (blockSt, blockEd) = Destruct(method.block, None, None, funcEnd=Option(end))
     val cfgMthd = CFGMethod(method.name, Option(blockSt), params, method)
 
     link(start, cfgMthd)
-    link(cfgMthd, end)
+    link(blockEd, end)
     (start, end)
   }
 
@@ -585,15 +595,16 @@ object Destruct {
   def apply( // when called on a program, the returned start node simply points to the CFGProgram
              ir: IR, // the end node of CFGProgram has no meaning
              loopStart: Option[CFG] = None,
-             loopEnd: Option[CFG] = None): (CFG, CFG) = {
+             loopEnd: Option[CFG] = None,
+             funcEnd: Option[CFG] = None): (CFG, CFG) = {
     counter += 1;
     //println(ir.getClass.toString) //DEBUG
     ir match {
       // assignment
-      case block: Block => destructBlock(block, loopStart, loopEnd) // break and continue only appears here.
-      case ifstmt: If => destructIf(ifstmt, loopStart, loopEnd)
-      case forstmt: For => destructFor(forstmt)
-      case whilestmt: While => destructWhile(whilestmt)
+      case block: Block => destructBlock(block, loopStart, loopEnd, funcEnd) // break and continue only appears here.
+      case ifstmt: If => destructIf(ifstmt, loopStart, loopEnd, funcEnd)
+      case forstmt: For => destructFor(forstmt, funcEnd)
+      case whilestmt: While => destructWhile(whilestmt, funcEnd)
       case method: LocMethodDeclaration => destructMethodDeclaration(method)
       case program: Program => destructProgram(program)
       case call: MethodCall => destructMethodCall(call)

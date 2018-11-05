@@ -1,0 +1,11 @@
+void main() {
+    int i, a;
+    for (i = 0; i < 10; i++) {
+        if (a > 0) {
+            return;
+        }
+        else {
+            break;
+        }
+    }
+}
