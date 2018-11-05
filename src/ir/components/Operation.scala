@@ -6,7 +6,7 @@ trait Operation extends Expression{
   var eval: Option[Location]
 }
 
-trait UnaryOperation extends Expression with Operation {
+trait UnaryOperation extends Operation {
   def expression: Expression
 }
 
@@ -32,7 +32,7 @@ case class Negate(
   override def toString: String = s"[Negate] ${typ.get}  (${line}:${col})"
 }
 
-trait BinaryOperation extends Expression with Operation {
+trait BinaryOperation extends Operation {
   def lhs: Expression
   def rhs: Expression
 }
@@ -70,7 +70,7 @@ case class TernaryOperation(
     override val block: Option[Block],
     condition: Expression,
     var ifTrue: Expression,
-    var ifFalse: Expression) extends Expression with Operation {
+    var ifFalse: Expression) extends  Operation {
 
   def typ: Option[Type] = if (ifTrue.typ == ifFalse.typ) ifTrue.typ else None
   override def toString: String = s"[TernaryOperation] ${typ.get}  (${line}:${col})"
