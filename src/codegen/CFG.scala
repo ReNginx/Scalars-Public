@@ -35,6 +35,8 @@ trait CFG {
   def setOptimized(opt: Optimization): Unit = {
       activeOpti += opt
   }
+  var tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
+  var var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
  */
