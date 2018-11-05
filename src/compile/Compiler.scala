@@ -224,7 +224,7 @@ object Compiler {
 
     // Optimizations
     if (optFlagMap("cse")) {
-      optCFG = CSE(optCFG)
+      CSE(optCFG)
     }
 
     if (optFlagMap("cse")) {

@@ -2,7 +2,7 @@ package codegen
 
 import scala.collection.mutable.{ArrayBuffer, HashSet, Map, Set}
 import ir.components._
-import ir.PrettyPrint
+import optimization.Optimization
 
 /** Control Flow Graph, generalized.
  *
@@ -27,6 +27,13 @@ trait CFG {
   override def equals(obj: Any): Boolean = {
     obj.isInstanceOf[CFG] &&
     obj.hashCode == this.hashCode
+  }
+  var activeOpti: Set[Optimization] = Set[Optimization]()
+  def isOptimized(opt: Optimization): Boolean = {
+      activeOpti.contains(opt)
+  }
+  def setOptimized(opt: Optimization): Unit = {
+      activeOpti += opt
   }
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
