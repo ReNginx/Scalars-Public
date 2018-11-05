@@ -1,6 +1,6 @@
 package ir.components
 
-trait LogicalOperator extends IR
+trait LogicalOperator extends Operator
 
 case object And extends LogicalOperator {
   override def toString: String = s"[And]"

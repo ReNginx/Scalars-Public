@@ -1,6 +1,6 @@
 package ir.components
 
-trait ArithmeticOperator extends IR
+trait ArithmeticOperator extends Operator
 
 case object Add extends ArithmeticOperator {
   override def toString: String = s"[Add]"

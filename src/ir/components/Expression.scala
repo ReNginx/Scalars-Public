@@ -20,6 +20,8 @@ trait Expression extends IR {
   def cfgRep: String = ""
 }
 
+trait SingleExpr extends Expression
+
 case class Length(line: Int, col: Int, location: Location) extends Expression {
   val typ = Option(IntType)
 
@@ -37,7 +39,7 @@ case class Location(
                     col: Int,
                     name: String,
                     var index: Option[Expression], // location or int linteral
-                    var field: Option[FieldDeclaration] = None) extends Expression {
+                    var field: Option[FieldDeclaration] = None) extends SingleExpr {
   self =>
 
   var evalLoc: Option[Expression] = None
