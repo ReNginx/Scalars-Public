@@ -48,7 +48,7 @@ case class Location(
 
   override def hashCode: Int = index.hashCode + field.hashCode
   override def equals(obj: Any): Boolean = {
-    obj.isInstanceOf[BoolLiteral] &&
+    obj.isInstanceOf[Location] &&
     obj.hashCode == this.hashCode
   }
 
