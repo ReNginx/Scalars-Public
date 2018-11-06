@@ -19,7 +19,7 @@ object Helper {
   /**
     * judge if a expression is a location whose name ends with suffix.
   */
-  def NameEndsWith(expr:Expression, suffix: String): Boolean = {
+  def nameEndsWith(expr:Expression, suffix: String): Boolean = {
     if (!expr.isInstanceOf[Location]) return false
     assert(expr.asInstanceOf[Location].field.isDefined)
     val name = expr.asInstanceOf[Location].field.get.name
