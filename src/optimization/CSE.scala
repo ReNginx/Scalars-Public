@@ -6,12 +6,19 @@ import codegen._
 
 object CSE extends Optimization {
 
+  val localTmpSuffix = "_cse_local_tmp"
   val var2Val: Map[SingleExpr, SymVal] = Map[SingleExpr, SymVal]()
   // operator, operand1, Some(operand2)
   val exp2ValTmp: Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]] = Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]]()
   var nextVacantVal: SymVal = SymVal(0)
   var nextVacantTmp: Int = 0
-  val localTmpSuffix = "_cse_local_tmp"
+
+  private def init(): Unit = {
+    var2Val.clear()
+    exp2ValTmp.clear()
+    nextVacantVal = SymVal(0)
+    nextVacantTmp = 0
+  }
 
   private def getNextVal(): SymVal = {
     val retVal: SymVal = nextVacantVal
@@ -19,11 +26,11 @@ object CSE extends Optimization {
     retVal
   }
 
-  private def getNextTmp(typ: Type): Location = {
+  private def getNextTmp(block: CFGBlock, typ: Type): Location = {
     val numTmp: Int = nextVacantTmp
     nextVacantTmp += 1
-    val retField: FieldDeclaration = VariableDeclaration(0, 0, s"${numTmp}_cse_local_tmp", Some(typ))
-    val retTmp: Location = Location(0, 0, s"${numTmp}_cse_local_tmp", None, Some(retField))
+    val retField: FieldDeclaration = VariableDeclaration(0, 0, s"${numTmp}_${block.label}_cse_local_tmp", Some(typ))
+    val retTmp: Location = Location(0, 0, s"${numTmp}_${block.label}_cse_local_tmp", None, Some(retField))
     retTmp
   }
 
@@ -50,7 +57,7 @@ object CSE extends Optimization {
   }
   
   // CSE only targets statements with operations, not direct assignments
-  def exp2ValTmpUpdate(oper: Operation, op1: SymVal, op2: Option[SymVal] = None): (SymVal, Location) = {
+  def exp2ValTmpUpdate(block: CFGBlock, oper: Operation, op1: SymVal, op2: Option[SymVal] = None): (SymVal, Location) = {
     // Sanity check
     oper match {
       case unary: UnaryOperation => {
@@ -65,7 +72,7 @@ object CSE extends Optimization {
     }
     val typ: Type = oper.eval.get.field.get.typ.get // type depends on the type of oper.eval
     val retVal: SymVal = getNextVal
-    val retTmp: Location = getNextTmp(typ)
+    val retTmp: Location = getNextTmp(block, typ)
     val operString = getOperString(oper)
     exp2ValTmp += (Tuple3(operString, op1, op2) -> Tuple2(retVal, retTmp))
 
@@ -94,6 +101,8 @@ object CSE extends Optimization {
   }
 
   def apply(cfg: CFG): Unit = {
+    init()
+    
     if (!cfg.isOptimized(CSE)) {
       cfg.setOptimized(CSE)
       cfg match {
@@ -104,9 +113,6 @@ object CSE extends Optimization {
         }
   
         case block: CFGBlock => { // only optimize for block
-          if (!block.next.isEmpty) {
-            CSE(block.next.get)
-          }
           val newStatements: ArrayBuffer[IR] = ArrayBuffer[IR]()
           for (statement <- block.statements) {
             statement match {
@@ -128,7 +134,7 @@ object CSE extends Optimization {
                       // perform elimination
                       newStatements += AssignStatement(0, 0, unary.eval.get, retLoc)
                     } else {
-                      val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(unary, operVal, None)
+                      val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(block, unary, operVal, None)
                       newStatements += statement
                       newStatements += AssignStatement(0, 0, newLoc, unary.eval.get)
                       var2ValUpdate(unary.eval.get)
@@ -141,22 +147,26 @@ object CSE extends Optimization {
                     var rhsVal: SymVal = SymVal(-1)
                     if (!var2ValGet(lhs).isEmpty) {
                       lhsVal = var2ValGet(lhs).get
+                      println(s"Retrieve ${lhs}: ${lhsVal}")
                     } else {
                       lhsVal = var2ValUpdate(lhs)
+                      println(s"Update ${lhs}: ${lhsVal}")
                     }
                     if (!var2ValGet(rhs).isEmpty) {
                       rhsVal = var2ValGet(rhs).get
+                      println(s"Retrieve ${rhs}: ${rhsVal}")
                     } else {
                       rhsVal = var2ValUpdate(rhs)
+                      println(s"Update ${rhs}: ${rhsVal}")
                     }
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(binary, lhsVal, Some(rhsVal))
                     if (!exp2ValTmpRet.isEmpty) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
                       // perform elimination
-                      println(s"Binary hit: ${binary}")
+                      println(s"Binary hit: ${binary}, ${retVal}, ${retLoc}")
                       newStatements += AssignStatement(0, 0, binary.eval.get, retLoc)
                     } else {
-                      val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(binary, lhsVal, Some(rhsVal))
+                      val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(block, binary, lhsVal, Some(rhsVal))
                       newStatements += statement
                       newStatements += AssignStatement(0, 0, newLoc, binary.eval.get)
                       var2ValUpdate(binary.eval.get)
@@ -183,17 +193,21 @@ object CSE extends Optimization {
           }
           block.statements.clear
           block.statements ++= newStatements
+
+          if (!block.next.isEmpty) {
+            CSE(block.next.get)
+          }
         }
   
         case conditional: CFGConditional => {
-          if (!conditional.end.isEmpty) {
-            CSE(conditional.end.get)
-          }
           if (!conditional.next.isEmpty) {
             CSE(conditional.next.get)
           }
           if (!conditional.ifFalse.isEmpty) {
             CSE(conditional.ifFalse.get)
+          }
+          if (!conditional.end.isEmpty) {
+            CSE(conditional.end.get)
           }
         }
 
