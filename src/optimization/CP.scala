@@ -38,6 +38,8 @@ object CP extends Optimization {
                         if (block.tmp2Var.contains(rhsLoc)) { // c = t1 => c = a
                           val replaceStatement: AssignStatement = AssignStatement(assign.line,  assign.col, assign.loc, block.tmp2Var(rhsLoc))
                           newStatements += replaceStatement
+                        } else {
+                          throw new NotImplementedError // should be impossible
                         }
                         if (block.var2Set.contains(assign.loc)) { // remove c from tmp2Var and var2Set
                           val lhsSet: Set[Location] = block.var2Set(assign.loc)
