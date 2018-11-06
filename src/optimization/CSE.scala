@@ -147,23 +147,23 @@ object CSE extends Optimization {
                     var rhsVal: SymVal = SymVal(-1)
                     if (!var2ValGet(lhs).isEmpty) {
                       lhsVal = var2ValGet(lhs).get
-                      println(s"Retrieve ${lhs}: ${lhsVal}")
+                      // println(s"Retrieve ${lhs}: ${lhsVal}")
                     } else {
                       lhsVal = var2ValUpdate(lhs)
-                      println(s"Update ${lhs}: ${lhsVal}")
+                      // println(s"Update ${lhs}: ${lhsVal}")
                     }
                     if (!var2ValGet(rhs).isEmpty) {
                       rhsVal = var2ValGet(rhs).get
-                      println(s"Retrieve ${rhs}: ${rhsVal}")
+                      // println(s"Retrieve ${rhs}: ${rhsVal}")
                     } else {
                       rhsVal = var2ValUpdate(rhs)
-                      println(s"Update ${rhs}: ${rhsVal}")
+                      // println(s"Update ${rhs}: ${rhsVal}")
                     }
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(binary, lhsVal, Some(rhsVal))
                     if (!exp2ValTmpRet.isEmpty) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
                       // perform elimination
-                      println(s"Binary hit: ${binary}, ${retVal}, ${retLoc}")
+                      // println(s"Binary hit: ${binary}, ${retVal}, ${retLoc}")
                       newStatements += AssignStatement(0, 0, binary.eval.get, retLoc)
                     } else {
                       val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(block, binary, lhsVal, Some(rhsVal))
