@@ -228,11 +228,11 @@ object Compiler {
     }
 
     if (optFlagMap("cse")) {
-      optCFG = CP(optCFG)
+      CP(optCFG)
     }
 
     if (optFlagMap("cse")) {
-      optCFG = DCE(optCFG)
+      DCE(optCFG)
     }
     
     Allocate(optCFG)
