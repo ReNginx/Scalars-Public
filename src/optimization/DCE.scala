@@ -101,7 +101,9 @@ object DCE extends Optimization{
 
               // we should never take out a return value.
             case ret: Return => {
-              markRhs(needed, ret.value.get)
+              if (!ret.value.isEmpty) {
+                markRhs(needed, ret.value.get)
+              }
             }
 
             case op: Operation => {
