@@ -17,9 +17,9 @@ object Helper {
   }
 
   /**
-  expr is a locaion or a literal
+    * judge if a expression is a location whose name ends with suffix.
   */
-  def isTemp(expr:Expression): Boolean = {
+  def NameEndsWith(expr:Expression, suffix: String): Boolean = {
     if (!expr.isInstanceOf[Location]) return false
     assert(expr.asInstanceOf[Location].field.isDefined)
     val name = expr.asInstanceOf[Location].field.get.name

@@ -363,8 +363,8 @@ object Destruct {
           this implies this temp comes from an operation. which means we  can safely swap
           their place and won't cause any problem.
         */
-        if (Helper.isTemp(asg.value.eval.get) &&
-            !Helper.isTemp(asg.loc) &&
+        if (Helper.nameEndsWith(asg.value.eval.get, "_tmp") &&
+            !Helper.nameEndsWith(asg.loc, "_tmp") &&
             asg.value.isInstanceOf[Operation]) {
           val oper = asg.value.asInstanceOf[Operation]
           val tmp = oper.eval.get
