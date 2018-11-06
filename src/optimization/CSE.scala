@@ -153,6 +153,7 @@ object CSE extends Optimization {
                     if (!exp2ValTmpRet.isEmpty) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
                       // perform elimination
+                      println(s"Binary hit: ${binary}")
                       newStatements += AssignStatement(0, 0, binary.eval.get, retLoc)
                     } else {
                       val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(binary, lhsVal, Some(rhsVal))
@@ -162,6 +163,18 @@ object CSE extends Optimization {
                     }
                   }
                 }
+              }
+              case assign: AssignmentStatements => { // create new val for variable
+                var2ValUpdate(assign.loc)
+                newStatements += statement
+              }
+              case inc: Increment => {
+                var2ValUpdate(inc.loc)
+                newStatements += statement
+              }
+              case dec: Decrement => {
+                var2ValUpdate(dec.loc)
+                newStatements += statement
               }
               case _ => {
                 newStatements += statement
