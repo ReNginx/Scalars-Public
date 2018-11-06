@@ -23,8 +23,8 @@ object Helper {
     if (!expr.isInstanceOf[Location]) return false
     assert(expr.asInstanceOf[Location].field.isDefined)
     val name = expr.asInstanceOf[Location].field.get.name
-    if (name.length < 4) return false
-    if (name.slice(name.length-4, name.length) == "_tmp") return true
+    if (name.length < suffix.length) return false
+    if (name.slice(name.length-suffix.length, name.length) == suffix) return true
     return false
   }
 }
