@@ -227,11 +227,11 @@ object Compiler {
       CSE(optCFG)
     }
 
-    if (optFlagMap("cse")) {
+    if (optFlagMap("cp")) {
       CP(optCFG)
     }
 
-    if (optFlagMap("cse")) {
+    if (optFlagMap("dce")) {
       DCE(optCFG)
     }
     

@@ -1,14 +1,19 @@
 package optimization
 
+import ir.components._
+
 import scala.collection.mutable.ArrayBuffer
 
 // Symbolic value
-case class SymVal (value: Int) {
+case class SymVal (value: Int) extends SingleExpr {
   override def hashCode: Int = value.hashCode
   override def equals(obj: Any): Boolean = {
     obj.isInstanceOf[SymVal] &&
     obj.hashCode == this.hashCode
   }
+
+  override def eval: Option[ir.components.Expression] = None // not used
+  override def typ: Option[ir.components.Type] = None // not used
 }
 
 /*
