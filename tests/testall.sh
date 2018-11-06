@@ -19,6 +19,8 @@ case $OS in
     $ROOT/codegen/test.sh;
     echo "Codegen Hidden Tests";
     $ROOT/codegen-hidden/test.sh;
+    echo "Dataflow Tests";
+    $ROOT/dataflow/test.sh;
     ;;
   CYGWIN*|Windows*)
     cd $ROOT;
