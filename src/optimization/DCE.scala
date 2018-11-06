@@ -70,7 +70,7 @@ object DCE extends Optimization{
 
         //assuming each tmp var won't be assigned twice.
         for (idx <- block.statements.indices.reverse) {
-          val statement = block(idx)
+          val statement = block.statements(idx)
           statement match {
             case assign: AssignmentStatements => {
               if (judgeVar(needed, assign.loc)) {
