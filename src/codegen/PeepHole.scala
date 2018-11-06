@@ -8,7 +8,7 @@ object PeepHole {
 
   def apply(cfg: CFG): Option[CFG] = {
     if (set.contains(cfg))
-      return cfg.next
+      return Option(cfg)
     set.add(cfg)
 
     cfg match {
@@ -17,8 +17,8 @@ object PeepHole {
           case Some(next) => {
             for (parent <- virtualCFG.parents) {
               next.parents.add(parent)
-              next.parents.remove(virtualCFG)
             }
+            next.parents.remove(virtualCFG)
             virtualCFG.next = PeepHole(next)
             virtualCFG.next
           }
