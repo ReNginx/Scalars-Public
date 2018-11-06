@@ -1,0 +1,8 @@
+int i;
+int j;
+bool k;
+void main() {
+    i = i + j;
+    k = i == j;
+    k = !k;
+}
