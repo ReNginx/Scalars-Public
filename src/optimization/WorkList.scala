@@ -57,10 +57,12 @@ object WorkList {
     val optIn = Map[CFG, Set[T]]()
     val optOut = Map[CFG, Set[T]]()
     val list = Set[CFG]()
+    val allCfgs = Set[CFG]()
 
     for ((node, value) <- optGen) {
       optOut(node) = initialization.clone
       list += node
+      allCfgs += node
     }
 
     optIn(startFrom) = Set[T]()
@@ -78,13 +80,17 @@ object WorkList {
       direction match {
         case "up" => {
           for (pre <- pred(curr)) {
-            optIn(curr) = updateIn[T](optIn(curr), optOut(pre), updateOptIn)
+            if (allCfgs.contains(pre)) {
+              optIn(curr) = updateIn[T](optIn(curr), optOut(pre), updateOptIn)
+            }
           }
         }
 
         case "down" => {
           for (nxt <- succ(curr)) {
-            optIn(curr) = updateIn[T](optIn(curr), optOut(nxt), updateOptIn)
+            if (allCfgs.contains(nxt)) {
+              optIn(curr) = updateIn[T](optIn(curr), optOut(nxt), updateOptIn)
+            }
           }
         }
 
