@@ -315,7 +315,7 @@ object Destruct {
       paramList += param.eval.get
     }
 
-    val mthdCal = CFGMethodCall(placeStr + "_call", paramList.toVector, call.method.get.name)
+    val mthdCal = CFGMethodCall(placeStr + "_call", ArrayBuffer(paramList:_*), call.method.get.name)
 
     link(last, mthdCal)
     last = mthdCal

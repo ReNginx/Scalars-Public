@@ -78,7 +78,7 @@ case class CFGBlock(
  */
 case class CFGConditional(
     label: String,
-    condition: Expression,
+    var condition: Expression,
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,
     var end: Option[CFG] = None,
@@ -115,7 +115,7 @@ case class CFGMethod(
 // where IR can be either Literal or Location
 case class CFGMethodCall(
     label: String,
-    params: Vector[Expression],
+    params: ArrayBuffer[Expression],
     declaration: String,
     var next: Option[CFG] = None,
     parents: Set[CFG] = Set()) extends CFG

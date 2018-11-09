@@ -39,7 +39,7 @@ object TranslateCFG {
   }
 
   //params stores locations
-  private def paramCopy(params: Vector[IR]): Int = { // could either be a literal or a location
+  private def paramCopy(params: ArrayBuffer[Expression]): Int = { // could either be a literal or a location
     val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
     for ((param, reg) <- params zip regs) { // first six go to regs
       param match {

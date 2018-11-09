@@ -2,10 +2,12 @@ package ir.components
 
 import scala.collection.mutable.ArrayBuffer
 
-trait Expression extends IR {
+trait Expression extends IR with Def {
   def typ: Option[Type]
 
   def eval: Option[Expression]
+
+  override def getLoc: Location = eval.get.asInstanceOf[Location]
 
   def block: Option[Block] = None
 
