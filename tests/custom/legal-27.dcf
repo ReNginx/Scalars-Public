@@ -1,0 +1,8 @@
+import printf;
+int a, b, c;
+void main() {
+    b = 5;
+    c = b;
+    a = c + 10;
+    printf("%d\n", a);
+}

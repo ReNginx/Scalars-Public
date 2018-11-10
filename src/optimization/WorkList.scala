@@ -68,7 +68,7 @@ object WorkList {
     optIn(startFrom) = Set[T]()
     optOut(startFrom) = optGen(startFrom).clone
 
-    list.remove(startFrom)
+    list.add(startFrom)
 
     while (!list.isEmpty) {
       val curr = list.head
