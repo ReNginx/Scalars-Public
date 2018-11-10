@@ -74,7 +74,6 @@ object WorkList {
       val curr = list.head
       list.remove(curr)
 
-      val oldOptIn = optIn(curr)
       optIn(curr) = initialization.clone
 
       direction match {
@@ -97,9 +96,10 @@ object WorkList {
         case _ => throw new NotImplementedError()
       }
 
+      val oldOut = optOut(curr)
       optOut(curr) = optGen(curr) union (optIn(curr) diff optKill(curr))
 
-      if (oldOptIn != optIn(curr)) {
+      if (oldOut != optOut(curr)) {
         list += curr
       }
     }

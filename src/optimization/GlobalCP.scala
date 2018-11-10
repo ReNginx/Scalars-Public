@@ -85,7 +85,7 @@ object GlobalCP extends Optimization {
 
     for (cfg <- funcCfgs) {
       cfg match {
-        case block: Block => {
+        case block: CFGBlock => {
           kill(block) = Set()
           for ((cfg, idx) <- gen(block)) {
             val defn: Def = block.statements(idx).asInstanceOf[Def]
@@ -165,8 +165,11 @@ object GlobalCP extends Optimization {
           if (lastDef.contains(loc)) {
             findCommon(Set(lastDef(loc)), loc)
           }
-          else {
+          else if (in.contains(loc)) {
             findCommon(in(loc), loc)
+          }
+          else {
+            loc
           }
         }
       }
@@ -334,7 +337,7 @@ object GlobalCP extends Optimization {
         Set[DefId](),
         "down",
         "union")
-//    subBlocks(in)
+    subBlocks(in)
   }
 
   def apply(cfg: CFG): Unit = {
