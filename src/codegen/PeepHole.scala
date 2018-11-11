@@ -5,6 +5,7 @@ import scala.collection.mutable.Set
 object PeepHole {
 
   val set: Set[CFG] = Set[CFG]()
+  val del: Set[CFG] = Set[CFG]()
 
   def adjustPar(parent: CFG, curr: CFG): Unit = {
     parent match {
@@ -26,13 +27,14 @@ object PeepHole {
 
   def apply(cfg: CFG): Option[CFG] = {
     if (set.contains(cfg))
-      return Option(cfg)
+      return if (del.contains(cfg)) cfg.next else Option(cfg)
     set.add(cfg)
 
     cfg match {
       case virtualCFG: VirtualCFG => {
         virtualCFG.next match {
           case Some(next) => {
+            del.add(virtualCFG)
             for (parent <- virtualCFG.parents) {
               next.parents.add(parent)
               adjustPar(parent, virtualCFG)
@@ -50,6 +52,7 @@ object PeepHole {
           for (parent <- block.parents) {
             parent match {
               case prevBlock: CFGBlock => {
+                del.add(block)
                 prevBlock.statements ++= block.statements
                 block.next match {
                   case Some(next) => {
