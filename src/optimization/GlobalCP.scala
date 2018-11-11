@@ -122,6 +122,7 @@ object GlobalCP extends Optimization {
   /**
     * return the common value(a literal or a location) that location equals to.
     * if there's no such value, return the location itself.
+    *
     * @param ids
     * @param loc
     * @return
@@ -184,6 +185,7 @@ object GlobalCP extends Optimization {
   /**
     * see if a statement could be replaced by another.
     * all compound assignments and inc, dec would be replaced by unary or binary operation.
+    *
     * @param in
     * @param lastDef
     * @param stmt
@@ -302,6 +304,7 @@ object GlobalCP extends Optimization {
 
   /**
     * in are the sets of definitions reaching the beginning of blocks.
+    *
     * @param in
     */
   def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
@@ -333,10 +336,6 @@ object GlobalCP extends Optimization {
 
   def copyProp: Unit = {
     collect()
-    println(kill)
-    println("\n\n\n")
-    println(gen)
-    println("\n\n\n")
     val (in, out) =
       WorkList[DefId](gen,
         kill,
@@ -344,10 +343,6 @@ object GlobalCP extends Optimization {
         Set[DefId](),
         "down",
         "union")
-    println(in)
-    println("\n\n\n")
-    println(out)
-    println("\n\n\n")
     subBlocks(in)
   }
 
