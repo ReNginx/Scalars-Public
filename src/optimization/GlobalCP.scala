@@ -19,14 +19,34 @@ object GlobalCP extends Optimization {
 
 
   /**
-    * tell a location is an array or not.
+    * tell an ir is an array or not.
     *
-    * @param loc
+    * @param ir
     * @return
     */
-  def isArray(loc: Location): Boolean = {
-    loc.index.isDefined
+  def isArray(ir: IR): Boolean = {
+    ir match {
+      case loc: Location => loc.index.isDefined
+      case _ => false
+    }
   }
+
+  def isReg(ir: IR): Boolean = {
+    ir match {
+      case loc: Location => loc.field.get.isReg
+      case _ => false
+    }
+  }
+
+def AssignFromReg(defn: Def): Boolean = {
+  defn match {
+    case asg: AssignStatement => {
+      //println(s"${asg.value},  ${isReg(asg.value)}")
+      isReg(asg.value)
+    }
+    case _ => false
+  }
+}
 
   /**
     * add an ordinary var(ignore array defs) definition to locMap, and lastLoc
@@ -42,6 +62,7 @@ object GlobalCP extends Optimization {
           defn: IR with Def,
           id: DefId): Unit = {
     if (isArray(defn.getLoc)) return
+    if (AssignFromReg(defn)) return
     if (!locMap.contains(defn.getLoc)) {
       locMap(defn.getLoc) = Set[DefId]()
     }
@@ -74,6 +95,7 @@ object GlobalCP extends Optimization {
           }
 
           gen(block) = Set(lastLoc.values.toVector: _*)
+          //println(s"CFG:${block}\n${gen(block)}")
         }
 
         case other => {
@@ -290,11 +312,15 @@ object GlobalCP extends Optimization {
         if (isArray(oper.eval.get))
           oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get))
       }
+
+      case _ =>
     }
 
     stmt match {
       case defn: Def => {
-        lastDef(defn.getLoc) = id
+        if (!AssignFromReg(defn)) {
+          lastDef(defn.getLoc) = id
+        }
       }
       case _ =>
     }
