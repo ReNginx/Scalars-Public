@@ -22,6 +22,10 @@ object PrintCFG {
 
   def doHeader(cfg: CFG): Unit = {
     println("\n\n#########START")
+    println(s"parents are ${cfg.parents}")
+    for (par <- cfg.parents) {
+      writer.write(s"${cfg.label} -> ${par.label}[style=dotted];\n")
+    }
     println(cfg.getClass.toString + ":  " + cfg.label)
   }
 

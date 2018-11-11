@@ -21,6 +21,14 @@ object Destruct {
     }
   }
 
+
+  def linkFalse(from: CFGConditional, to: CFG) = {
+    if (from.ifFalse.isEmpty) {
+      from.ifFalse = Some(to)
+      to.parents.add(from)
+    }
+  }
+
   /**
     * create start node and end node.
     *
@@ -176,7 +184,6 @@ object Destruct {
     link(last, end)
     (start, end)
   }
-
   /**
     * this function first destruct its condition expression.
     * and then tests %rdi, and determine which branch to goto.
@@ -193,11 +200,12 @@ object Destruct {
     val (condSt, condEd) = Destruct(ifstmt.condition)
     val (nextSt, nextEd) = Destruct(ifstmt.ifTrue, loopStart, loopEnd, funcEnd)
     val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
+    assert(nextSt.parents.contains(cfgCond))
     link(condEd, cfgCond)
 
     if (ifstmt.ifFalse.isDefined) {
       val (ifFalseSt, ifFalseEd) = Destruct(ifstmt.ifFalse.get, loopStart, loopEnd, funcEnd)
-      cfgCond.ifFalse = Option(ifFalseSt)
+      linkFalse(cfgCond, ifFalseSt)
       link(ifFalseEd, end)
       if (ifFalseEd.next == loopEnd)
         cfgCond.end = loopEnd
@@ -205,7 +213,7 @@ object Destruct {
         cfgCond.end = funcEnd
     }
     else {
-      cfgCond.ifFalse = Option(end)
+      linkFalse(cfgCond, end)
     }
     link(start, condSt)
     link(nextEd, end)

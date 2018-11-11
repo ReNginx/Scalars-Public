@@ -6,6 +6,24 @@ object PeepHole {
 
   val set: Set[CFG] = Set[CFG]()
 
+  def adjustPar(parent: CFG, curr: CFG): Unit = {
+    parent match {
+      case cond: CFGConditional => {
+        if (curr == cond.next.get) {
+          cond.next = curr.next
+        }
+        if (curr == cond.ifFalse.get) {
+          cond.ifFalse = curr.next
+        }
+      }
+      case x => {
+        if (curr == x.next.get) {
+          x.next = curr.next
+        }
+      }
+    }
+  }
+
   def apply(cfg: CFG): Option[CFG] = {
     if (set.contains(cfg))
       return Option(cfg)
@@ -17,6 +35,7 @@ object PeepHole {
           case Some(next) => {
             for (parent <- virtualCFG.parents) {
               next.parents.add(parent)
+              adjustPar(parent, virtualCFG)
             }
             next.parents.remove(virtualCFG)
             virtualCFG.next = PeepHole(next)
@@ -36,6 +55,7 @@ object PeepHole {
                   case Some(next) => {
                     next.parents.add(parent)
                     next.parents.remove(block)
+                    adjustPar(parent, next)
                     block.next = PeepHole(next)
                     return block.next
                   }

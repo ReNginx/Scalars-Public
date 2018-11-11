@@ -37,13 +37,19 @@ trait CFG {
   }
   val tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
   val var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
+
+  override def toString: String = label
 }
 /** VirtualCFG, used to represent start and end nodes that do not contain statements.
  */
 case class VirtualCFG(
     label: String,
     parents: Set[CFG]=Set(),
-    var next: Option[CFG] = None) extends CFG
+    var next: Option[CFG] = None) extends CFG {
+  if (next.isDefined) {
+    next.get.parents.add(this)
+  }
+}
 
 /** Basic Block in Control Flow Graph, which does not contain conditional statements.
  *
@@ -62,7 +68,11 @@ case class CFGBlock(
     label: String,
     statements: ArrayBuffer[IR],
     var next: Option[CFG] = None,
-    parents: Set[CFG]=Set()) extends CFG
+    parents: Set[CFG]=Set()) extends CFG {
+  if (next.isDefined) {
+    next.get.parents.add(this)
+  }
+}
 
 /** Basic Block in Control Flow Graph, which represents a single conditional statement.
  *
@@ -82,7 +92,14 @@ case class CFGConditional(
     var next: Option[CFG] = None,
     var ifFalse: Option[CFG] = None,
     var end: Option[CFG] = None,
-    parents: Set[CFG]=Set()) extends CFG
+    parents: Set[CFG]=Set()) extends CFG {
+  if (next.isDefined) {
+    next.get.parents.add(this)
+  }
+  if (ifFalse.isDefined) {
+    ifFalse.get.parents.add(this)
+  }
+}
 
 /** Basic Block in Control Flow Graph, which represents a method declaration.
  *
@@ -118,7 +135,11 @@ case class CFGMethodCall(
     params: ArrayBuffer[Expression],
     declaration: String,
     var next: Option[CFG] = None,
-    parents: Set[CFG] = Set()) extends CFG
+    parents: Set[CFG] = Set()) extends CFG {
+  if (next.isDefined) {
+    next.get.parents.add(this)
+  }
+}
 
 /** Basic Block in Control Flow Graph, which represents a program.
  */

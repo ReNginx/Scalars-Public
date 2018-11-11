@@ -108,9 +108,12 @@ object GlobalCP extends Optimization {
   def transfer(in: Set[DefId]): MultiMap[Location, DefId] = {
     val ret = new HashMap[Location, Set[DefId]] with mutable.MultiMap[Location, DefId]
     for ((cfg, index) <- in) {
-      val blk = cfg.asInstanceOf[Block]
+      val blk = cfg.asInstanceOf[CFGBlock]
       val stmt = blk.statements(index)
       val loc = stmt.asInstanceOf[Def].getLoc
+      if (!ret.contains(loc)) {
+        ret(loc) = Set[DefId]()
+      }
       ret(loc).add((cfg, index))
     }
     ret
@@ -330,6 +333,10 @@ object GlobalCP extends Optimization {
 
   def copyProp: Unit = {
     collect()
+    println(kill)
+    println("\n\n\n")
+    println(gen)
+    println("\n\n\n")
     val (in, out) =
       WorkList[DefId](gen,
         kill,
@@ -337,6 +344,10 @@ object GlobalCP extends Optimization {
         Set[DefId](),
         "down",
         "union")
+    println(in)
+    println("\n\n\n")
+    println(out)
+    println("\n\n\n")
     subBlocks(in)
   }
 

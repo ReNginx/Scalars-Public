@@ -1,0 +1,13 @@
+void main() {
+    int a, b, c, d;
+
+    if (a > b) {
+        c = 10;
+    }
+    else {
+        c = 10;
+     }
+
+     d = c + 100;
+     c = d;
+}
