@@ -228,7 +228,7 @@ def AssignFromReg(defn: Def): Boolean = {
 
       case casgStmt: CompoundAssignStatement => {
         val expr = subExpr(in, lastDef, casgStmt.loc)
-        val value = subExpr(in, lastDef, casgStmt.loc)
+        val value = subExpr(in, lastDef, casgStmt.value)
         val operator = casgStmt.operator
         replacedStmt = ArithmeticOperation(
           casgStmt.line,
