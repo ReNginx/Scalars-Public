@@ -119,8 +119,8 @@ object CSE extends Optimization {
   }
 
   def idx2AryRemove(idx: SingleExpr): Unit = {
-    println(s"Query: ${idx}")
-    println(s"Result: ${idx2Ary.get(idx)}")
+    // println(s"Query: ${idx}")
+    // println(s"Result: ${idx2Ary.get(idx)}")
     if (idx2Ary.contains(idx)) {
       idx2Ary.remove(idx)
     }
