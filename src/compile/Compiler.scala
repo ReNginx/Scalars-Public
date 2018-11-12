@@ -188,37 +188,31 @@ object Compiler {
 
     val irModified = IRto3Addr(ir, iter)
 
-    if (debugSwitch) {
-      println("\nPrinting debug info for Assembly:\n")
-    }
+    // if (debugSwitch) {
+    //   println("\nPrinting debug info for Assembly:\n")
+    // }
 
-    if (debugSwitch) {
-      println("Enabled optimizations:")
-      var opt: String = ""
-      for (opt <- optFlagMap.keys) {
-        if (optFlagMap(opt)) {
-          printf(opt)
-          printf(" ")
-        }
-      }
-      println()
-    }
+    // if (debugSwitch) {
+    //   println("Enabled optimizations:")
+    //   var opt: String = ""
+    //   for (opt <- optFlagMap.keys) {
+    //     if (optFlagMap(opt)) {
+    //       printf(opt)
+    //       printf(" ")
+    //     }
+    //   }
+    //   println()
+    // }
 
-    if (debugSwitch) {
-      println("Low-level IR tree:")
-      PrettyPrint(irModified, 1)
-      println()
-    }
+    // if (debugSwitch) {
+    //   println("Low-level IR tree:")
+    //   PrettyPrint(irModified, 1)
+    //   println()
+    // }
 
     val (start, end) = Destruct(irModified)
 
     val _st = PeepHole(start).get
-
-    /*
-    PrintCFG.init()
-    PrintCFG(_st)
-    PrintCFG.close()
-    */
 
     var optCFG = _st
 
@@ -234,40 +228,50 @@ object Compiler {
     if (optFlagMap("dce")) {
       DCE(optCFG)
     }
-    
+
+    if (optFlagMap("cp")) {
+      GlobalCP(optCFG)
+    }
+
+    if (debugSwitch) {
+      PrintCFG.init()
+      PrintCFG(_st)
+      PrintCFG.close()
+    }
+
     Allocate(optCFG)
 
-    if (debugSwitch) {
-      println("Low-level IR tree after destruct, peephole and allocate:")
-      PrettyPrint(irModified, 2)
-      println()
-    }
+    // if (debugSwitch) {
+    //   println("Low-level IR tree after destruct, peephole and allocate:")
+    //   PrettyPrint(irModified, 2)
+    //   println()
+    // }
 
-    if (debugSwitch) {
-      println("x86-64 assembly:")
-    }
+    // if (debugSwitch) {
+    //   println("x86-64 assembly:")
+    // }
 
     TranslateCFG(_st, output, debugSwitch)
     TranslateCFG.closeOutput
 
-    if (debugSwitch) {
-      println()
-    }
+    // if (debugSwitch) {
+    //   println()
+    // }
 
-    if (debugSwitch && !output.isEmpty) {
-      println("Execution result:")
-      val asmFileVec = outFile.split("\\.")
-      val binFileVec = asmFileVec.slice(0, asmFileVec.length - 1)
-      val binFile = binFileVec.mkString(".")
-      val compileRet = s"gcc -o ${binFile} ${outFile} -no-pie".! // Hardened compile chain workaround
-      println()
-      println(s"Compilation returns ${compileRet}\n");
-      if (compileRet == 0) {
-        val runRet = s"${binFile}".!
-        println()
-        println(s"Program returns ${runRet}\n");
-      }
-    }
+    // if (debugSwitch && !output.isEmpty) {
+    //   println("Execution result:")
+    //   val asmFileVec = outFile.split("\\.")
+    //   val binFileVec = asmFileVec.slice(0, asmFileVec.length - 1)
+    //   val binFile = binFileVec.mkString(".")
+    //   val compileRet = s"gcc -o ${binFile} ${outFile} -no-pie".! // Hardened compile chain workaround
+    //   println()
+    //   println(s"Compilation returns ${compileRet}\n");
+    //   if (compileRet == 0) {
+    //     val runRet = s"${binFile}".!
+    //     println()
+    //     println(s"Program returns ${runRet}\n");
+    //   }
+    // }
 
     irModified
   }
