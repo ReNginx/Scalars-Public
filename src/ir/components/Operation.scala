@@ -8,6 +8,12 @@ trait Operation extends Expression{
 
 trait UnaryOperation extends Operation {
   def expression: Expression
+
+  override def hashCode: Int = expression.hashCode
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[UnaryOperation] &&
+    obj.hashCode == this.hashCode
+  }
 }
 
 case class Not(
@@ -35,6 +41,12 @@ case class Negate(
 trait BinaryOperation extends Operation {
   def lhs: Expression
   def rhs: Expression
+
+  override def hashCode: Int = lhs.hashCode + rhs.hashCode
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[UnaryOperation] &&
+    obj.hashCode == this.hashCode
+  }
 }
 
 case class ArithmeticOperation(
