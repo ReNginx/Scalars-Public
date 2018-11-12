@@ -10,12 +10,15 @@ object CSE extends Optimization {
   val var2Val: Map[SingleExpr, SymVal] = Map[SingleExpr, SymVal]()
   // operator, operand1, Some(operand2)
   val exp2ValTmp: Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]] = Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]]()
+  // idx2Ary maps an index to a set of arrays indexed by such index
+  val idx2Ary: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
   var nextVacantVal: SymVal = SymVal(0)
   var nextVacantTmp: Int = 0
 
   private def init(): Unit = {
     var2Val.clear()
     exp2ValTmp.clear()
+    idx2Ary.clear()
     nextVacantVal = SymVal(0)
     nextVacantTmp = 0
   }
@@ -48,6 +51,12 @@ object CSE extends Optimization {
     val retVal: SymVal = getNextVal
     var2Val += (expr -> retVal)
     retVal
+  }
+
+  def var2ValRemove(loc: Location): Unit = { // only useful for arrays
+    if (var2Val.contains(loc)) {
+      var2Val.remove(loc)
+    }
   }
 
   def var2ValGet(expr: SingleExpr): Option[SymVal] = {
@@ -100,6 +109,32 @@ object CSE extends Optimization {
     }
   }
 
+  def idx2AryAdd(idx: SingleExpr, ary: Location): Set[Location] = {
+    if (idx2Ary.contains(idx)) {
+      idx2Ary(idx) += ary
+    } else {
+      idx2Ary += (idx -> Set[Location](ary))
+    }
+    idx2Ary(idx)
+  }
+
+  def idx2AryRemove(idx: SingleExpr): Unit = {
+    println(s"Query: ${idx}")
+    println(s"Result: ${idx2Ary.get(idx)}")
+    if (idx2Ary.contains(idx)) {
+      idx2Ary.remove(idx)
+    }
+  }
+
+  // Returns idx2Ary(idx) or empty set
+  def idx2AryGet(idx: SingleExpr): Set[Location] = {
+    if (idx2Ary.contains(idx)) {
+      idx2Ary(idx)
+    } else {
+      Set[Location]()
+    }
+  }
+
   def apply(cfg: CFG): Unit = {
     init()
     
@@ -126,6 +161,15 @@ object CSE extends Optimization {
                       operVal = var2ValGet(operand).get
                     } else {
                       operVal = var2ValUpdate(operand)
+                    }
+                    // if operand is an array, add it to idx2Ary
+                    operand match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
+                        }
+                      }
+                      case _ =>
                     }
                     // query exp2ValTmp
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(unary, operVal, None)
@@ -159,6 +203,23 @@ object CSE extends Optimization {
                       rhsVal = var2ValUpdate(rhs)
                       // println(s"Update ${rhs}: ${rhsVal}")
                     }
+                    // if operand is an array, add it to idx2Ary
+                    lhs match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
+                        }
+                      }
+                      case _ =>
+                    }
+                    rhs match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
+                        }
+                      }
+                      case _ =>
+                    }
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(binary, lhsVal, Some(rhsVal))
                     if (!exp2ValTmpRet.isEmpty) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
@@ -175,14 +236,23 @@ object CSE extends Optimization {
                 }
               }
               case assign: AssignmentStatements => { // create new val for variable
+                val arySet: Set[Location] = idx2AryGet(assign.loc) // array fix
+                arySet foreach { var2ValRemove(_) }
+                idx2AryRemove(assign.loc)
                 var2ValUpdate(assign.loc)
                 newStatements += statement
               }
               case inc: Increment => {
+                val arySet: Set[Location] = idx2AryGet(inc.loc) // array fix
+                arySet foreach { var2ValRemove(_) }
+                idx2AryRemove(inc.loc)
                 var2ValUpdate(inc.loc)
                 newStatements += statement
               }
               case dec: Decrement => {
+                val arySet: Set[Location] = idx2AryGet(dec.loc) // array fix
+                arySet foreach { var2ValRemove(_) }
+                idx2AryRemove(dec.loc)
                 var2ValUpdate(dec.loc)
                 newStatements += statement
               }
