@@ -44,7 +44,7 @@ trait BinaryOperation extends Operation {
 
   override def hashCode: Int = lhs.hashCode + rhs.hashCode
   override def equals(obj: Any): Boolean = {
-    obj.isInstanceOf[UnaryOperation] &&
+    obj.isInstanceOf[BinaryOperation] &&
     obj.hashCode == this.hashCode
   }
 }
