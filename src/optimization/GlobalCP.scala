@@ -76,7 +76,7 @@ def AssignFromReg(defn: Def): Boolean = {
     * and recognizes which definitions are killed in the block.
     * it sets gen and kill for blocks.
     */
-  def collect(): Unit = {
+  def collect():Map[Location, Set[DefId]] = {
     val locMap = Map[Location, Set[DefId]]()
 
     for (cfg <- funcCfgs) { // we only have virtual, cond, block here.
@@ -119,6 +119,8 @@ def AssignFromReg(defn: Def): Boolean = {
 
       }
     }
+
+    locMap
   }
 
   /**
@@ -153,8 +155,9 @@ def AssignFromReg(defn: Def): Boolean = {
     val value = Set[Expression]()
     for ((cfg, idx) <- ids) {
       val stmt = cfg.statements(idx)
+      //PrintCFG.prtStmt(stmt)
       stmt match {
-        case asg: AssignmentStatements => value += asg.value
+        case asg: AssignStatement => value += asg.value
         case _ => return loc
       }
     }
@@ -192,7 +195,10 @@ def AssignFromReg(defn: Def): Boolean = {
             findCommon(Set(lastDef(loc)), loc)
           }
           else if (in.contains(loc)) {
-            findCommon(in(loc), loc)
+            //println(s"${in(loc)}")
+            val res = findCommon(in(loc), loc)
+            //println("\n\n")
+            res
           }
           else {
             loc
@@ -219,6 +225,7 @@ def AssignFromReg(defn: Def): Boolean = {
               stmt: IR,
               id: DefId): IR = {
     var replacedStmt = stmt
+    //PrintCFG.prtStmt(stmt)
     stmt match {
       case asgStmt: AssignStatement => {
         replacedStmt = asgStmt.copy(
@@ -325,6 +332,7 @@ def AssignFromReg(defn: Def): Boolean = {
       case _ =>
     }
 
+    //PrintCFG.prtStmt(replacedStmt)
     replacedStmt
   }
 
@@ -335,6 +343,7 @@ def AssignFromReg(defn: Def): Boolean = {
     */
   def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
     for (cfg <- funcCfgs) {
+      //println(cfg)
       val map = transfer(in(cfg))
       cfg match {
         case block: CFGBlock => {

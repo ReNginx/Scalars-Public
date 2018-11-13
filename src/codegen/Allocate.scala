@@ -147,11 +147,6 @@ object Allocate {
       }
 
       case CFGProgram(_, fields, methods, _, _) => {
-        fields foreach {
-          case array: ArrayDeclaration => array.isGlobal = true
-          case variable: VariableDeclaration => variable.isGlobal = true
-        }
-
         for (method <- methods) {
           offset = -sizeOfVar // local var starts from -8
           Allocate(method)
