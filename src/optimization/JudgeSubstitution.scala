@@ -23,7 +23,8 @@ object JudgeSubstitution {
     */
 
   def init(cfgLst: Vector[CFG]): Unit = {
-    (_, graph) = Labeling(cfgLst)
+    val (_, newGraph) = Labeling(cfgLst)
+    graph = newGraph
   }
 
   def apply(from: Set[DefId],
