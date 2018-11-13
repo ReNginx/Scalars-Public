@@ -15,7 +15,7 @@ object GlobalCP extends Optimization {
   type DefId = (CFGBlock, Int)
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
-  val funcCfgs = ArrayBuffer[CFG]()
+  val cfgs = ArrayBuffer[CFG]()
 
 
   /**
@@ -38,15 +38,15 @@ object GlobalCP extends Optimization {
     }
   }
 
-def AssignFromReg(defn: Def): Boolean = {
-  defn match {
-    case asg: AssignStatement => {
-      //println(s"${asg.value},  ${isReg(asg.value)}")
-      isReg(asg.value)
+  def AssignFromReg(defn: Def): Boolean = {
+    defn match {
+      case asg: AssignStatement => {
+        //println(s"${asg.value},  ${isReg(asg.value)}")
+        isReg(asg.value)
+      }
+      case _ => false
     }
-    case _ => false
   }
-}
 
   /**
     * add an ordinary var(ignore array defs) definition to locMap, and lastLoc
@@ -76,10 +76,10 @@ def AssignFromReg(defn: Def): Boolean = {
     * and recognizes which definitions are killed in the block.
     * it sets gen and kill for blocks.
     */
-  def collect():Map[Location, Set[DefId]] = {
+  def collect(): Map[Location, Set[DefId]] = {
     val locMap = Map[Location, Set[DefId]]()
 
-    for (cfg <- funcCfgs) { // we only have virtual, cond, block here.
+    for (cfg <- cfgs) { // we only have virtual, cond, block here.
       cfg match {
         case block: CFGBlock => {
           val lastLoc = Map[Location, DefId]() //keep track of last definition
@@ -105,7 +105,7 @@ def AssignFromReg(defn: Def): Boolean = {
       }
     }
 
-    for (cfg <- funcCfgs) {
+    for (cfg <- cfgs) {
       cfg match {
         case block: CFGBlock => {
           kill(block) = Set()
@@ -182,27 +182,30 @@ def AssignFromReg(defn: Def): Boolean = {
     */
   def subExpr(in: MultiMap[Location, DefId],
               lastDef: Map[Location, DefId],
-              expr: Expression): Expression = {
+              expr: Expression,
+              pos: (CFG, Int)): Expression = {
     expr match {
       case loc: Location => {
         if (isArray(loc)) {
           loc.copy(
-            index = Option(subExpr(in, lastDef, loc.index.get))
+            index = Option(subExpr(in, lastDef, loc.index.get, pos))
           )
         }
         else {
-          if (lastDef.contains(loc)) {
-            findCommon(Set(lastDef(loc)), loc)
-          }
-          else if (in.contains(loc)) {
-            //println(s"${in(loc)}")
-            val res = findCommon(in(loc), loc)
-            //println("\n\n")
+          val from =
+            if (lastDef.contains(loc)) {
+              Set(lastDef(loc))
+            }
+            else if (in.contains(loc)) {
+              in(loc)
+            }
+            else Set[DefId]()
+
+          val res = findCommon(from, loc)
+          if (res != loc && JudgeSubstitution(from, pos, loc, res))
             res
-          }
-          else {
+          else
             loc
-          }
         }
       }
 
@@ -229,13 +232,13 @@ def AssignFromReg(defn: Def): Boolean = {
     stmt match {
       case asgStmt: AssignStatement => {
         replacedStmt = asgStmt.copy(
-          value = subExpr(in, lastDef, asgStmt.value)
+          value = subExpr(in, lastDef, asgStmt.value, id)
         )
       }
 
       case casgStmt: CompoundAssignStatement => {
-        val expr = subExpr(in, lastDef, casgStmt.loc)
-        val value = subExpr(in, lastDef, casgStmt.value)
+        val expr = subExpr(in, lastDef, casgStmt.loc, id)
+        val value = subExpr(in, lastDef, casgStmt.value, id)
         val operator = casgStmt.operator
         replacedStmt = ArithmeticOperation(
           casgStmt.line,
@@ -255,7 +258,7 @@ def AssignFromReg(defn: Def): Boolean = {
           Option(inc.loc),
           None,
           Add,
-          subExpr(in, lastDef, inc.loc),
+          subExpr(in, lastDef, inc.loc, id),
           IntLiteral(0, 0, 1)
         )
       }
@@ -267,41 +270,41 @@ def AssignFromReg(defn: Def): Boolean = {
           Option(dec.loc),
           None,
           Subtract,
-          subExpr(in, lastDef, dec.loc),
+          subExpr(in, lastDef, dec.loc, id),
           IntLiteral(0, 0, 1)
         )
       }
 
       case not: Not => {
         replacedStmt = not.copy(
-          expression = subExpr(in, lastDef, not.expression)
+          expression = subExpr(in, lastDef, not.expression, id)
         )
       }
 
       case negate: Negate => {
         replacedStmt = negate.copy(
-          expression = subExpr(in, lastDef, negate.expression)
+          expression = subExpr(in, lastDef, negate.expression, id)
         )
       }
 
       case arith: ArithmeticOperation => {
         replacedStmt = arith.copy(
-          lhs = subExpr(in, lastDef, arith.lhs),
-          rhs = subExpr(in, lastDef, arith.rhs)
+          lhs = subExpr(in, lastDef, arith.lhs, id),
+          rhs = subExpr(in, lastDef, arith.rhs, id)
         )
       }
 
       case logic: LogicalOperation => {
         replacedStmt = logic.copy(
-          lhs = subExpr(in, lastDef, logic.lhs),
-          rhs = subExpr(in, lastDef, logic.rhs)
+          lhs = subExpr(in, lastDef, logic.lhs, id),
+          rhs = subExpr(in, lastDef, logic.rhs, id)
         )
       }
 
       case ret: Return => {
         if (ret.value.isDefined) {
           replacedStmt = ret.copy(
-            value = Option(subExpr(in, lastDef, ret.value.get))
+            value = Option(subExpr(in, lastDef, ret.value.get, id))
           )
         }
       }
@@ -312,12 +315,12 @@ def AssignFromReg(defn: Def): Boolean = {
     replacedStmt match {
       case asgStmt: AssignmentStatements => {
         if (isArray(asgStmt.loc))
-          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get))
+          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get, id))
       }
 
       case oper: Operation => {
         if (isArray(oper.eval.get))
-          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get))
+          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get, id))
       }
 
       case _ =>
@@ -342,7 +345,7 @@ def AssignFromReg(defn: Def): Boolean = {
     * @param in
     */
   def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
-    for (cfg <- funcCfgs) {
+    for (cfg <- cfgs) {
       //println(cfg)
       val map = transfer(in(cfg))
       cfg match {
@@ -355,12 +358,12 @@ def AssignFromReg(defn: Def): Boolean = {
         }
 
         case conditional: CFGConditional => {
-          conditional.condition = subExpr(map, Map(), conditional.condition)
+          conditional.condition = subExpr(map, Map(), conditional.condition, (conditional, 0))
         }
 
         case call: CFGMethodCall => {
           for (index <- call.params.indices) {
-            call.params(index) = subExpr(map, Map(), call.params(index))
+            call.params(index) = subExpr(map, Map(), call.params(index), (call, 0))
           }
         }
 
@@ -374,10 +377,11 @@ def AssignFromReg(defn: Def): Boolean = {
     val (in, out) =
       WorkList[DefId](gen,
         kill,
-        funcCfgs(0),
+        cfgs(0),
         Set[DefId](),
         "down",
         "union")
+    JudgeSubstitution.init(cfgs.toVector)
     subBlocks(in)
   }
 
@@ -386,7 +390,7 @@ def AssignFromReg(defn: Def): Boolean = {
       return
     }
     cfg.setOptimized(GlobalCP)
-    funcCfgs += cfg
+    cfgs += cfg
 
     cfg match {
       case program: CFGProgram => {
@@ -398,7 +402,7 @@ def AssignFromReg(defn: Def): Boolean = {
         if (method.block.isDefined) {
           gen.clear
           kill.clear
-          funcCfgs.clear
+          cfgs.clear
           GlobalCP(method.block.get)
           copyProp
         }
