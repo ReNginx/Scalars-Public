@@ -202,8 +202,11 @@ object GlobalCP extends Optimization {
             else Set[DefId]()
 
           val res = findCommon(from, loc)
-          if (res != loc && JudgeSubstitution(from, pos, loc, res))
+          //System.err.println(s"try sub ${loc} with ${res}")
+          if (res != loc && !isArray(res) && JudgeSubstitution(from, pos, loc, res)) {
+            //System.err.println(s"sub ${loc} with ${res}")
             res
+          }
           else
             loc
         }
@@ -358,12 +361,12 @@ object GlobalCP extends Optimization {
         }
 
         case conditional: CFGConditional => {
-          conditional.condition = subExpr(map, Map(), conditional.condition, (conditional, 0))
+          //conditional.condition = subExpr(map, Map(), conditional.condition, (conditional, -1))
         }
 
         case call: CFGMethodCall => {
           for (index <- call.params.indices) {
-            call.params(index) = subExpr(map, Map(), call.params(index), (call, 0))
+            call.params(index) = subExpr(map, Map(), call.params(index), (call, -1))
           }
         }
 

@@ -99,6 +99,12 @@ object PeepHole {
 
       case program: CFGProgram => {
         program.methods foreach { x => PeepHole(x) }
+        for (cfg <- set) {
+          val oldPar = cfg.parents.clone()
+          for (par <- oldPar)
+            if (!set.contains(par))
+              cfg.parents.remove(par)
+        }
         Option(program)
       }
     }

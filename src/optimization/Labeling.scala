@@ -18,22 +18,23 @@ object Labeling {
     * @return
     */
 
-  def link(cfgLst: Vector[CFG]): (Set[CFG], Graph) = {
+  def link(cfgLst: Vector[CFG]): (Set[CFG], Graph, Graph) = {
     val map = Set[StmtId]()
     val calls = Set[CFG]()
     val lnk = mutable.Map[StmtId, Set[StmtId]]()
     val revLnk = mutable.Map[StmtId, Set[StmtId]]()
 
-    def setHelper(id: StmtId) {
+    def lnkInit(id: StmtId) {
       if (!map.contains(id)) {
         map += id
         lnk(id) = Set[StmtId]()
+        revLnk(id) = Set[StmtId]()
       }
     }
 
     def setLnk(from: StmtId, to: StmtId) {
-      setHelper(from)
-      setHelper(to)
+      lnkInit(from)
+      lnkInit(to)
       lnk(from) += to
       revLnk(to) += from
     }
@@ -46,11 +47,11 @@ object Labeling {
         case block: CFGBlock => {
           var last = beg(block)
 
-          setHelper(beg(block))
-          setHelper(end(block))
+          lnkInit(beg(block))
+          lnkInit(end(block))
 
           for (i <- block.statements.indices) {
-            setLnk((block, i), (block, i - 1))
+            setLnk((block, i - 1), (block, i))
             last = (block, i)
           }
 
@@ -73,11 +74,11 @@ object Labeling {
         }
       }
     }
-    (calls, lnk)
+    (calls, lnk, revLnk)
   }
 
-  def apply(cfgLst: Vector[CFG]): (Set[CFG], Graph) = {
-    val (callCFG, graph) = link(cfgLst)
-    (callCFG, graph)
+  def apply(cfgLst: Vector[CFG]): (Set[CFG], Graph, Graph) = {
+    val (callCFG, graph, revGraph) = link(cfgLst)
+    (callCFG, graph, revGraph)
   }
 }
