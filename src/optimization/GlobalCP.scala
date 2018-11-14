@@ -15,17 +15,37 @@ object GlobalCP extends Optimization {
   type DefId = (CFGBlock, Int)
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
-  val funcCfgs = ArrayBuffer[CFG]()
+  val cfgs = ArrayBuffer[CFG]()
 
 
   /**
-    * tell a location is an array or not.
+    * tell an ir is an array or not.
     *
-    * @param loc
+    * @param ir
     * @return
     */
-  def isArray(loc: Location): Boolean = {
-    loc.index.isDefined
+  def isArray(ir: IR): Boolean = {
+    ir match {
+      case loc: Location => loc.index.isDefined
+      case _ => false
+    }
+  }
+
+  def isReg(ir: IR): Boolean = {
+    ir match {
+      case loc: Location => loc.field.get.isReg
+      case _ => false
+    }
+  }
+
+  def AssignFromReg(defn: Def): Boolean = {
+    defn match {
+      case asg: AssignStatement => {
+        //println(s"${asg.value},  ${isReg(asg.value)}")
+        isReg(asg.value)
+      }
+      case _ => false
+    }
   }
 
   /**
@@ -42,6 +62,7 @@ object GlobalCP extends Optimization {
           defn: IR with Def,
           id: DefId): Unit = {
     if (isArray(defn.getLoc)) return
+    if (AssignFromReg(defn)) return
     if (!locMap.contains(defn.getLoc)) {
       locMap(defn.getLoc) = Set[DefId]()
     }
@@ -55,10 +76,10 @@ object GlobalCP extends Optimization {
     * and recognizes which definitions are killed in the block.
     * it sets gen and kill for blocks.
     */
-  def collect(): Unit = {
+  def collect(): Map[Location, Set[DefId]] = {
     val locMap = Map[Location, Set[DefId]]()
 
-    for (cfg <- funcCfgs) { // we only have virtual, cond, block here.
+    for (cfg <- cfgs) { // we only have virtual, cond, block here.
       cfg match {
         case block: CFGBlock => {
           val lastLoc = Map[Location, DefId]() //keep track of last definition
@@ -74,6 +95,7 @@ object GlobalCP extends Optimization {
           }
 
           gen(block) = Set(lastLoc.values.toVector: _*)
+          //println(s"CFG:${block}\n${gen(block)}")
         }
 
         case other => {
@@ -83,7 +105,7 @@ object GlobalCP extends Optimization {
       }
     }
 
-    for (cfg <- funcCfgs) {
+    for (cfg <- cfgs) {
       cfg match {
         case block: CFGBlock => {
           kill(block) = Set()
@@ -97,6 +119,8 @@ object GlobalCP extends Optimization {
 
       }
     }
+
+    locMap
   }
 
   /**
@@ -131,8 +155,9 @@ object GlobalCP extends Optimization {
     val value = Set[Expression]()
     for ((cfg, idx) <- ids) {
       val stmt = cfg.statements(idx)
+      //PrintCFG.prtStmt(stmt)
       stmt match {
-        case asg: AssignmentStatements => value += asg.value
+        case asg: AssignStatement => value += asg.value
         case _ => return loc
       }
     }
@@ -157,24 +182,33 @@ object GlobalCP extends Optimization {
     */
   def subExpr(in: MultiMap[Location, DefId],
               lastDef: Map[Location, DefId],
-              expr: Expression): Expression = {
+              expr: Expression,
+              pos: (CFG, Int)): Expression = {
     expr match {
       case loc: Location => {
         if (isArray(loc)) {
           loc.copy(
-            index = Option(subExpr(in, lastDef, loc.index.get))
+            index = Option(subExpr(in, lastDef, loc.index.get, pos))
           )
         }
         else {
-          if (lastDef.contains(loc)) {
-            findCommon(Set(lastDef(loc)), loc)
+          val from =
+            if (lastDef.contains(loc)) {
+              Set(lastDef(loc))
+            }
+            else if (in.contains(loc)) {
+              in(loc)
+            }
+            else Set[DefId]()
+
+          val res = findCommon(from, loc)
+          //System.err.println(s"try sub ${loc} with ${res}")
+          if (res != loc && !isArray(res) && JudgeSubstitution(from, pos, loc, res)) {
+            //System.err.println(s"sub ${loc} with ${res}")
+            res
           }
-          else if (in.contains(loc)) {
-            findCommon(in(loc), loc)
-          }
-          else {
+          else
             loc
-          }
         }
       }
 
@@ -197,16 +231,17 @@ object GlobalCP extends Optimization {
               stmt: IR,
               id: DefId): IR = {
     var replacedStmt = stmt
+    //PrintCFG.prtStmt(stmt)
     stmt match {
       case asgStmt: AssignStatement => {
         replacedStmt = asgStmt.copy(
-          value = subExpr(in, lastDef, asgStmt.value)
+          value = subExpr(in, lastDef, asgStmt.value, id)
         )
       }
 
       case casgStmt: CompoundAssignStatement => {
-        val expr = subExpr(in, lastDef, casgStmt.loc)
-        val value = subExpr(in, lastDef, casgStmt.loc)
+        val expr = subExpr(in, lastDef, casgStmt.loc, id)
+        val value = subExpr(in, lastDef, casgStmt.value, id)
         val operator = casgStmt.operator
         replacedStmt = ArithmeticOperation(
           casgStmt.line,
@@ -226,7 +261,7 @@ object GlobalCP extends Optimization {
           Option(inc.loc),
           None,
           Add,
-          subExpr(in, lastDef, inc.loc),
+          subExpr(in, lastDef, inc.loc, id),
           IntLiteral(0, 0, 1)
         )
       }
@@ -238,41 +273,41 @@ object GlobalCP extends Optimization {
           Option(dec.loc),
           None,
           Subtract,
-          subExpr(in, lastDef, dec.loc),
+          subExpr(in, lastDef, dec.loc, id),
           IntLiteral(0, 0, 1)
         )
       }
 
       case not: Not => {
         replacedStmt = not.copy(
-          expression = subExpr(in, lastDef, not.expression)
+          expression = subExpr(in, lastDef, not.expression, id)
         )
       }
 
       case negate: Negate => {
         replacedStmt = negate.copy(
-          expression = subExpr(in, lastDef, negate.expression)
+          expression = subExpr(in, lastDef, negate.expression, id)
         )
       }
 
       case arith: ArithmeticOperation => {
         replacedStmt = arith.copy(
-          lhs = subExpr(in, lastDef, arith.lhs),
-          rhs = subExpr(in, lastDef, arith.rhs)
+          lhs = subExpr(in, lastDef, arith.lhs, id),
+          rhs = subExpr(in, lastDef, arith.rhs, id)
         )
       }
 
       case logic: LogicalOperation => {
         replacedStmt = logic.copy(
-          lhs = subExpr(in, lastDef, logic.lhs),
-          rhs = subExpr(in, lastDef, logic.rhs)
+          lhs = subExpr(in, lastDef, logic.lhs, id),
+          rhs = subExpr(in, lastDef, logic.rhs, id)
         )
       }
 
       case ret: Return => {
         if (ret.value.isDefined) {
           replacedStmt = ret.copy(
-            value = Option(subExpr(in, lastDef, ret.value.get))
+            value = Option(subExpr(in, lastDef, ret.value.get, id))
           )
         }
       }
@@ -283,22 +318,27 @@ object GlobalCP extends Optimization {
     replacedStmt match {
       case asgStmt: AssignmentStatements => {
         if (isArray(asgStmt.loc))
-          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get))
+          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get, id))
       }
 
       case oper: Operation => {
         if (isArray(oper.eval.get))
-          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get))
+          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get, id))
       }
+
+      case _ =>
     }
 
     stmt match {
       case defn: Def => {
-        lastDef(defn.getLoc) = id
+        if (!AssignFromReg(defn)) {
+          lastDef(defn.getLoc) = id
+        }
       }
       case _ =>
     }
 
+    //PrintCFG.prtStmt(replacedStmt)
     replacedStmt
   }
 
@@ -308,7 +348,8 @@ object GlobalCP extends Optimization {
     * @param in
     */
   def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
-    for (cfg <- funcCfgs) {
+    for (cfg <- cfgs) {
+      //println(cfg)
       val map = transfer(in(cfg))
       cfg match {
         case block: CFGBlock => {
@@ -320,12 +361,12 @@ object GlobalCP extends Optimization {
         }
 
         case conditional: CFGConditional => {
-          conditional.condition = subExpr(map, Map(), conditional.condition)
+          //conditional.condition = subExpr(map, Map(), conditional.condition, (conditional, -1))
         }
 
         case call: CFGMethodCall => {
           for (index <- call.params.indices) {
-            call.params(index) = subExpr(map, Map(), call.params(index))
+            call.params(index) = subExpr(map, Map(), call.params(index), (call, -1))
           }
         }
 
@@ -339,10 +380,11 @@ object GlobalCP extends Optimization {
     val (in, out) =
       WorkList[DefId](gen,
         kill,
-        funcCfgs(0),
+        cfgs(0),
         Set[DefId](),
         "down",
         "union")
+    JudgeSubstitution.init(cfgs.toVector)
     subBlocks(in)
   }
 
@@ -351,7 +393,7 @@ object GlobalCP extends Optimization {
       return
     }
     cfg.setOptimized(GlobalCP)
-    funcCfgs += cfg
+    cfgs += cfg
 
     cfg match {
       case program: CFGProgram => {
@@ -363,7 +405,7 @@ object GlobalCP extends Optimization {
         if (method.block.isDefined) {
           gen.clear
           kill.clear
-          funcCfgs.clear
+          cfgs.clear
           GlobalCP(method.block.get)
           copyProp
         }

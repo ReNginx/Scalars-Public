@@ -349,6 +349,12 @@ object Destruct {
     val fields = program.fields
     val methods = program.methods map (Destruct(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
     val cfg = CFGProgram("program", fields, methods)
+  
+    fields foreach {
+      case array: ArrayDeclaration => array.isGlobal = true
+      case variable: VariableDeclaration => variable.isGlobal = true
+    }
+
     link(start, cfg)
     link(cfg, end)
     (start, end)

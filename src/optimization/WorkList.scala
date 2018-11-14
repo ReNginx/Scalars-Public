@@ -36,7 +36,7 @@ object WorkList {
   /**
     * please ensure that startFrom is a key in optGen and optKill
     * and optGen, optKill contain that same set of key. opt_in, opt_out would contain the same set of key.
-    * this algorithm does not check this error.
+    * this algorithm does not check any input error.
     * This algorithm would simple ignore any cfg node that's not in the key set.
     *
     * @param optGen         : generated stuff within the list
@@ -76,19 +76,31 @@ object WorkList {
 
       optIn(curr) = initialization.clone
 
-      val nxtLst =
+      val updFrom =
         direction match {
           case "up" => succ(curr)
           case "down" => pred(curr)
           case _ => throw new NotImplementedError()
         }
 
-      for (nxt <- nxtLst) {
-        optIn(curr) = updateIn[T](optIn(curr), optOut(nxt), updateOptIn)
+      val nxtLst =
+        direction match {
+          case "up" => pred(curr)
+          case "down" => succ(curr)
+          case _ => throw new NotImplementedError()
+        }
+
+      for (from <- updFrom) {
+        optIn(curr) = updateIn[T](optIn(curr), optOut(from), updateOptIn)
       }
+
+      //println(s"in${curr}: ${optIn(curr)}\n")
 
       val oldOut = optOut(curr)
       optOut(curr) = optGen(curr) union (optIn(curr) diff optKill(curr))
+
+      // println(s"old${curr}: ${oldOut}")
+      // println(s"new${curr}: ${optOut(curr)}")
 
       if (oldOut != optOut(curr)) {
         list ++= nxtLst

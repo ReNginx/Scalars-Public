@@ -1,17 +1,18 @@
 package compile
 
 import java.io._
-import scala.Console
-import scala.collection.mutable.Map
-import scala.collection.breakOut
-import sys.process._
 
-import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
-import ir.{ASTtoIR, CommonASTWithLines, ScalarAST, TypeCheck, MiscCheck, PrettyPrint}
-import ir.components._
 import codegen._
+import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTypes}
+import ir.components._
+import ir._
 import optimization._
 import util.CLI
+
+import scala.Console
+import scala.collection.breakOut
+import scala.collection.mutable.Map
+import scala.sys.process._
 
 object Compiler {
   val tokenMap = Map(
@@ -26,10 +27,10 @@ object Compiler {
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
   val optMap: Map[String, Optimization] = Map(
-                                              "cse" -> CSE,
-                                              "cp" -> CP,
-                                              "dce" -> DCE
-                                              )
+    "cse" -> CSE,
+    "cp" -> CP,
+    "dce" -> DCE
+  )
   val optAry: Array[String] = optMap.keys.toArray
 
   def main(args: Array[String]): Unit = {
@@ -45,11 +46,11 @@ object Compiler {
         System.exit(1)
       }
     } else if (CLI.target == CLI.Action.ASSEMBLY) {
-      val optFlagMap: Map[String, Boolean] = (optAry zip CLI.opts)(breakOut)
+      val optFlagMap: Map[String, Boolean] = (optAry zip CLI.opts) (breakOut)
       if (assembly(CLI.infile, CLI.outfile, optFlagMap) == null) {
         System.exit(1)
       }
-      
+
     }
     System.exit(0)
   }
@@ -71,7 +72,7 @@ object Compiler {
             done = true
           } else {
             val tokenType = tokenMap.getOrElse(head.getType(), "")
-            outFile.println(head.getLine() + (if (tokenType ==  "") "" else " ") + tokenType + " " + head.getText())
+            outFile.println(head.getLine() + (if (tokenType == "") "" else " ") + tokenType + " " + head.getText())
           }
         } catch {
           case ex: Exception => {
@@ -87,10 +88,10 @@ object Compiler {
 
   def parse(fileName: String, debugSwitch: Boolean = CLI.debug): ScalarAST = {
     /**
-    Parse the file specified by the filename. Eventually, this method
-    may return a type specific to your compiler.
-    */
-    var inputStream : java.io.FileInputStream = null
+      * Parse the file specified by the filename. Eventually, this method
+      * may return a type specific to your compiler.
+      */
+    var inputStream: java.io.FileInputStream = null
     try {
       inputStream = new java.io.FileInputStream(fileName)
     } catch {
@@ -135,11 +136,11 @@ object Compiler {
       ast
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
-      null
+        null
     }
   }
 
-  def inter(fileName: String, debugSwitch: Boolean = CLI.debug) : IR = {
+  def inter(fileName: String, debugSwitch: Boolean = CLI.debug): IR = {
     val optAST = Option(parse(fileName, false))
 
     // parsing failed
@@ -175,7 +176,7 @@ object Compiler {
     ir
   }
 
-  def assembly(inFile: String, outFile: String, optFlagMap: Map[String, Boolean], debugSwitch: Boolean = CLI.debug) : IR = {
+  def assembly(inFile: String, outFile: String, optFlagMap: Map[String, Boolean], debugSwitch: Boolean = CLI.debug): IR = {
     val optIR = Option(inter(inFile, false))
     val output = if (outFile == null) None else Some(outFile)
     // parsing failed
@@ -213,12 +214,7 @@ object Compiler {
     val (start, end) = Destruct(irModified)
 
     val _st = PeepHole(start).get
-
-    /*
-    PrintCFG.init()
-    PrintCFG(_st)
-    PrintCFG.close()
-    */
+    //val _st = start
 
     var optCFG = _st
 
@@ -234,7 +230,17 @@ object Compiler {
     if (optFlagMap("dce")) {
       DCE(optCFG)
     }
-    
+
+    if (optFlagMap("cp")) {
+      GlobalCP(optCFG)
+    }
+
+    if (debugSwitch) {
+      PrintCFG.init()
+      PrintCFG(_st)
+      PrintCFG.close()
+    }
+
     Allocate(optCFG)
 
     if (debugSwitch) {

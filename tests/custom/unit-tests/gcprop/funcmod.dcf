@@ -1,0 +1,14 @@
+import printf;
+
+int a, c, d, e;
+
+void foo ( ) {
+  a = 1;
+}
+
+void main ( ) {
+  a = 2;
+  foo();
+  d = c;
+  printf ( "%d\n", a );
+}
