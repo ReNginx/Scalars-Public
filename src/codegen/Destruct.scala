@@ -49,7 +49,7 @@ object Destruct {
     * and this function should only run once.
     */
   def reconstruct() {
-    System.err.println(reconstructLogical)
+    //System.err.println(reconstructLogical)
     for ((start, lhsSt, lhsEd, rhsSt, rhsEd, body, end) <- reconstructLogical) {
       val expr = body.asInstanceOf[CFGBlock].statements(0).asInstanceOf[LogicalOperation]
       counter = counter + 1
