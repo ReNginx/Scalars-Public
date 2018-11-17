@@ -213,6 +213,7 @@ object Compiler {
 
     val (start, end) = Destruct(irModified)
 
+    Destruct.reconstruct()
     val _st = PeepHole(start).get
     //val _st = start
 
