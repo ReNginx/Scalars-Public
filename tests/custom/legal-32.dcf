@@ -1,0 +1,11 @@
+import printf;
+
+int a, b;
+void main() {
+  int i;
+  b = 0;
+  for (i = 0; i < 100000000; i++) {
+    a = (b + 10 * 10 + 20 / 10) * (100 - 5);
+    //printf("%d\n", a);
+  }
+}

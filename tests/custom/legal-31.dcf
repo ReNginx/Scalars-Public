@@ -1,0 +1,8 @@
+void main() {
+  bool y;
+  y = false;
+  if (y) {
+  }
+  if (y) {
+  }
+}

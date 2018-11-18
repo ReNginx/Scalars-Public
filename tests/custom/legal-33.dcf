@@ -1,0 +1,10 @@
+import printf;
+
+int a, b;
+void main() {
+  int i;
+  b = 0;
+  //a = (b + 10 * 10 + 20 / 10) * (100 - 5);
+  a = b + 10 * 10;
+  printf("%d\n", a);
+}

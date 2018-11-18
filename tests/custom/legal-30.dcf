@@ -1,0 +1,13 @@
+import printf;
+
+void main() {
+  bool x;
+
+  x = false;
+  if (x) {
+    printf("Good");
+  }
+  else {
+    printf("Bad");
+  }
+}
