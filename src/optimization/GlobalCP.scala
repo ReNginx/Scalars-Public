@@ -16,7 +16,7 @@ object GlobalCP extends Optimization {
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
   val cfgs = ArrayBuffer[CFG]()
-
+  val allCfgs = Set[CFG]()
 
   /**
     * tell an ir is an array or not.
@@ -388,12 +388,18 @@ object GlobalCP extends Optimization {
     subBlocks(in)
   }
 
+  def init: Unit = {
+    allCfgs foreach(_.resetOptmized(GlobalCP))
+    allCfgs.clear()
+  }
+
   def apply(cfg: CFG): Unit = {
     if (cfg.isOptimized(GlobalCP)) {
       return
     }
     cfg.setOptimized(GlobalCP)
     cfgs += cfg
+    allCfgs += cfg
 
     cfg match {
       case program: CFGProgram => {
