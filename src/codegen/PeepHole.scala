@@ -1,7 +1,7 @@
 package codegen
 
 import scala.collection.mutable.Set
-
+import ir.components._
 object PeepHole {
 
   val set: Set[CFG] = Set[CFG]()
@@ -75,14 +75,45 @@ object PeepHole {
         Option(block)
       }
 
-      case conditional: CFGConditional => {
-        if (conditional.end.isDefined)
-          conditional.end = PeepHole(conditional.end.get)
-        if (conditional.next.isDefined)
-          conditional.next = PeepHole(conditional.next.get)
-        if (conditional.ifFalse.isDefined)
-          conditional.ifFalse = PeepHole(conditional.ifFalse.get)
-        Option(conditional)
+      case cond: CFGConditional => {
+        cond.condition match {
+          case bool: BoolLiteral => {
+            //System.err.println(s"removed ${cond.label}")
+            del.add(cond)
+            val nxt: Option[CFG] = {
+              bool.value match {
+                case true => cond.next
+                case false =>
+                  cond.ifFalse match {
+                    case None => cond.end
+                    case Some(cfg) => Option(cfg)
+                  }
+              }
+            }
+            if (nxt.isDefined) {
+              nxt.get.parents.remove(cond)
+            }
+            cond.next = nxt
+            for (par <- cond.parents) {
+              adjustPar(par, cond)
+              if (nxt.isDefined) {
+                nxt.get.parents.add(par)
+              }
+            }
+            cond.next = PeepHole(nxt.get)
+            cond.next
+          }
+
+          case _ => {
+            if (cond.end.isDefined)
+              cond.end = PeepHole(cond.end.get)
+            if (cond.next.isDefined)
+              cond.next = PeepHole(cond.next.get)
+            if (cond.ifFalse.isDefined)
+              cond.ifFalse = PeepHole(cond.ifFalse.get)
+            Option(cond)
+          }
+        }
       }
 
       case method: CFGMethod => {
@@ -105,6 +136,8 @@ object PeepHole {
             if (!set.contains(par))
               cfg.parents.remove(par)
         }
+        set.clear()
+        del.clear()
         Option(program)
       }
     }
