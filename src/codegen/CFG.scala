@@ -80,7 +80,7 @@ case class VirtualCFG(
   */
 case class CFGBlock(
                      label: String,
-                     statements: ArrayBuffer[IR],
+                     var statements: ArrayBuffer[IR],
                      var next: Option[CFG] = None,
                      parents: Set[CFG] = Set()) extends CFG {
   if (next.isDefined) {
