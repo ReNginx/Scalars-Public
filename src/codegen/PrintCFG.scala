@@ -3,7 +3,7 @@ package codegen
 import java.io.{BufferedWriter, File, FileWriter}
 
 import ir.components._
-import sys.process._
+import scala.sys.process._
 import scala.collection.mutable.{ArrayBuffer, HashSet, Map, Set}
 
 object PrintCFG {
@@ -17,7 +17,7 @@ object PrintCFG {
   def close(): Unit = {
     writer.write("label=\"cfg graph\"}")
     writer.close()
-    s"dot -Tpng ${fileName} -o cfg.png"!
+    s"dot -Tpng ${fileName} -o cfg.png".!
   }
 
   def doHeader(cfg: CFG): Unit = {
