@@ -212,37 +212,39 @@ object Compiler {
     }
 
     val (start, end) = Destruct(irModified)
+    val optCFG = PeepHole(start, preserveCritical=true).get
 
-    Destruct.reconstruct()
-    val _st = PeepHole(start).get
-    //val _st = start
-
-    var optCFG = _st
-
-    // Optimizations
     if (optFlagMap("cse")) {
       CSE(optCFG)
     }
-
     if (optFlagMap("cp")) {
       CP(optCFG)
     }
-
     if (optFlagMap("dce")) {
       DCE(optCFG)
     }
-
+    /*
+    if (optFlagMap("cse")) {
+      GlobalCSE(optCFG)
+    }
+    */
     if (optFlagMap("cp")) {
       GlobalCP(optCFG)
     }
 
+    Destruct.reconstruct()
+
+    val optCFGFinal = PeepHole(optCFG, preserveCritical=false).get
+
+    /*
     if (debugSwitch) {
       PrintCFG.init()
       PrintCFG(_st)
       PrintCFG.close()
     }
+    */
 
-    Allocate(optCFG)
+    Allocate(optCFGFinal)
 
     if (debugSwitch) {
       println("Low-level IR tree after destruct, peephole and allocate:")
@@ -254,7 +256,7 @@ object Compiler {
       println("x86-64 assembly:")
     }
 
-    TranslateCFG(_st, output, debugSwitch)
+    TranslateCFG(optCFGFinal, output, debugSwitch)
     TranslateCFG.closeOutput
 
     if (debugSwitch) {

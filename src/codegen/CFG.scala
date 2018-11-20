@@ -26,6 +26,7 @@ trait CFG {
   var isTranslated: Boolean = false
   var isAllocated: Boolean = false
   var next: Option[CFG]
+  var isCritical: Boolean = false
 
   override def hashCode: Int = label.hashCode
 
@@ -47,9 +48,6 @@ trait CFG {
   def resetOptmized(opt: Optimization): Unit = {
     activeOpti -= opt
   }
-
-  val tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
-  val var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
 
   override def toString: String = label
 }

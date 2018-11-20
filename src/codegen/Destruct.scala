@@ -51,6 +51,13 @@ object Destruct {
   def reconstruct() {
     //System.err.println(reconstructLogical)
     for ((start, lhsSt, lhsEd, rhsSt, rhsEd, body, end) <- reconstructLogical) {
+      assert(start.isCritical)
+      assert(lhsSt.isCritical)
+      assert(lhsEd.isCritical)
+      assert(rhsSt.isCritical)
+      assert(rhsEd.isCritical)
+      assert(body.isCritical)
+      assert(end.isCritical)
       val expr = body.asInstanceOf[CFGBlock].statements(0).asInstanceOf[LogicalOperation]
       counter = counter + 1
       val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Logical"
@@ -135,62 +142,23 @@ object Destruct {
     val (lhsSt, lhsEd) = Destruct(expr.lhs)
     val (rhsSt, rhsEd) = Destruct(expr.rhs)
 
-    expr.operator match {
-      //      case And => {
-      //        val assignTrue = AssignStatement(expr.line, expr.col,
-      //          expr.eval.get,
-      //          BoolLiteral(expr.line, expr.col, true))
-      //        val assignFalse = AssignStatement(expr.line, expr.col,
-      //          expr.eval.get,
-      //          BoolLiteral(expr.line, expr.col, false))
-      //
-      //        val (trueSt, trueEd) = Destruct(assignTrue)
-      //        val (falseSt, falseEd) = Destruct(assignFalse)
-      //
-      //        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
-      //        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt), Option(end))
-      //
-      //        link(start, lhsSt)
-      //        link(lhsEd, cond1)
-      //        link(rhsEd, cond2)
-      //        link(trueEd, end)
-      //        link(falseEd, end)
-      //      }
-      //
-      //      case Or => {
-      //        val assignTrue = AssignStatement(expr.line, expr.col,
-      //          expr.eval.get,
-      //          BoolLiteral(expr.line, expr.col, true))
-      //        val assignFalse = AssignStatement(expr.line, expr.col,
-      //          expr.eval.get,
-      //          BoolLiteral(expr.line, expr.col, false))
-      //
-      //        val (trueSt, trueEd) = Destruct(assignTrue)
-      //        val (falseSt, falseEd) = Destruct(assignFalse)
-      //
-      //        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
-      //        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt), Option(end))
-      //
-      //        link(start, lhsSt)
-      //        link(lhsEd, cond1)
-      //        link(rhsEd, cond2)
-      //        link(trueEd, end)
-      //        link(falseEd, end)
-      //      }
-
-      case _ => {
-        link(start, lhsSt)
-        link(lhsEd, rhsSt)
-        expr.lhs = expr.lhs.eval.get
-        expr.rhs = expr.rhs.eval.get
-        val body = CFGBlock(placeStr + "_body", ArrayBuffer(expr))
-        link(rhsEd, body)
-        link(body, end)
-        if (expr.operator == Or || expr.operator == And) {
-          val tuple = (start, lhsSt, lhsEd, rhsSt, rhsEd, body, end)
-          reconstructLogical += tuple
-        }
-      }
+    link(start, lhsSt)
+    link(lhsEd, rhsSt)
+    expr.lhs = expr.lhs.eval.get
+    expr.rhs = expr.rhs.eval.get
+    val body = CFGBlock(placeStr + "_body", ArrayBuffer(expr))
+    link(rhsEd, body)
+    link(body, end)
+    if (expr.operator == Or || expr.operator == And) {
+      start.isCritical = true
+      lhsSt.isCritical = true
+      lhsEd.isCritical = true
+      rhsSt.isCritical = true
+      rhsEd.isCritical = true
+      body.isCritical = true
+      end.isCritical = true
+      val tuple = (start, lhsSt, lhsEd, rhsSt, rhsEd, body, end)
+      reconstructLogical += tuple
     }
 
     (start, end)
@@ -465,10 +433,8 @@ object Destruct {
 
     assignment match {
       case asg: AssignStatement => {
-        //println("Asghere") // DEBUG
-
         /* when we encouner assigning a temp to a non-temp,
-          this implies this temp comes from an operation. which means we  can safely swap
+          this implies this temp comes from an operation. which means we can safely swap
           their place and won't cause any problem.
         */
         if (Helper.nameEndsWith(asg.value.eval.get, "_tmp") &&
@@ -527,35 +493,6 @@ object Destruct {
     *
     * @return (start, end)
     */
-  // private def destructLocation(loc: Location): (CFG, CFG) = {
-  //   val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
-  //   val (start, end) = create(placeStr)
-  //   if (loc.index.isDefined) {
-  //     loc.index.get match {
-  //       case location: Location => {
-  //         //println(loc.field.get.name)
-  //         val (indexSt, indexEd) = Destruct(loc.index.get)
-  //         link(start, indexSt)
-  //         loc.index = loc.index.get.eval
-  //         val self = CFGBlock(placeStr + "_index", ArrayBuffer(loc))
-  //         link(indexEd, self)
-  //         link(self, end)
-  //       }
-  //       case _ => {
-  //         val (indexSt, indexEd) = Destruct(loc.index.get)
-  //         loc.index = loc.index.get.eval
-  //         link(start, indexSt)
-  //         link(indexEd, end)
-  //       }
-  //     }
-  //   }
-  //   else {
-  //     link(start, end)
-  //   }
-  //
-  //   (start, end)
-  // }
-
   private def destructLocation(loc: Location): (CFG, CFG)
 
   = {
@@ -584,9 +521,6 @@ object Destruct {
     else {
       link(start, end)
     }
-    // val locSelf = CFGBlock(placeStr + "_self", ArrayBuffer(loc))
-    // link(last, locSelf)
-    // last = locSelf
     (start, end)
   }
 
