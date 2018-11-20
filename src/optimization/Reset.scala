@@ -13,8 +13,8 @@ object Reset extends Optimization {
 
   private def init() {
     cfgs foreach (cfg => {
-      cfg.resetOptmized(GlobalCP)
-      cfg.resetOptmized(ConstantFolding)
+      cfg.resetOptimized(GlobalCP)
+      cfg.resetOptimized(ConstantFolding)
       // add more here if want to do them more than once.
     })
     cfgs.clear()

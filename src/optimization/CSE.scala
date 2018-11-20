@@ -136,8 +136,7 @@ object CSE extends Optimization {
   }
 
   def apply(cfg: CFG): Unit = {
-    init()
-    
+    init
     if (!cfg.isOptimized(CSE)) {
       cfg.setOptimized(CSE)
       cfg match {

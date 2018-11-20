@@ -45,7 +45,7 @@ trait CFG {
     activeOpti += opt
   }
 
-  def resetOptmized(opt: Optimization): Unit = {
+  def resetOptimized(opt: Optimization): Unit = {
     activeOpti -= opt
   }
 
