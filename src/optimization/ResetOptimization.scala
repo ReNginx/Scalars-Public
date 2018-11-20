@@ -1,6 +1,5 @@
 package optimization
 
-import ir.components._
 import codegen._
 
 // Given an optimization opt, reset all CFG blocks for opt
