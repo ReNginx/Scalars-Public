@@ -133,8 +133,8 @@ object GlobalDCE extends Optimization {
                           case _ =>
                         }
                       }
-
-                      break
+                      if (!decl.isInstanceOf[ArrayDeclaration])
+                        break
                     }
                   }
                 }
@@ -161,6 +161,7 @@ object GlobalDCE extends Optimization {
               newStmt += block.statements(i)
             } else {
               //PrintCFG.prtStmt(block.statements(i))
+              //PrettyPrint(block.statements(i), 0)
             }
           }
 

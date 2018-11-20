@@ -1,0 +1,17 @@
+import printf;
+
+int a[10];
+
+void swap(int x, int y) {
+    int tmp;
+    tmp = a[x];
+    a[x] = a[y];
+    a[y] = tmp;
+}
+
+void main() {
+    a[1] = 2;
+    a[2] = 5;
+    swap(1,2);
+    printf("%d %d\n", a[1], a[2]);
+}
