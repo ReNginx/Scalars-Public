@@ -47,7 +47,7 @@ object DCE extends Optimization{
       !needed.contains(loc.field.get)
   }
 
-  def apply(cfg: CFG): Unit = {
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (cfg.isOptimized(DCE)) {
       return
     }
@@ -56,13 +56,13 @@ object DCE extends Optimization{
     cfg match {
       case vCfg: VirtualCFG => {
         if (vCfg.next.isDefined) {
-          DCE(vCfg.next.get)
+          DCE(vCfg.next.get, false)
         }
       }
 
       case block: CFGBlock => {
         if (block.next.isDefined) {
-          DCE(block.next.get)
+          DCE(block.next.get, false)
         }
 
         val needed = Set[FieldDeclaration]()
@@ -138,25 +138,25 @@ object DCE extends Optimization{
 
       case condition: CFGConditional => {
         if (condition.next.isDefined) {
-          DCE(condition.next.get)
+          DCE(condition.next.get, false)
         }
         if (condition.ifFalse.isDefined) {
-          DCE(condition.ifFalse.get)
+          DCE(condition.ifFalse.get, false)
         }
       }
 
       case method: CFGMethod => {
-        DCE(method.block.get)
+        DCE(method.block.get, false)
       }
 
       case call: CFGMethodCall => {
         if (call.next.isDefined) {
-          DCE(call.next.get)
+          DCE(call.next.get, false)
         }
       }
 
       case prog: CFGProgram => {
-        prog.methods foreach {DCE(_)}
+        prog.methods foreach {DCE(_, false)}
       }
     }
   }

@@ -10,19 +10,17 @@ object CP extends Optimization {
   val tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
   val var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
  
-  private def init(): Unit = {
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+    if (isInit) { init }
     tmp2Var.clear
     var2Set.clear
-  }
-  
-  def apply(cfg: CFG): Unit = {
-    init
+
     if (!cfg.isOptimized(CP)) {
       cfg.setOptimized(CP)
       cfg match {
         case virtualCFG: VirtualCFG => {
           if (!virtualCFG.next.isEmpty) {
-            CP(virtualCFG.next.get)
+            CP(virtualCFG.next.get, false)
           }
         }
   
@@ -43,6 +41,7 @@ object CP extends Optimization {
                   assign.value match {
                     case rhsLoc: Location => {
                       if (rhsLoc.name.endsWith(localTmpSuffix)) { // c = t1
+                        isChanged = true // changed
                         if (tmp2Var.contains(rhsLoc)) { // c = t1 => c = a
                           val replaceStatement: AssignStatement = AssignStatement(assign.line,  assign.col, assign.loc, tmp2Var(rhsLoc))
                           newStatements += replaceStatement
@@ -78,36 +77,36 @@ object CP extends Optimization {
           block.statements ++= newStatements
 
           if (!block.next.isEmpty) {
-            CP(block.next.get)
+            CP(block.next.get, false)
           }
         }
   
         case conditional: CFGConditional => {
           if (!conditional.next.isEmpty) {
-            CP(conditional.next.get)
+            CP(conditional.next.get, false)
           }
           if (!conditional.ifFalse.isEmpty) {
-            CP(conditional.ifFalse.get)
+            CP(conditional.ifFalse.get, false)
           }
           if (!conditional.end.isEmpty) {
-            CP(conditional.end.get)
+            CP(conditional.end.get, false)
           }
         }
 
         case method: CFGMethod => {
           if (!method.block.isEmpty) {
-            CP(method.block.get)
+            CP(method.block.get, false)
           }
         }
 
         case call: CFGMethodCall => {
           if (!call.next.isEmpty) {
-            CP(call.next.get)
+            CP(call.next.get, false)
           }
         }
 
         case program: CFGProgram => {
-          program.methods foreach { CP(_) }
+          program.methods foreach { CP(_, false) }
         }
       }
     }

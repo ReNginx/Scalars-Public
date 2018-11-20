@@ -7,7 +7,7 @@ import scala.collection.mutable.{ArrayBuffer, HashMap, Map, MultiMap, Set}
 /**
   * this class reset marks of optimizations.
   */
-object Reset extends Optimization {
+object Reset {
 
   val cfgs = Set[CFG]()
 

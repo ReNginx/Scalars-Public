@@ -387,7 +387,7 @@ object GlobalCP extends Optimization {
     subBlocks(in)
   }
 
-  def apply(cfg: CFG): Unit = {
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (cfg.isOptimized(GlobalCP)) {
       return
     }

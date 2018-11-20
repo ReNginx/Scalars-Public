@@ -173,7 +173,7 @@ object GlobalDCE extends Optimization {
     }
   }
 
-  def apply(cfg: CFG): Unit = {
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (cfg.isOptimized(GlobalDCE)) {
       return
     }

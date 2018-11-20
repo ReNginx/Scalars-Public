@@ -5,7 +5,7 @@ import ir.components._
 
 object ConstantFolding extends Optimization {
 
- def apply(cfg: CFG): Unit = {
+ def apply(cfg: CFG, isInit: Boolean=true): Unit = {
    if (cfg.isOptimized(ConstantFolding)) {
      return
    }

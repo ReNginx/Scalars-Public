@@ -3,7 +3,7 @@ package optimization
 import codegen._
 
 // Given an optimization opt, reset all CFG blocks for opt
-object ResetOptimization extends Optimization {
+object ResetOptimization {
 
   def apply(cfg: CFG, opt: Optimization): Unit = {
     if (cfg.isOptimized(opt)) {

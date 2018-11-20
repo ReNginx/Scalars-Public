@@ -179,6 +179,18 @@ object Compiler {
   def assembly(inFile: String, outFile: String, optFlagMap: Map[String, Boolean], debugSwitch: Boolean = CLI.debug): IR = {
     val optIR = Option(inter(inFile, false))
     val output = if (outFile == null) None else Some(outFile)
+    val str2Opts = Map[String, Map[String, Optimization]](
+      "cse" -> Map[String, Optimization](
+        "local" -> CSE),
+        // "global" -> GlobalCSE),
+      "cp" -> Map[String, Optimization](
+        "local" -> CP,
+        "global" -> GlobalCP),
+      "dce" -> Map[String, Optimization](
+        "local" -> DCE,
+        "global" -> GlobalDCE)
+    )
+
     // parsing failed
     if (optIR.isEmpty) {
       System.exit(1)
@@ -214,26 +226,33 @@ object Compiler {
     val (start, end) = Destruct(irModified)
     val optCFG = PeepHole(start, preserveCritical=true).get
 
-    if (optFlagMap("cse")) {
-      CSE(optCFG)
-    }
-    if (optFlagMap("cp")) {
-      CP(optCFG)
-    }
-    if (optFlagMap("dce")) {
-      DCE(optCFG)
-    }
+    val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
+    val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
+
+    println(localOptCond)
+    println(localOptSeq)
+
+    val localOptIter = RepeatOptimization(optCFG, None, localOptCond, Option(localOptSeq))
+
+    println(s"Number of iterations: ${localOptIter}")
+
+    val localOptWrapUp = RepeatOptimization(optCFG, None, localOptSeq, None)
+
+    assert(localOptWrapUp == 1) // an extra run of DCE should not change anything
+
     /*
     if (optFlagMap("cse")) {
       GlobalCSE(optCFG)
     }
     */
+    /*
     if (optFlagMap("cp")) {
       GlobalCP(optCFG)
     }
     if (optFlagMap("dce")) {
       GlobalDCE(optCFG)
     }
+    */
 
     Destruct.reconstruct()
 
