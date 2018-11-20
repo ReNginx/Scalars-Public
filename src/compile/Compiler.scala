@@ -231,18 +231,20 @@ object Compiler {
     if (optFlagMap("cp")) {
       GlobalCP(optCFG)
     }
+    if (optFlagMap("dce")) {
+      GlobalDCE(optCFG)
+    }
 
     Destruct.reconstruct()
 
     val optCFGFinal = PeepHole(optCFG, preserveCritical=false).get
 
-    /*
+
     if (debugSwitch) {
       PrintCFG.init()
-      PrintCFG(_st)
+      PrintCFG(optCFGFinal)
       PrintCFG.close()
     }
-    */
 
     Allocate(optCFGFinal)
 
