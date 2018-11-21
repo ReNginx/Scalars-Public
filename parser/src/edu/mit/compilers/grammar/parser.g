@@ -267,7 +267,7 @@ stand_alone_expr: (  // stand-alone expression
 );
 mul_op_expr: (
   stand_alone_expr
-  ( options{greedy=true;}: (MULTIPLY^ | DIVIDE^ | MOD^) mul_op_expr )*
+  ( options{greedy=true;}: (MULTIPLY^ | DIVIDE^ | MOD^) stand_alone_expr )*
 );
 add_op_expr: (
   mul_op_expr

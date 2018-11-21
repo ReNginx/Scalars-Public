@@ -23,6 +23,8 @@ case $OS in
     $ROOT/dataflow/test.sh;
     echo "Dataflow Hidden Tests";
     $ROOT/dataflow-hidden/test.sh;
+    echo "Optimizer Tests";
+    $ROOT/optimizer/test.sh;
     ;;
   CYGWIN*|Windows*)
     cd $ROOT;
@@ -42,6 +44,8 @@ case $OS in
     bash codegen/test.sh;
     echo "Codegen Hidden Tests";
     bash codegen-hidden/test.sh;
+    echo "Optimizer Tests";
+    bash optimizer/test.sh;
     ;;
   *)
     echo "Error: Unknown $OS";
