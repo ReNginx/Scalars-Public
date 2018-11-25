@@ -1,0 +1,17 @@
+import printf;
+
+int gint(int x) {
+    return x;
+}
+
+void main() {
+    int a, b, i;
+    for (i = gint(11); i < 10; i++) {
+        a = 100;
+        b = a * i + 1;
+        printf("i, %d\n", i);
+        printf("a %d\n", a);
+        printf("b %d\n", b);
+    }
+    // in this case a could be move out, since it's not used after loop.
+}

@@ -1,0 +1,12 @@
+import printf;
+
+void main() {
+    int a, b, i;
+    for (i = 0; i < 10; i++) {
+        b = i + 1;
+        a = b * 10;
+        printf("i, %d\n", i);
+        printf("a %d\n", a);
+        printf("b %d\n", b);
+    }
+}
