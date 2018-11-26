@@ -160,6 +160,7 @@ object GlobalDCE extends Optimization {
             if (requiredStmts.contains(pos)) {
               newStmt += block.statements(i)
             } else {
+              isChanged=true
               //PrintCFG.prtStmt(block.statements(i))
               //PrettyPrint(block.statements(i), 0)
             }
@@ -174,6 +175,7 @@ object GlobalDCE extends Optimization {
   }
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+    if (isInit) { init() }
     if (cfg.isOptimized(GlobalDCE)) {
       return
     }
@@ -183,7 +185,7 @@ object GlobalDCE extends Optimization {
     cfg match {
       case program: CFGProgram => {
         globalVars = program.fields
-        program.methods foreach (GlobalDCE(_))
+        program.methods foreach (GlobalDCE(_, isInit = false))
       }
 
       // we collect all blocks of a function.
@@ -191,23 +193,23 @@ object GlobalDCE extends Optimization {
         if (method.block.isDefined) {
           cfgs.clear
           unused.clear
-          GlobalDCE(method.block.get)
+          GlobalDCE(method.block.get, isInit = false)
           eliminateUnsed(method)
         }
       }
 
       case cond: CFGConditional => {
         if (cond.next.isDefined) {
-          GlobalDCE(cond.next.get)
+          GlobalDCE(cond.next.get, isInit = false)
         }
         if (cond.ifFalse.isDefined) {
-          GlobalDCE(cond.ifFalse.get)
+          GlobalDCE(cond.ifFalse.get, isInit = false)
         }
       }
 
       case other => {
         if (other.next.isDefined) {
-          GlobalDCE(other.next.get)
+          GlobalDCE(other.next.get, isInit = false)
         }
       }
     }
