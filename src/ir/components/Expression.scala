@@ -2,7 +2,7 @@ package ir.components
 
 import scala.collection.mutable.ArrayBuffer
 
-trait Expression extends IR with Def {
+trait Expression extends IR with Def with Use {
   def typ: Option[Type]
 
   def eval: Option[Expression]
@@ -44,7 +44,7 @@ case class Location(
                     var field: Option[FieldDeclaration] = None) extends SingleExpr {
   self =>
 
-  var evalLoc: Option[Expression] = None
+  var evalLoc: Option[Expression] = None // might be deprecated.
   var blockLoc: Option[Block] = None
 
   override def eval: Option[Expression] = Some(self)

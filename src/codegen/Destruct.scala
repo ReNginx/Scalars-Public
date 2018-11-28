@@ -16,7 +16,7 @@ object Destruct {
     * @param to
     * @return
     */
-  private def link(from: CFG, to: CFG) = {
+  def link(from: CFG, to: CFG) = {
     if (from.next.isEmpty) {
       from.next = Some(to)
       to.parents.add(from)
@@ -179,6 +179,31 @@ object Destruct {
     val placeStr = s"_${counter}_r${block.line}_c${block.col}_Block"
     val (start, end) = create(placeStr)
     var last = start
+    //initialization of variables should go here.
+    // TODO check this part, and remove counterpart in code translation.
+//    val init = CFGBlock(placeStr+"_Init", ArrayBuffer())
+//    for (decl <- block.declarations) {
+//      def clearHelper(decl:FieldDeclaration, index:Option[Long]=None):AssignStatement = {
+//        val idxLiteral = if (index.isDefined)
+//          Option(IntLiteral(0,0,index.get))
+//        else
+//          None
+//        val loc = Location(decl.line, decl.col, decl.name, idxLiteral, Option(decl))
+//        AssignStatement(decl.line, decl.col, loc, IntLiteral(0, 0, 0))
+//      }
+//
+//      decl match {
+//        case variable:VariableDeclaration => {
+//          init.statements.append(clearHelper(variable))
+//        }
+//        case array:ArrayDeclaration => {
+//          (0 until array.length.value) foreach (x => init.statements.append(clearHelper(array, Option(x))))
+//        }
+//      }
+//    }
+//
+//    link(last, init)
+//    last = init
 
     for (stmt <- block.statements) {
       stmt match {
