@@ -19,4 +19,7 @@ local.environment
 cfg.dot
 cfg.png
 output/
+__tmp/
+__asmopt/
+__asmnopt/
 test_alt.sh
