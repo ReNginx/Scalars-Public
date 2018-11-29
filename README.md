@@ -1,6 +1,6 @@
 # Scalars Decaf Compiler
 
-Nov. 2, 2018 23:01 PM
+Nov. 28, 2018 23:10 PM
 
 ## Scanner
 
@@ -22,7 +22,7 @@ Nov. 2, 2018 23:01 PM
 - 100% pass on public tests
 - 100% pass on private tests
 
-## Dataflow
+## Dataflow Analysis
 
 - Implemented: local CSE. local CP, local DCE, global CSE, global CP, global DCE (see Optimization section)
 - 100% pass on public tests
