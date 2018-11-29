@@ -22,7 +22,7 @@ case class Continue(
 case class Return(
   line: Int,
   col: Int,
-  var value: Option[Expression]) extends Statement {
+  var value: Option[Expression]) extends Statement with Use {
   override def toString: String = s"[Return]  (${line}:${col})"
 }
 

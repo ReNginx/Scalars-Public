@@ -4,14 +4,18 @@ import codegen._
 import ir.components._
 import scala.collection.mutable.{ArrayBuffer, HashMap, Map, MultiMap, Set}
 
-object Reset extends Optimization {
+/**
+  * this class reset marks of optimizations.
+  */
+object Reset {
 
   val cfgs = Set[CFG]()
 
   private def init() {
     cfgs foreach (cfg => {
-      cfg.resetOptmized(GlobalCP)
-      cfg.resetOptmized(ConstantFolding)
+      cfg.resetOptimized(GlobalCP)
+      cfg.resetOptimized(ConstantFolding)
+      // add more here if want to do them more than once.
     })
     cfgs.clear()
   }

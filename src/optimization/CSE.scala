@@ -4,6 +4,7 @@ import scala.collection.mutable.{ArrayBuffer, Map}
 import ir.components._
 import codegen._
 
+// CSE is not idempotoent, so setChanged is never used here.
 object CSE extends Optimization {
 
   val localTmpSuffix = "_cse_local_tmp"
@@ -15,14 +16,6 @@ object CSE extends Optimization {
   var nextVacantVal: SymVal = SymVal(0)
   var nextVacantTmp: Int = 0
 
-  private def init(): Unit = {
-    var2Val.clear()
-    exp2ValTmp.clear()
-    idx2Ary.clear()
-    nextVacantVal = SymVal(0)
-    nextVacantTmp = 0
-  }
-
   private def getNextVal(): SymVal = {
     val retVal: SymVal = nextVacantVal
     nextVacantVal = SymVal(nextVacantVal.value + 1)
@@ -32,8 +25,8 @@ object CSE extends Optimization {
   private def getNextTmp(block: CFGBlock, typ: Type): Location = {
     val numTmp: Int = nextVacantTmp
     nextVacantTmp += 1
-    val retField: FieldDeclaration = VariableDeclaration(0, 0, s"${numTmp}_${block.label}_cse_local_tmp", Some(typ))
-    val retTmp: Location = Location(0, 0, s"${numTmp}_${block.label}_cse_local_tmp", None, Some(retField))
+    val retField: FieldDeclaration = VariableDeclaration(0, 0, s"${numTmp}_${block.label}${localTmpSuffix}", Some(typ))
+    val retTmp: Location = Location(0, 0, s"${numTmp}_${block.label}localTmpSuffix", None, Some(retField))
     retTmp
   }
 
@@ -135,15 +128,20 @@ object CSE extends Optimization {
     }
   }
 
-  def apply(cfg: CFG): Unit = {
-    init()
-    
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+    if (isInit) { init }
+    var2Val.clear()
+    exp2ValTmp.clear()
+    idx2Ary.clear()
+    nextVacantVal = SymVal(0)
+    nextVacantTmp = 0
+
     if (!cfg.isOptimized(CSE)) {
       cfg.setOptimized(CSE)
       cfg match {
         case virtualCFG: VirtualCFG => {
           if (!virtualCFG.next.isEmpty) {
-            CSE(virtualCFG.next.get)
+            CSE(virtualCFG.next.get, false)
           }
         }
   
@@ -265,36 +263,36 @@ object CSE extends Optimization {
           block.statements ++= newStatements
 
           if (!block.next.isEmpty) {
-            CSE(block.next.get)
+            CSE(block.next.get, false)
           }
         }
   
         case conditional: CFGConditional => {
           if (!conditional.next.isEmpty) {
-            CSE(conditional.next.get)
+            CSE(conditional.next.get, false)
           }
           if (!conditional.ifFalse.isEmpty) {
-            CSE(conditional.ifFalse.get)
+            CSE(conditional.ifFalse.get, false)
           }
           if (!conditional.end.isEmpty) {
-            CSE(conditional.end.get)
+            CSE(conditional.end.get, false)
           }
         }
 
         case method: CFGMethod => {
           if (!method.block.isEmpty) {
-            CSE(method.block.get)
+            CSE(method.block.get, false)
           }
         }
 
         case call: CFGMethodCall => {
           if (!call.next.isEmpty) {
-            CSE(call.next.get)
+            CSE(call.next.get, false)
           }
         }
 
         case program: CFGProgram => {
-          program.methods foreach { CSE(_) }
+          program.methods foreach { CSE(_, false) }
         }
       }
     }

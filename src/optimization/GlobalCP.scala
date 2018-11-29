@@ -201,9 +201,9 @@ object GlobalCP extends Optimization {
             else Set[DefId]()
 
           val res = findCommon(from, loc)
-          System.err.println(s"try sub ${loc} with ${res}")
+          //System.err.println(s"try sub ${loc} with ${res}")
           if (res != loc && !isArray(res) && JudgeSubstitution(from, pos, loc, res)) {
-            System.err.println(s"sub ${loc} with ${res}")
+            //System.err.println(s"sub ${loc} with ${res}")
             res
           }
           else
@@ -387,7 +387,7 @@ object GlobalCP extends Optimization {
     subBlocks(in)
   }
 
-  def apply(cfg: CFG): Unit = {
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (cfg.isOptimized(GlobalCP)) {
       return
     }

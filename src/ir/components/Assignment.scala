@@ -1,6 +1,6 @@
 package ir.components
 
-trait Assignment extends Statement with Def{
+trait Assignment extends Statement with Def with Use {
   def loc: Location
 }
 

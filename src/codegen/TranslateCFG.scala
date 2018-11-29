@@ -133,6 +133,11 @@ object TranslateCFG {
           case loc: Location => {
             outputVec(loc.indexCheck)
           }
+          case _ => {
+            //System.err.println(label)
+            throw new NotImplementedError()
+          }
+
         }
         val (repVec: Vector[String], repStr: String) = condition.eval.get.getRep(aryIdxReg1)
         outputVec(repVec)

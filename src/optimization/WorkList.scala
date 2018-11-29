@@ -91,7 +91,8 @@ object WorkList {
         }
 
       for (from <- updFrom) {
-        optIn(curr) = updateIn[T](optIn(curr), optOut(from), updateOptIn)
+        if (optOut.contains(from))
+          optIn(curr) = updateIn[T](optIn(curr), optOut(from), updateOptIn)
       }
 
       //println(s"in${curr}: ${optIn(curr)}\n")

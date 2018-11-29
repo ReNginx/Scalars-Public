@@ -1,7 +1,7 @@
 package codegen
 
 import ir.components._
-import optimization.Optimization
+import optimization.{GenericOptimization, Optimization}
 
 import scala.collection.mutable.{ArrayBuffer, Map, Set}
 
@@ -26,6 +26,7 @@ trait CFG {
   var isTranslated: Boolean = false
   var isAllocated: Boolean = false
   var next: Option[CFG]
+  var isCritical: Boolean = false
 
   override def hashCode: Int = label.hashCode
 
@@ -34,22 +35,19 @@ trait CFG {
       obj.hashCode == this.hashCode
   }
 
-  var activeOpti: Set[Optimization] = Set[Optimization]()
+  var activeOpti: Set[GenericOptimization] = Set[GenericOptimization]()
 
-  def isOptimized(opt: Optimization): Boolean = {
+  def isOptimized(opt: GenericOptimization): Boolean = {
     activeOpti.contains(opt)
   }
 
-  def setOptimized(opt: Optimization): Unit = {
+  def setOptimized(opt: GenericOptimization): Unit = {
     activeOpti += opt
   }
 
-  def resetOptmized(opt: Optimization): Unit = {
+  def resetOptimized(opt: GenericOptimization): Unit = {
     activeOpti -= opt
   }
-
-  val tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
-  val var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
 
   override def toString: String = label
 }
@@ -80,7 +78,7 @@ case class VirtualCFG(
   */
 case class CFGBlock(
                      label: String,
-                     statements: ArrayBuffer[IR],
+                     var statements: ArrayBuffer[IR],
                      var next: Option[CFG] = None,
                      parents: Set[CFG] = Set()) extends CFG {
   if (next.isDefined) {

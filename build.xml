@@ -85,7 +85,8 @@
       destdir="${build-classes.dir}"
       classpathref="project.classpath"
       deprecation="off"
-      unchecked="off">
+      unchecked="off"
+      addparams="-feature">
       <include name="**/*.scala"/>
       <include name="**/*.java"/>
       <src>

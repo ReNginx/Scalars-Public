@@ -2,10 +2,12 @@ package codegen
 
 import ir.components._
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object Destruct {
   var counter = 0
+  val reconstructLogical = mutable.Set[(CFG, CFG, CFG, CFG, CFG, CFG, CFG)]()
 
   /**
     * Link two CFG together.
@@ -14,7 +16,7 @@ object Destruct {
     * @param to
     * @return
     */
-  private def link(from: CFG, to: CFG) = {
+  def link(from: CFG, to: CFG) = {
     if (from.next.isEmpty) {
       from.next = Some(to)
       to.parents.add(from)
@@ -39,6 +41,74 @@ object Destruct {
     val st = VirtualCFG(str + "_st")
     val ed = VirtualCFG(str + "_ed")
     (st, ed)
+  }
+
+  /**
+    * this function reconstructs short-circuiting.
+    * Note that this function should run after a normal destruction.
+    * and this function should only run once.
+    */
+  def reconstruct() {
+    //System.err.println(reconstructLogical)
+    for ((start, lhsSt, lhsEd, rhsSt, rhsEd, body, end) <- reconstructLogical) {
+      assert(start.isCritical)
+      assert(lhsSt.isCritical)
+      assert(lhsEd.isCritical)
+      assert(rhsSt.isCritical)
+      assert(rhsEd.isCritical)
+      assert(body.isCritical)
+      assert(end.isCritical)
+      val expr = body.asInstanceOf[CFGBlock].statements(0).asInstanceOf[LogicalOperation]
+      counter = counter + 1
+      val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Logical"
+
+      Vector(start, lhsEd, rhsEd, body) foreach ( x => x.next = None)
+      Vector(lhsSt, rhsSt, body, end) foreach ( x => x.parents.clear)
+
+      expr.operator match {
+        case And => {
+          val assignTrue = AssignStatement(expr.line, expr.col,
+            expr.eval.get,
+            BoolLiteral(expr.line, expr.col, true))
+          val assignFalse = AssignStatement(expr.line, expr.col,
+            expr.eval.get,
+            BoolLiteral(expr.line, expr.col, false))
+
+          val (trueSt, trueEd) = Destruct(assignTrue)
+          val (falseSt, falseEd) = Destruct(assignFalse)
+
+          val cond2 = CFGConditional(placeStr + "_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
+          val cond1 = CFGConditional(placeStr + "_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt), Option(end))
+
+          link(start, lhsSt)
+          link(lhsEd, cond1)
+          link(rhsEd, cond2)
+          link(trueEd, end)
+          link(falseEd, end)
+        }
+
+        case Or => {
+          val assignTrue = AssignStatement(expr.line, expr.col,
+            expr.eval.get,
+            BoolLiteral(expr.line, expr.col, true))
+          val assignFalse = AssignStatement(expr.line, expr.col,
+            expr.eval.get,
+            BoolLiteral(expr.line, expr.col, false))
+
+          val (trueSt, trueEd) = Destruct(assignTrue)
+          val (falseSt, falseEd) = Destruct(assignFalse)
+
+          val cond2 = CFGConditional(placeStr + "_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
+          val cond1 = CFGConditional(placeStr + "_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt), Option(end))
+
+          link(start, lhsSt)
+          link(lhsEd, cond1)
+          link(rhsEd, cond2)
+          link(trueEd, end)
+          link(falseEd, end)
+        }
+      }
+    }
   }
 
   /**
@@ -72,58 +142,23 @@ object Destruct {
     val (lhsSt, lhsEd) = Destruct(expr.lhs)
     val (rhsSt, rhsEd) = Destruct(expr.rhs)
 
-    expr.operator match {
-      case And => {
-        val assignTrue = AssignStatement(expr.line, expr.col,
-          expr.eval.get,
-          BoolLiteral(expr.line, expr.col, true))
-        val assignFalse = AssignStatement(expr.line, expr.col,
-          expr.eval.get,
-          BoolLiteral(expr.line, expr.col, false))
-
-        val (trueSt, trueEd) = Destruct(assignTrue)
-        val (falseSt, falseEd) = Destruct(assignFalse)
-
-        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
-        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(rhsSt), Option(falseSt), Option(end))
-
-        link(start, lhsSt)
-        link(lhsEd, cond1)
-        link(rhsEd, cond2)
-        link(trueEd, end)
-        link(falseEd, end)
-      }
-
-      case Or => {
-        val assignTrue = AssignStatement(expr.line, expr.col,
-          expr.eval.get,
-          BoolLiteral(expr.line, expr.col, true))
-        val assignFalse = AssignStatement(expr.line, expr.col,
-          expr.eval.get,
-          BoolLiteral(expr.line, expr.col, false))
-
-        val (trueSt, trueEd) = Destruct(assignTrue)
-        val (falseSt, falseEd) = Destruct(assignFalse)
-
-        val cond2 = CFGConditional(placeStr+"_cond2", expr.rhs.eval.get, Option(trueSt), Option(falseSt), Option(end))
-        val cond1 = CFGConditional(placeStr+"_cond1", expr.lhs.eval.get, Option(trueSt), Option(rhsSt), Option(end))
-
-        link(start, lhsSt)
-        link(lhsEd, cond1)
-        link(rhsEd, cond2)
-        link(trueEd, end)
-        link(falseEd, end)
-      }
-
-      case _ => {
-        link(start, lhsSt)
-        link(lhsEd, rhsSt)
-        expr.lhs = expr.lhs.eval.get
-        expr.rhs = expr.rhs.eval.get
-        val body = CFGBlock(placeStr+"_body", ArrayBuffer(expr))
-        link(rhsEd, body)
-        link(body, end)
-      }
+    link(start, lhsSt)
+    link(lhsEd, rhsSt)
+    expr.lhs = expr.lhs.eval.get
+    expr.rhs = expr.rhs.eval.get
+    val body = CFGBlock(placeStr + "_body", ArrayBuffer(expr))
+    link(rhsEd, body)
+    link(body, end)
+    if (expr.operator == Or || expr.operator == And) {
+      start.isCritical = true
+      lhsSt.isCritical = true
+      lhsEd.isCritical = true
+      rhsSt.isCritical = true
+      rhsEd.isCritical = true
+      body.isCritical = true
+      end.isCritical = true
+      val tuple = (start, lhsSt, lhsEd, rhsSt, rhsEd, body, end)
+      reconstructLogical += tuple
     }
 
     (start, end)
@@ -138,10 +173,37 @@ object Destruct {
   private def destructBlock(block: Block,
                             loopStart: Option[CFG] = None,
                             loopEnd: Option[CFG] = None,
-                            funcEnd:Option[CFG] = None): (CFG, CFG) = {
+                            funcEnd: Option[CFG] = None): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${block.line}_c${block.col}_Block"
     val (start, end) = create(placeStr)
     var last = start
+    //initialization of variables should go here.
+    // TODO check this part, and remove counterpart in code translation.
+//    val init = CFGBlock(placeStr+"_Init", ArrayBuffer())
+//    for (decl <- block.declarations) {
+//      def clearHelper(decl:FieldDeclaration, index:Option[Long]=None):AssignStatement = {
+//        val idxLiteral = if (index.isDefined)
+//          Option(IntLiteral(0,0,index.get))
+//        else
+//          None
+//        val loc = Location(decl.line, decl.col, decl.name, idxLiteral, Option(decl))
+//        AssignStatement(decl.line, decl.col, loc, IntLiteral(0, 0, 0))
+//      }
+//
+//      decl match {
+//        case variable:VariableDeclaration => {
+//          init.statements.append(clearHelper(variable))
+//        }
+//        case array:ArrayDeclaration => {
+//          (0 until array.length.value) foreach (x => init.statements.append(clearHelper(array, Option(x))))
+//        }
+//      }
+//    }
+//
+//    link(last, init)
+//    last = init
 
     for (stmt <- block.statements) {
       stmt match {
@@ -184,6 +246,7 @@ object Destruct {
     link(last, end)
     (start, end)
   }
+
   /**
     * this function first destruct its condition expression.
     * and then tests %rdi, and determine which branch to goto.
@@ -194,12 +257,14 @@ object Destruct {
   private def destructIf(ifstmt: If,
                          loopStart: Option[CFG] = None,
                          loopEnd: Option[CFG] = None,
-                         funcEnd:Option[CFG] = None): (CFG, CFG) = {
+                         funcEnd: Option[CFG] = None): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${ifstmt.line}_c${ifstmt.col}_If"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = Destruct(ifstmt.condition)
     val (nextSt, nextEd) = Destruct(ifstmt.ifTrue, loopStart, loopEnd, funcEnd)
-    val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end=Option(end))
+    val cfgCond = CFGConditional(placeStr + "_cond", ifstmt.condition.eval.get, Option(nextSt), end = Option(end))
     assert(nextSt.parents.contains(cfgCond))
     link(condEd, cfgCond)
 
@@ -245,7 +310,9 @@ object Destruct {
     * loop start is start node of update. **after continue, you should first goto update rather than test**
     * loop end is ifFalse branch of test
     */
-  private def destructFor(forstmt: For, funcEnd:Option[CFG]=None): (CFG, CFG) = {
+  private def destructFor(forstmt: For, funcEnd: Option[CFG] = None): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${forstmt.line}_c${forstmt.col}_For"
     val (start, end) = create(placeStr)
     val (initSt, initEd) = Destruct(forstmt.start)
@@ -268,7 +335,9 @@ object Destruct {
   /** Destruct an while loop.
     * pretty much the same as the previous one.
     */
-  private def destructWhile(whilestmt: While, funcEnd:Option[CFG]=None): (CFG, CFG) = {
+  private def destructWhile(whilestmt: While, funcEnd: Option[CFG] = None): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${whilestmt.line}_c${whilestmt.col}_While"
     val (start, end) = create(placeStr)
     val (condSt, condEd) = Destruct(whilestmt.condition)
@@ -291,11 +360,13 @@ object Destruct {
     * @param method
     * @return
     */
-  private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG) = {
+  private def destructMethodDeclaration(method: LocMethodDeclaration): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${method.line}_c${method.col}_Method"
     val (start, end) = create(placeStr)
     val params = method.params
-    val (blockSt, blockEd) = Destruct(method.block, None, None, funcEnd=Option(end))
+    val (blockSt, blockEd) = Destruct(method.block, None, None, funcEnd = Option(end))
     val cfgMthd = CFGMethod(method.name, Option(blockSt), params, method)
 
     link(start, cfgMthd)
@@ -309,7 +380,9 @@ object Destruct {
     *
     * @return (start, end, loc) where loc holds the
     */
-  private def destructMethodCall(call: MethodCall): (CFG, CFG) = {
+  private def destructMethodCall(call: MethodCall): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${call.line}_c${call.col}_call"
     val (start, end) = create(placeStr)
     val paramList = ArrayBuffer[Expression]()
@@ -323,7 +396,7 @@ object Destruct {
       paramList += param.eval.get
     }
 
-    val mthdCal = CFGMethodCall(placeStr + "_call", ArrayBuffer(paramList:_*), call.method.get.name)
+    val mthdCal = CFGMethodCall(placeStr + "_call", ArrayBuffer(paramList: _*), call.method.get.name)
 
     link(last, mthdCal)
     last = mthdCal
@@ -333,8 +406,8 @@ object Destruct {
       if (call.eval.isDefined) {
         val copy = AssignStatement(call.line, call.col,
           call.eval.get,
-          Location(0,0,"rax",None,Option(Registers("rax"))))
-        val block = CFGBlock(placeStr+"_block", ArrayBuffer(copy))
+          Location(0, 0, "rax", None, Option(Registers("rax"))))
+        val block = CFGBlock(placeStr + "_block", ArrayBuffer(copy))
         link(last, block)
         last = block
       }
@@ -344,12 +417,14 @@ object Destruct {
     (start, end)
   }
 
-  private def destructProgram(program: Program): (CFG, CFG) = {
+  private def destructProgram(program: Program): (CFG, CFG)
+
+  = {
     val (start, end) = create("")
     val fields = program.fields
     val methods = program.methods map (Destruct(_)._1.next.get.asInstanceOf[CFGMethod]) // get methods block.
     val cfg = CFGProgram("program", fields, methods)
-  
+
     fields foreach {
       case array: ArrayDeclaration => array.isGlobal = true
       case variable: VariableDeclaration => variable.isGlobal = true
@@ -371,7 +446,9 @@ object Destruct {
     * assignment.expression = literal or location,
     * assignment.loc.index = None or literal or location.
     */
-  private def destructAssignment(assignment: Assignment): (CFG, CFG) = {
+  private def destructAssignment(assignment: Assignment): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${assignment.line}_c${assignment.col}_Assign"
     val (start, end) = create(placeStr)
     val (locSt, locEd) = Destruct(assignment.loc)
@@ -381,15 +458,13 @@ object Destruct {
 
     assignment match {
       case asg: AssignStatement => {
-        //println("Asghere") // DEBUG
-
         /* when we encouner assigning a temp to a non-temp,
-          this implies this temp comes from an operation. which means we  can safely swap
+          this implies this temp comes from an operation. which means we can safely swap
           their place and won't cause any problem.
         */
         if (Helper.nameEndsWith(asg.value.eval.get, "_tmp") &&
-            !Helper.nameEndsWith(asg.loc, "_tmp") &&
-            asg.value.isInstanceOf[Operation]) {
+          !Helper.nameEndsWith(asg.loc, "_tmp") &&
+          asg.value.isInstanceOf[Operation]) {
           val oper = asg.value.asInstanceOf[Operation]
           val tmp = oper.eval.get
           asg.value.asInstanceOf[Operation].eval = Option(asg.loc)
@@ -443,36 +518,9 @@ object Destruct {
     *
     * @return (start, end)
     */
-  // private def destructLocation(loc: Location): (CFG, CFG) = {
-  //   val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
-  //   val (start, end) = create(placeStr)
-  //   if (loc.index.isDefined) {
-  //     loc.index.get match {
-  //       case location: Location => {
-  //         //println(loc.field.get.name)
-  //         val (indexSt, indexEd) = Destruct(loc.index.get)
-  //         link(start, indexSt)
-  //         loc.index = loc.index.get.eval
-  //         val self = CFGBlock(placeStr + "_index", ArrayBuffer(loc))
-  //         link(indexEd, self)
-  //         link(self, end)
-  //       }
-  //       case _ => {
-  //         val (indexSt, indexEd) = Destruct(loc.index.get)
-  //         loc.index = loc.index.get.eval
-  //         link(start, indexSt)
-  //         link(indexEd, end)
-  //       }
-  //     }
-  //   }
-  //   else {
-  //     link(start, end)
-  //   }
-  //
-  //   (start, end)
-  // }
+  private def destructLocation(loc: Location): (CFG, CFG)
 
-  private def destructLocation(loc: Location): (CFG, CFG) = {
+  = {
     val placeStr = s"_${counter}_r${loc.line}_c${loc.col}_Loc"
     val (start, end) = create(placeStr)
     var last = start
@@ -498,9 +546,6 @@ object Destruct {
     else {
       link(start, end)
     }
-    // val locSelf = CFGBlock(placeStr + "_self", ArrayBuffer(loc))
-    // link(last, locSelf)
-    // last = locSelf
     (start, end)
   }
 
@@ -512,7 +557,9 @@ object Destruct {
     * @param expr
     * @return
     */
-  private def destructOperation(expr: Operation): (CFG, CFG) = {
+  private def destructOperation(expr: Operation): (CFG, CFG)
+
+  = {
     val placeStr = s"_${counter}_r${expr.line}_c${expr.col}_Oper"
     val (start, end) = create(placeStr)
 
