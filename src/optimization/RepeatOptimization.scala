@@ -2,7 +2,7 @@ package optimization
 import codegen._
 
 /**
- *Repeat optimizations until reaching fixed-point
+ * Repeat optimizations until reaching fixed-point
  * @param cfg the start node of CFG to optimize for
  * @param prequel a vector of optimizations that always run before condition
  * @param condition a vector of optimizations. a (prequel + condition + sequel) loop will run until all optimizations in condition report isChanged = false
@@ -20,20 +20,20 @@ object RepeatOptimization {
       flagTerminate = true
       if (!prequel.isEmpty) {
         for (opt <- prequel.get) {
-          println(s"In Prequel: ${opt}")
+          // println(s"In Prequel: ${opt}")
           ResetOptimization(cfg, opt)
           opt(cfg)
         }
       }
       for (opt <- condition) {
-        println(s"In Condition: ${opt}")
+        // println(s"In Condition: ${opt}")
         ResetOptimization(cfg, opt)
         opt(cfg)
         if (opt.isChanged) { flagTerminate = false }
       }
       if (!sequel.isEmpty) {
         for (opt <- sequel.get) {
-          println(s"In Sequel: ${opt}")
+          // println(s"In Sequel: ${opt}")
           ResetOptimization(cfg, opt)
           opt(cfg)
         }

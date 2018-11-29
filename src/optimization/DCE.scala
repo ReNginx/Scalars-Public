@@ -42,12 +42,13 @@ object DCE extends Optimization{
     }
   }
 
-  def judgeVar(needed: mutable.Set[FieldDeclaration], loc: Location): Boolean = {
+  def isNotNeeded(needed: mutable.Set[FieldDeclaration], loc: Location): Boolean = {
     Helper.nameEndsWith(loc,localTmpSuffix) &&
       !needed.contains(loc.field.get)
   }
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+    if (isInit) { init }
     if (cfg.isOptimized(DCE)) {
       return
     }
@@ -72,7 +73,8 @@ object DCE extends Optimization{
           val statement = block.statements(idx)
           statement match {
             case assign: AssignmentStatements => {
-              if (judgeVar(needed, assign.loc)) {
+              if (isNotNeeded(needed, assign.loc)) {
+                setChanged
                 block.statements.remove(idx)
               }
               else {
@@ -82,7 +84,8 @@ object DCE extends Optimization{
             }
 
             case inc: Increment => {
-              if (judgeVar(needed, inc.loc)) {
+              if (isNotNeeded(needed, inc.loc)) {
+                setChanged
                 block.statements.remove(idx)
               }
               else {
@@ -91,7 +94,8 @@ object DCE extends Optimization{
             }
 
             case dec: Decrement => {
-              if (judgeVar(needed, dec.loc)) {
+              if (isNotNeeded(needed, dec.loc)) {
+                setChanged
                 block.statements.remove(idx)
               }
               else {
@@ -109,7 +113,8 @@ object DCE extends Optimization{
             case op: Operation => {
               op match {
                 case ury: UnaryOperation => {
-                  if (judgeVar(needed, ury.eval.get)) {
+                  if (isNotNeeded(needed, ury.eval.get)) {
+                    setChanged
                     block.statements.remove(idx)
                   }
                   else {
@@ -119,7 +124,8 @@ object DCE extends Optimization{
                 }
 
                 case binary: BinaryOperation => {
-                  if (judgeVar(needed, binary.eval.get)) {
+                  if (isNotNeeded(needed, binary.eval.get)) {
+                    setChanged
                     block.statements.remove(idx)
                   }
                   else {

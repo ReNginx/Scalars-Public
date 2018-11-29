@@ -41,7 +41,7 @@ object CP extends Optimization {
                   assign.value match {
                     case rhsLoc: Location => {
                       if (rhsLoc.name.endsWith(localTmpSuffix)) { // c = t1
-                        isChanged = true // changed
+                        setChanged // changed
                         if (tmp2Var.contains(rhsLoc)) { // c = t1 => c = a
                           val replaceStatement: AssignStatement = AssignStatement(assign.line,  assign.col, assign.loc, tmp2Var(rhsLoc))
                           newStatements += replaceStatement

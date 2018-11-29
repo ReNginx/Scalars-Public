@@ -1,7 +1,7 @@
 package codegen
 
 import ir.components._
-import optimization.Optimization
+import optimization.{GenericOptimization, Optimization}
 
 import scala.collection.mutable.{ArrayBuffer, Map, Set}
 
@@ -35,17 +35,17 @@ trait CFG {
       obj.hashCode == this.hashCode
   }
 
-  var activeOpti: Set[Optimization] = Set[Optimization]()
+  var activeOpti: Set[GenericOptimization] = Set[GenericOptimization]()
 
-  def isOptimized(opt: Optimization): Boolean = {
+  def isOptimized(opt: GenericOptimization): Boolean = {
     activeOpti.contains(opt)
   }
 
-  def setOptimized(opt: Optimization): Unit = {
+  def setOptimized(opt: GenericOptimization): Unit = {
     activeOpti += opt
   }
 
-  def resetOptimized(opt: Optimization): Unit = {
+  def resetOptimized(opt: GenericOptimization): Unit = {
     activeOpti -= opt
   }
 

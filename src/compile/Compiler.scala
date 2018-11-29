@@ -229,16 +229,14 @@ object Compiler {
     val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
     val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
 
-    println(localOptCond)
-    println(localOptSeq)
-
     val localOptIter = RepeatOptimization(optCFG, None, localOptCond, Option(localOptSeq))
 
-    println(s"Number of iterations: ${localOptIter}")
-
     val localOptWrapUp = RepeatOptimization(optCFG, None, localOptSeq, None)
-
     assert(localOptWrapUp == 1) // an extra run of DCE should not change anything
+
+    if (debugSwitch) {
+      println(s"Number of local optimization iterations before fixed point: ${localOptIter}")
+    }
 
     /*
     if (optFlagMap("cse")) {
@@ -254,15 +252,16 @@ object Compiler {
     }
     */
 
-    Destruct.reconstruct()
+    Destruct.reconstruct() // reconstruct logical shortcuts
 
     val optCFGFinal = PeepHole(optCFG, preserveCritical=false).get
 
-
     if (debugSwitch) {
+      /*
       PrintCFG.init()
       PrintCFG(optCFGFinal)
       PrintCFG.close()
+      */
     }
 
     Allocate(optCFGFinal)

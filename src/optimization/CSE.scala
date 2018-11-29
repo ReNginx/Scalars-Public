@@ -4,6 +4,7 @@ import scala.collection.mutable.{ArrayBuffer, Map}
 import ir.components._
 import codegen._
 
+// CSE is not idempotoent, so setChanged is never used here.
 object CSE extends Optimization {
 
   val localTmpSuffix = "_cse_local_tmp"
