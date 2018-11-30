@@ -40,6 +40,7 @@ object CP extends Optimization {
                   }
                   newStatements += statement
                 } else {
+                  println(assign.value)
                   assign.value match {
                     case rhsLoc: Location => {
                       if (rhsLoc.name.endsWith(localTmpSuffix)) { // c = t1

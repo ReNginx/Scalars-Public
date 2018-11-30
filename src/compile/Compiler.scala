@@ -26,12 +26,7 @@ object Compiler {
   )
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
-  val optMap: Map[String, Optimization] = Map(
-    "cse" -> CSE,
-    "cp" -> CP,
-    "dce" -> DCE
-  )
-  val optAry: Array[String] = optMap.keys.toArray
+  val optAry: Array[String] = Array[String]("cse", "cp", "dce")
 
   def main(args: Array[String]): Unit = {
     CLI.parse(args, optAry)
@@ -179,16 +174,19 @@ object Compiler {
   def assembly(inFile: String, outFile: String, optFlagMap: Map[String, Boolean], debugSwitch: Boolean = CLI.debug): IR = {
     val optIR = Option(inter(inFile, false))
     val output = if (outFile == null) None else Some(outFile)
-    val str2Opts = Map[String, Map[String, Optimization]](
-      "cse" -> Map[String, Optimization](
-        "local" -> CSE),
-        // "global" -> GlobalCSE),
-      "cp" -> Map[String, Optimization](
-        "local" -> CP,
-        "global" -> GlobalCP),
-      "dce" -> Map[String, Optimization](
-        "local" -> DCE,
-        "global" -> GlobalDCE)
+    val str2Opts = Map[String, Map[String, Option[Optimization]]](
+      "cse" -> Map[String, Option[Optimization]](
+        "local" -> Option(CSE),
+        "global" -> None
+        ),
+      "cp" -> Map[String, Option[Optimization]](
+        "local" -> Option(CP),
+        "global" -> Option(GlobalCP)
+        ),
+      "dce" -> Map[String, Option[Optimization]](
+        "local" -> Option(DCE),
+        "global" -> Option(GlobalDCE)
+        )
     )
 
     // parsing failed
@@ -206,6 +204,15 @@ object Compiler {
     }
 
     if (debugSwitch) {
+      println("Low-level IR tree:")
+      PrettyPrint(irModified, 1)
+      println()
+    }
+
+    val (start, end) = Destruct(irModified)
+
+    // Begin Optimization
+    if (debugSwitch) {
       println("Enabled optimizations:")
       for (opt <- optFlagMap.keys) {
         if (optFlagMap(opt)) {
@@ -216,15 +223,6 @@ object Compiler {
       println()
     }
 
-    if (debugSwitch) {
-      println("Low-level IR tree:")
-      PrettyPrint(irModified, 1)
-      println()
-    }
-
-    val (start, end) = Destruct(irModified)
-
-    // Begin Optimization
     val optCFG = PeepHole(start, preserveCritical=true).get
 
     val localOptPreq = GenerateOptVec(str2Opts, optFlagMap, Vector("cse"), "local")
@@ -246,13 +244,13 @@ object Compiler {
       println(s"\nNumber of local optimization iterations before fixed point: ${localOptIter}")
       println()
     }
-
+/*
     val globalOptPreq = Vector[Optimization]()
     val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp", "dce"), "global")
     val globalOptSeq = Vector[Optimization]()
 
     val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
-
+    
     if (debugSwitch) {
       println("Global optimizations:")
       printf("- Prequels:\n  ")
@@ -264,7 +262,7 @@ object Compiler {
       println(s"\nNumber of global optimization iterations before fixed point: ${globalOptIter}")
       println()
     }
-
+*/
     // End Optimization
     Destruct.reconstruct() // reconstruct logical shortcuts
 
