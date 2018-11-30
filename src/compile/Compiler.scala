@@ -244,7 +244,7 @@ object Compiler {
       println(s"\nNumber of local optimization iterations before fixed point: ${localOptIter}")
       println()
     }
-/*
+
     val globalOptPreq = Vector[Optimization]()
     val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp", "dce"), "global")
     val globalOptSeq = Vector[Optimization]()
@@ -262,7 +262,7 @@ object Compiler {
       println(s"\nNumber of global optimization iterations before fixed point: ${globalOptIter}")
       println()
     }
-*/
+
     // End Optimization
     Destruct.reconstruct() // reconstruct logical shortcuts
 
