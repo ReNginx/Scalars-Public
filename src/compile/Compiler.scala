@@ -207,7 +207,6 @@ object Compiler {
 
     if (debugSwitch) {
       println("Enabled optimizations:")
-      var opt: String = ""
       for (opt <- optFlagMap.keys) {
         if (optFlagMap(opt)) {
           printf(opt)
@@ -224,53 +223,71 @@ object Compiler {
     }
 
     val (start, end) = Destruct(irModified)
+
+    // Begin Optimization
     val optCFG = PeepHole(start, preserveCritical=true).get
 
-    val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
+    val localOptPreq = GenerateOptVec(str2Opts, optFlagMap, Vector("cse"), "local")
+    val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp"), "local")
     val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
 
-    val localOptIter = RepeatOptimization(optCFG, None, localOptCond, Option(localOptSeq))
+    val localOptIter = RepeatOptimization(optCFG, Option(localOptPreq), localOptCond, Option(localOptSeq))
 
-    val localOptWrapUp = RepeatOptimization(optCFG, None, localOptSeq, None)
-    assert(localOptWrapUp == 1) // an extra run of DCE should not change anything
+    assert(RepeatOptimization(optCFG, None, localOptSeq, None) == 1) // an extra run of DCE should not change anything
 
     if (debugSwitch) {
-      println(s"Number of local optimization iterations before fixed point: ${localOptIter}")
+      println("Local optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- localOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- localOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- localOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of local optimization iterations before fixed point: ${localOptIter}")
+      println()
     }
 
-    /*
-    if (optFlagMap("cse")) {
-      GlobalCSE(optCFG)
-    }
-    */
-    /*
-    if (optFlagMap("cp")) {
-      GlobalCP(optCFG)
-    }
-    if (optFlagMap("dce")) {
-      GlobalDCE(optCFG)
-    }
-    */
+    val globalOptPreq = Vector[Optimization]()
+    val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp", "dce"), "global")
+    val globalOptSeq = Vector[Optimization]()
 
+    val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
+
+    if (debugSwitch) {
+      println("Global optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- globalOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- globalOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- globalOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of global optimization iterations before fixed point: ${globalOptIter}")
+      println()
+    }
+
+    // End Optimization
     Destruct.reconstruct() // reconstruct logical shortcuts
 
     val optCFGFinal = PeepHole(optCFG, preserveCritical=false).get
 
+    /*
     if (debugSwitch) {
-      /*
       PrintCFG.init()
       PrintCFG(optCFGFinal)
       PrintCFG.close()
-      */
     }
+    */
 
     Allocate(optCFGFinal)
 
+    // Deprecated
+    /*
     if (debugSwitch) {
       println("Low-level IR tree after destruct, peephole and allocate:")
       PrettyPrint(irModified, 2)
       println()
     }
+    */
 
     if (debugSwitch) {
       println("x86-64 assembly:")

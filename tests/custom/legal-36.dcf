@@ -1,0 +1,5 @@
+int i, j, k, l;
+void main () {
+    k = i + j;
+    l = i + j;
+}

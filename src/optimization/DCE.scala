@@ -13,6 +13,9 @@ import scala.collection.mutable.Set
   */
 
 object DCE extends Optimization{
+
+  override def toString(): String = "LocalDCE"
+
   val localTmpSuffix = "_cse_local_tmp"
 
   // if location is not a location then we do nothing.

@@ -15,13 +15,16 @@ import scala.collection.mutable.{ ArrayBuffer, Queue, Set }
  * before using this function, be sure that each function has one common end node.
  */
 object GlobalDCE extends Optimization {
+
+  override def toString(): String = "GlobalDCE"
+
   type Place = (FieldDeclaration, CFG, Int)
   val cfgs = Set[CFG]()
   val unused = Set[(CFGBlock, Int)]()
   var globalVars = Vector[FieldDeclaration]()
   val dumbDecl = VariableDeclaration(0,0,"__dumb__",None)
 
-  def addHelper(iter: Growable[Place], cfg: CFG): (Expression, Int) => Unit = {
+  private def addHelper(iter: Growable[Place], cfg: CFG): (Expression, Int) => Unit = {
     def addExpr(expr: Expression, pos: Int): Unit = {
       expr match {
         case loc: Location => {
@@ -37,7 +40,7 @@ object GlobalDCE extends Optimization {
     addExpr
   }
 
-  def getRequired(mthd: CFGMethod): Set[Place] = {
+  private def getRequired(mthd: CFGMethod): Set[Place] = {
     val required = Set[Place]()
 
     for (cfg <- cfgs) {
@@ -81,7 +84,7 @@ object GlobalDCE extends Optimization {
     required
   }
 
-  def eliminateUnsed(mthd: CFGMethod): Unit = {
+  private def eliminateUnused(mthd: CFGMethod): Unit = {
     val (_, _, graph) = Labeling(cfgs.toVector)
     val requiredPlaces = getRequired(mthd)
     val queue = Queue[Place]() ++ requiredPlaces
@@ -160,7 +163,7 @@ object GlobalDCE extends Optimization {
             if (requiredStmts.contains(pos)) {
               newStmt += block.statements(i)
             } else {
-              isChanged=true
+              setChanged // statement is removed
               //PrintCFG.prtStmt(block.statements(i))
               //PrettyPrint(block.statements(i), 0)
             }
@@ -194,7 +197,7 @@ object GlobalDCE extends Optimization {
           cfgs.clear
           unused.clear
           GlobalDCE(method.block.get, isInit = false)
-          eliminateUnsed(method)
+          eliminateUnused(method)
         }
       }
 

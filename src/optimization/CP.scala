@@ -6,6 +6,8 @@ import codegen._
 
 object CP extends Optimization {
 
+  override def toString(): String = "LocalCP"
+
   val localTmpSuffix = "_cse_local_tmp"
   val tmp2Var: Map[Location, SingleExpr] = Map[Location, SingleExpr]()
   val var2Set: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()

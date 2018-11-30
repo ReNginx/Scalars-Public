@@ -38,8 +38,8 @@ Nov. 28, 2018 23:10 PM
 |            Local CP            |     Yes     |  Yes   | Not Applicable |               Yes               |
 |           Local DCE            |     Yes     |  Yes   | Not Applicable |               Yes               |
 |           Global CSE           |     Yes     |  Yes   |      WIP       |               WIP               |
-|           Global CP            |     Yes     |  Yes   |      WIP       |               WIP               |
-|           Global DCE           |     Yes     |  Yes   |      WIP       |               WIP               |
+|           Global CP            |     Yes     |  Yes   |      WIP       |               Yes               |
+|           Global DCE           |     Yes     |  Yes   |      WIP       |               Yes               |
 |        Constant Folding        |     Yes     |        |                |                                 |
 |       Invariant Hoisting       |     Yes     |        |                |                                 |
 | Induction Variable Elimination |     WIP     |        |                |                                 |

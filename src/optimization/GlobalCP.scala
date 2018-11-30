@@ -12,10 +12,20 @@ import scala.collection.mutable.{ArrayBuffer, HashMap, Map, MultiMap, Set}
   */
 
 object GlobalCP extends Optimization {
+
+  override def toString(): String = "GlobalCP"
+
   type DefId = (CFGBlock, Int)
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
   val cfgs = ArrayBuffer[CFG]()
+
+  override def init(): Unit = {
+    resetChanged
+    gen.clear
+    kill.clear
+    cfgs.clear
+  }
 
   /**
     * tell an ir is an array or not.
@@ -23,21 +33,21 @@ object GlobalCP extends Optimization {
     * @param ir
     * @return
     */
-  def isArray(ir: IR): Boolean = {
+  private def isArray(ir: IR): Boolean = {
     ir match {
       case loc: Location => loc.index.isDefined
       case _ => false
     }
   }
 
-  def isReg(ir: IR): Boolean = {
+  private def isReg(ir: IR): Boolean = {
     ir match {
       case loc: Location => loc.field.get.isReg
       case _ => false
     }
   }
 
-  def AssignFromReg(defn: Def): Boolean = {
+  private def AssignFromReg(defn: Def): Boolean = {
     defn match {
       case asg: AssignStatement => {
         //println(s"${asg.value},  ${isReg(asg.value)}")
@@ -48,7 +58,7 @@ object GlobalCP extends Optimization {
   }
 
   /**
-    * add an ordinary var(ignore array defs) definition to locMap, and lastLoc
+    * add an ordinary var (ignore array defs) definition to locMap, and lastLoc
     * lastLoc keeps track of the last def of a var within a block.
     *
     * @param locMap
@@ -56,7 +66,7 @@ object GlobalCP extends Optimization {
     * @param defn
     * @param id
     */
-  def add(locMap: Map[Location, Set[DefId]],
+  private def add(locMap: Map[Location, Set[DefId]],
           lastLoc: Map[Location, DefId],
           defn: IR with Def,
           id: DefId): Unit = {
@@ -75,7 +85,7 @@ object GlobalCP extends Optimization {
     * and recognizes which definitions are killed in the block.
     * it sets gen and kill for blocks.
     */
-  def collect(): Map[Location, Set[DefId]] = {
+  private def collect(): Map[Location, Set[DefId]] = {
     val locMap = Map[Location, Set[DefId]]()
 
     for (cfg <- cfgs) { // we only have virtual, cond, block here.
@@ -128,7 +138,7 @@ object GlobalCP extends Optimization {
     * @param in
     * @return
     */
-  def transfer(in: Set[DefId]): MultiMap[Location, DefId] = {
+  private def transfer(in: Set[DefId]): MultiMap[Location, DefId] = {
     val ret = new HashMap[Location, Set[DefId]] with mutable.MultiMap[Location, DefId]
     for ((cfg, index) <- in) {
       val blk = cfg.asInstanceOf[CFGBlock]
@@ -150,7 +160,7 @@ object GlobalCP extends Optimization {
     * @param loc
     * @return
     */
-  def findCommon(ids: Set[DefId], loc: Location): Expression = {
+  private def findCommon(ids: Set[DefId], loc: Location): Expression = {
     val value = Set[Expression]()
     for ((cfg, idx) <- ids) {
       val stmt = cfg.statements(idx)
@@ -179,7 +189,7 @@ object GlobalCP extends Optimization {
     * @param expr
     * @return
     */
-  def subExpr(in: MultiMap[Location, DefId],
+  private def subExpr(in: MultiMap[Location, DefId],
               lastDef: Map[Location, DefId],
               expr: Expression,
               pos: (CFG, Int)): Expression = {
@@ -204,6 +214,7 @@ object GlobalCP extends Optimization {
           //System.err.println(s"try sub ${loc} with ${res}")
           if (res != loc && !isArray(res) && JudgeSubstitution(from, pos, loc, res)) {
             //System.err.println(s"sub ${loc} with ${res}")
+            setChanged // substituted by res
             res
           }
           else
@@ -225,7 +236,7 @@ object GlobalCP extends Optimization {
     * @param id
     * @return
     */
-  def subStmt(in: MultiMap[Location, DefId],
+  private def subStmt(in: MultiMap[Location, DefId],
               lastDef: Map[Location, DefId],
               stmt: IR,
               id: DefId): IR = {
@@ -239,6 +250,7 @@ object GlobalCP extends Optimization {
       }
 
       case casgStmt: CompoundAssignStatement => {
+        setChanged // should be replaced in the first iteration
         val expr = subExpr(in, lastDef, casgStmt.loc, id)
         val value = subExpr(in, lastDef, casgStmt.value, id)
         val operator = casgStmt.operator
@@ -254,6 +266,7 @@ object GlobalCP extends Optimization {
       }
 
       case inc: Increment => {
+        setChanged // should be replaced in the first iteration
         replacedStmt = ArithmeticOperation(
           inc.line,
           inc.col,
@@ -266,6 +279,7 @@ object GlobalCP extends Optimization {
       }
 
       case dec: Decrement => {
+        setChanged // should be replaced in the first iteration
         replacedStmt = ArithmeticOperation(
           dec.line,
           dec.col,
@@ -346,7 +360,7 @@ object GlobalCP extends Optimization {
     *
     * @param in
     */
-  def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
+  private def subBlocks(in: Map[CFG, Set[DefId]]): Unit = {
     for (cfg <- cfgs) {
       //println(cfg)
       val map = transfer(in(cfg))
@@ -374,7 +388,7 @@ object GlobalCP extends Optimization {
     }
   }
 
-  def copyProp: Unit = {
+  private def copyProp: Unit = {
     collect()
     val (in, out) =
       WorkList[DefId](gen,
@@ -388,6 +402,7 @@ object GlobalCP extends Optimization {
   }
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+    if (isInit) { init }
     if (cfg.isOptimized(GlobalCP)) {
       return
     }
@@ -396,7 +411,7 @@ object GlobalCP extends Optimization {
 
     cfg match {
       case program: CFGProgram => {
-        program.methods foreach (GlobalCP(_))
+        program.methods foreach (GlobalCP(_, false))
       }
 
       // we collect all blocks of a function.
@@ -405,23 +420,23 @@ object GlobalCP extends Optimization {
           gen.clear
           kill.clear
           cfgs.clear
-          GlobalCP(method.block.get)
+          GlobalCP(method.block.get, false)
           copyProp
         }
       }
 
       case cond: CFGConditional => {
         if (cond.next.isDefined) {
-          GlobalCP(cond.next.get)
+          GlobalCP(cond.next.get, false)
         }
         if (cond.ifFalse.isDefined) {
-          GlobalCP(cond.ifFalse.get)
+          GlobalCP(cond.ifFalse.get, false)
         }
       }
 
       case other => {
         if (other.next.isDefined) {
-          GlobalCP(other.next.get)
+          GlobalCP(other.next.get, false)
         }
       }
     }

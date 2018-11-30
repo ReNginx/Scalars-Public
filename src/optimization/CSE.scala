@@ -7,6 +7,8 @@ import codegen._
 // CSE is not idempotoent, so setChanged is never used here.
 object CSE extends Optimization {
 
+  override def toString(): String = "LocalCSE"
+
   val localTmpSuffix = "_cse_local_tmp"
   val var2Val: Map[SingleExpr, SymVal] = Map[SingleExpr, SymVal]()
   // operator, operand1, Some(operand2)
