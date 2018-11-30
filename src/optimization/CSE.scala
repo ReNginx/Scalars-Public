@@ -28,7 +28,7 @@ object CSE extends Optimization {
     val numTmp: Int = nextVacantTmp
     nextVacantTmp += 1
     val retField: FieldDeclaration = VariableDeclaration(0, 0, s"${numTmp}_${block.label}${localTmpSuffix}", Some(typ))
-    val retTmp: Location = Location(0, 0, s"${numTmp}_${block.label}localTmpSuffix", None, Some(retField))
+    val retTmp: Location = Location(0, 0, s"${numTmp}_${block.label}${localTmpSuffix}", None, Some(retField))
     retTmp
   }
 
@@ -104,7 +104,7 @@ object CSE extends Optimization {
     }
   }
 
-  def idx2AryAdd(idx: SingleExpr, ary: Location): Set[Location] = {
+  private def idx2AryAdd(idx: SingleExpr, ary: Location): Set[Location] = {
     if (idx2Ary.contains(idx)) {
       idx2Ary(idx) += ary
     } else {
@@ -113,7 +113,7 @@ object CSE extends Optimization {
     idx2Ary(idx)
   }
 
-  def idx2AryRemove(idx: SingleExpr): Unit = {
+  private def idx2AryRemove(idx: SingleExpr): Unit = {
     // println(s"Query: ${idx}")
     // println(s"Result: ${idx2Ary.get(idx)}")
     if (idx2Ary.contains(idx)) {
@@ -122,7 +122,7 @@ object CSE extends Optimization {
   }
 
   // Returns idx2Ary(idx) or empty set
-  def idx2AryGet(idx: SingleExpr): Set[Location] = {
+  private def idx2AryGet(idx: SingleExpr): Set[Location] = {
     if (idx2Ary.contains(idx)) {
       idx2Ary(idx)
     } else {
