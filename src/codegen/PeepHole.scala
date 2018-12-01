@@ -89,6 +89,7 @@ object PeepHole {
       }
 
       case cond: CFGConditional => {
+        //System.err.println(s"working on ${cond.label}")
         cond.condition match {
           case bool: BoolLiteral => {
             //System.err.println(s"removed ${cond.label}")

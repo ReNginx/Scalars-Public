@@ -181,29 +181,31 @@ object Destruct {
     var last = start
     //initialization of variables should go here.
     // TODO check this part, and remove counterpart in code translation.
-//    val init = CFGBlock(placeStr+"_Init", ArrayBuffer())
-//    for (decl <- block.declarations) {
-//      def clearHelper(decl:FieldDeclaration, index:Option[Long]=None):AssignStatement = {
-//        val idxLiteral = if (index.isDefined)
-//          Option(IntLiteral(0,0,index.get))
-//        else
-//          None
-//        val loc = Location(decl.line, decl.col, decl.name, idxLiteral, Option(decl))
-//        AssignStatement(decl.line, decl.col, loc, IntLiteral(0, 0, 0))
-//      }
-//
-//      decl match {
-//        case variable:VariableDeclaration => {
-//          init.statements.append(clearHelper(variable))
-//        }
-//        case array:ArrayDeclaration => {
-//          (0 until array.length.value) foreach (x => init.statements.append(clearHelper(array, Option(x))))
-//        }
-//      }
-//    }
-//
-//    link(last, init)
-//    last = init
+   val init = CFGBlock(placeStr+"_Init", ArrayBuffer())
+   for (decl <- block.declarations) {
+     def clearHelper(decl:FieldDeclaration, index:Option[Long]=None):AssignStatement = {
+       val idxLiteral = if (index.isDefined)
+         Option(IntLiteral(0,0,index.get))
+       else
+         None
+       val loc = Location(decl.line, decl.col, decl.name, idxLiteral, Option(decl))
+       val zero = IntLiteral(0, 0, 0)
+       val false_ = BoolLiteral(0, 0, false)
+       AssignStatement(decl.line, decl.col, loc, if(decl.typ.get == IntType) zero else false_)
+     }
+
+     decl match {
+       case variable:VariableDeclaration => {
+         init.statements.append(clearHelper(variable))
+       }
+       case array:ArrayDeclaration => {
+         (0.toLong until array.length.value) foreach (x => init.statements.append(clearHelper(array, Option(x))))
+       }
+     }
+   }
+
+   link(last, init)
+   last = init
 
     for (stmt <- block.statements) {
       stmt match {

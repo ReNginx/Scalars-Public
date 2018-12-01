@@ -20,6 +20,7 @@ object InvariantOpt extends Optimization {
   var graph = Map[StmtId, Set[StmtId]]()
   var revGraph = Map[StmtId, Set[StmtId]]()
   var dom = Map[StmtId, Set[StmtId]]()
+  var cnt = 0
 
   def getStmt(pos: StmtId): Option[IR] = {
     if (pos._2 >= 0) {
@@ -283,8 +284,10 @@ object InvariantOpt extends Optimization {
        //System.err.println(s"find potential invariant ${invariant}")
         val movable = judgeMov(invariant, loop)
        //System.err.println(s"find movable ")
-        //movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
+        movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
+      }) filter (pair => {
+        pair._2.size > 0
       })
 
    //System.err.println("finished tomove analysis")
@@ -296,32 +299,47 @@ object InvariantOpt extends Optimization {
     toMove foreach (pair => {
       val loopHeader = pair._1.header._1
       val invariant = pair._2
-      val preHeader = CFGBlock(loopHeader.label + "_preheader", ArrayBuffer())
+      cnt += 1
+      val preHeader = CFGBlock(s"_${cnt}_"+loopHeader.label + "_preheader", ArrayBuffer())
       preHeader.statements ++= (invariant flatMap (getStmt(_))).reverse
 
+      val parToRm = Set[CFG]()
       loopHeader.parents foreach (
         _ match {
           case cond: CFGConditional => {
             if (cond.next == Option(loopHeader)) {
-              cond.next = None
-              Destruct.link(cond, preHeader)
+              if (!dom((cond, -1)).contains((loopHeader,-1))) {
+                cond.next = None
+                parToRm += cond
+                Destruct.link(cond, preHeader)
+              }
             }
             if (cond.ifFalse == Option(loopHeader)) {
-              cond.ifFalse = None
-              Destruct.linkFalse(cond, preHeader)
+              if (!dom((cond, -1)).contains((loopHeader,-1))) {
+                cond.ifFalse = None
+                parToRm += cond
+                Destruct.linkFalse(cond, preHeader)
+              }
             }
           }
           case other => {
             if (other.next == Option(loopHeader)) {
-              other.next = None
-              Destruct.link(other, preHeader)
+              if (!dom((other,-1)).contains((loopHeader,-1))) {
+                other.next = None
+                parToRm += other
+                Destruct.link(other, preHeader)
+              }
             }
           }
         })
-      loopHeader.parents.clear()
+
+      loopHeader.parents --= parToRm
       Destruct.link(preHeader, loopHeader)
       (conds filter (_.end == Option(loopHeader))
-        foreach (_.end = Option(preHeader)))
+        foreach (cond => {
+          if (!dom((cond, -1)).contains((loopHeader,-1)))
+            cond.end = Option(preHeader)
+        }))
     })
 
     val toRemove = Map[CFG, SortedSet[Int]]()
