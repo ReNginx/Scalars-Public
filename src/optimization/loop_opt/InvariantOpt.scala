@@ -284,7 +284,8 @@ object InvariantOpt extends Optimization {
        //System.err.println(s"find potential invariant ${invariant}")
         val movable = judgeMov(invariant, loop)
        //System.err.println(s"find movable ")
-        movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
+        // movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
+        setChanged()
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
       }) filter (pair => {
         pair._2.size > 0

@@ -9,27 +9,30 @@ object ConstantFolding extends Optimization {
    if (cfg.isOptimized(ConstantFolding)) {
      return
    }
+   if (isInit) {
+     init()
+   }
    cfg.setOptimized(ConstantFolding)
 
 
    cfg match {
      case program: CFGProgram => {
-       program.methods foreach (ConstantFolding(_))
+       program.methods foreach (ConstantFolding(_, isInit = false))
      }
 
      // we collect all blocks of a function.
      case method: CFGMethod => {
        if (method.block.isDefined) {
-         ConstantFolding(method.block.get)
+         ConstantFolding(method.block.get, isInit=false)
        }
      }
 
      case cond: CFGConditional => {
        if (cond.next.isDefined) {
-         ConstantFolding(cond.next.get)
+         ConstantFolding(cond.next.get, isInit = false)
        }
        if (cond.ifFalse.isDefined) {
-         ConstantFolding(cond.ifFalse.get)
+         ConstantFolding(cond.ifFalse.get, isInit = false)
        }
      }
 
@@ -46,6 +49,7 @@ object ConstantFolding extends Optimization {
                  }
 
                  block.statements(idx) = AssignStatement(unary.line, unary.col, unary.eval.get, calculatedValue)
+                 setChanged()
                }
                case _ =>
              }
@@ -79,7 +83,7 @@ object ConstantFolding extends Optimization {
                  case arith: ArithmeticOperation =>
                    arith.operator match {
                      case Add => IntLiteral(binary.line, binary.col, lhsInt.value + rhsInt.value)
-                     case Divide => IntLiteral(binary.line, binary.col, lhsInt.value / rhsInt.value)
+                     case Divide => IntLiteral(binary.line, binary.col, lhsInt.value / rhsInt.value) // TODO divide by zero would be an error.
                      case Modulo => IntLiteral(binary.line, binary.col, lhsInt.value % rhsInt.value)
                      case Multiply => IntLiteral(binary.line, binary.col, lhsInt.value * rhsInt.value)
                      case Subtract => IntLiteral(binary.line, binary.col, lhsInt.value - rhsInt.value)
@@ -87,6 +91,7 @@ object ConstantFolding extends Optimization {
                }
 
                block.statements(idx) = AssignStatement(binary.line, binary.col, binary.eval.get, calculatedValue)
+               setChanged()
              }
            }
 
@@ -95,13 +100,13 @@ object ConstantFolding extends Optimization {
        }
 
        if (block.next.isDefined) {
-         ConstantFolding(block.next.get)
+         ConstantFolding(block.next.get, isInit=false)
        }
      }
 
      case other => {
        if (other.next.isDefined) {
-         ConstantFolding(other.next.get)
+         ConstantFolding(other.next.get, isInit=false)
        }
      }
    }
