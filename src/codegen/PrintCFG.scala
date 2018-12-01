@@ -69,34 +69,34 @@ object PrintCFG {
     ir match {
       case assign: AssignStatement => {
         assert(assign.loc.eval.isDefined)
-        System.err.println(s"Assign ${assign.loc.eval.get.cfgRep}, ${assign.value.cfgRep}")
+        System.err.println(s"line:${assign.line},col:${assign.col}, Assign ${assign.loc.eval.get.cfgRep}, ${assign.value.cfgRep}")
       }
       case compoundAsg: CompoundAssignStatement => {
         assert(compoundAsg.loc.eval.isDefined)
-        System.err.println(s"CompoundAssign ${compoundAsg.loc.eval.get.cfgRep}, ${compoundAsg.value.cfgRep}")
+        System.err.println(s"line:${compoundAsg.line},col:${compoundAsg.col}, CompoundAssign ${compoundAsg.loc.eval.get.cfgRep}, ${compoundAsg.value.cfgRep}")
       }
       case inc: Increment => {
         assert(inc.loc.eval.isDefined)
-        System.err.println(s"Inc ${inc.loc.eval.get.cfgRep}")
+        System.err.println(s"line:${inc.line},col:${inc.col}, Inc ${inc.loc.eval.get.cfgRep}")
       }
       case dec: Decrement => {
         assert(dec.loc.eval.isDefined)
-        System.err.println(s"Dec ${dec.loc.eval.get.cfgRep}")
+        System.err.println(s"line:${dec.line},col:${dec.col}, Dec ${dec.loc.eval.get.cfgRep}")
       }
       case unary: UnaryOperation => {
         assert(unary.expression.eval.isDefined)
-        System.err.println(s"Unary ${unary.eval.get.cfgRep} = ${unary.expression.eval.get.cfgRep}")
+        System.err.println(s"line:${unary.line},col:${unary.col}, Unary ${unary.eval.get.cfgRep} = ${unary.expression.eval.get.cfgRep}")
       }
       case binary: BinaryOperation => {
         assert(binary.eval.isDefined)
-        System.err.println(s"Binary ${binary.eval.get.cfgRep} = ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
+        System.err.println(s"line:${binary.line},col:${binary.col}, Binary ${binary.eval.get.cfgRep} = ${binary.lhs.cfgRep} op ${binary.rhs.cfgRep}")
       }
       case ret: Return => {
         if (ret.value.isDefined) {
-          System.err.println(s"Return ${ret.value.get.cfgRep}")
+          System.err.println(s"line:${ret.line},col:${ret.col}, Return ${ret.value.get.cfgRep}")
         }
         else {
-          System.err.println(s"Return")
+          System.err.println(s"line:${ret.line},col:${ret.col}, Return")
         }
       }
       case _ => throw new NotImplementedError()

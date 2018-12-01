@@ -6,7 +6,7 @@ import optimization.Labeling.StmtId
 import optimization.Optimization
 
 import scala.collection.immutable
-import scala.collection.mutable.{ArrayBuffer, Map, Queue, Set}
+import scala.collection.mutable.{ArrayBuffer, Map, Queue, Set, SortedSet}
 
 /**
   * this function won't mark any node.
@@ -22,8 +22,15 @@ object InvariantOpt extends Optimization {
   var dom = Map[StmtId, Set[StmtId]]()
 
   def getStmt(pos: StmtId): Option[IR] = {
-    if (pos._2 >= 0)
+    if (pos._2 >= 0) {
+      // if (pos._2 >= pos._1.asInstanceOf[CFGBlock].statements.size) {
+      //   System.err.println("start")
+      //   pos._1.asInstanceOf[CFGBlock].statements foreach (PrintCFG.prtStmt(_))
+      //   System.err.println("over")
+      //   assert(false)
+      // }
       Option(pos._1.asInstanceOf[CFGBlock].statements(pos._2))
+    }
     else
       None
   }
@@ -160,8 +167,8 @@ object InvariantOpt extends Optimization {
                loop: LoopEntity[StmtId]): Vector[StmtId] = {
     (invariant
       filter (invar => {
-      ////System.err.println(s"loops exits are ${loop.exits}")
-      ////System.err.println(s"dom(invar) are ${dom(invar)}")
+      //System.err.println(s"loops exits are ${loop.exits}")
+      //System.err.println(s"dom(invar) are ${dom(invar)}")
       (loop.exits forall (dom(_).contains(invar))) || { // dom all exits or not used after the loop
        //System.err.println(s"try another move")
         //PrintCFG.prtStmt(getStmt(invar).get)
@@ -276,7 +283,7 @@ object InvariantOpt extends Optimization {
        //System.err.println(s"find potential invariant ${invariant}")
         val movable = judgeMov(invariant, loop)
        //System.err.println(s"find movable ")
-        // movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
+        //movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
       })
 
@@ -290,10 +297,8 @@ object InvariantOpt extends Optimization {
       val loopHeader = pair._1.header._1
       val invariant = pair._2
       val preHeader = CFGBlock(loopHeader.label + "_preheader", ArrayBuffer())
-      (invariant flatMap (getStmt(_))) ++=: preHeader.statements
-      invariant foreach (invar => {
-        invar._1.asInstanceOf[CFGBlock].statements.remove(invar._2)
-      })
+      preHeader.statements ++= (invariant flatMap (getStmt(_))).reverse
+
       loopHeader.parents foreach (
         _ match {
           case cond: CFGConditional => {
@@ -317,6 +322,20 @@ object InvariantOpt extends Optimization {
       Destruct.link(preHeader, loopHeader)
       (conds filter (_.end == Option(loopHeader))
         foreach (_.end = Option(preHeader)))
+    })
+
+    val toRemove = Map[CFG, SortedSet[Int]]()
+    toMove foreach (pair => {
+      val loopHeader = pair._1.header._1
+      val invariant = pair._2
+      invariant foreach (invar => {
+        if (!toRemove.contains(invar._1))
+          toRemove(invar._1) = SortedSet()
+        toRemove(invar._1) += -invar._2 // note here uses negative number
+      })
+    })
+    toRemove foreach (x => {
+      x._2 foreach (idx => x._1.asInstanceOf[CFGBlock].statements.remove(-idx)) // note here also uses nagative
     })
    //System.err.println("finished all")
   }
