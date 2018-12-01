@@ -19,6 +19,7 @@ object LoopConstruction {
   var revGraph = Map[StmtId, Set[StmtId]]()
 
   def construct(): Unit = {
+    //System.err.println(s"total cfgs is ${cfgs.size}")
     val (_, graph, revGraph) = Labeling(cfgs.toVector)
     val keySet = Set() ++= revGraph.keySet
     dom = Map[StmtId, Set[StmtId]]()
@@ -37,13 +38,13 @@ object LoopConstruction {
     while (modified.nonEmpty) {
       val head = modified.dequeue()
       val oldHead = dom(head)
-      val nxt = revGraph(head) map (dom(_))
-      // System.err.println(s"header ${head} has prevs of ${revGraph(head)}\n")
+      val prev = revGraph(head) map (dom(_))
+      //System.err.println(s"header ${head} has prevs of ${revGraph(head)}\n")
       // System.err.println(s"combo of header ${head}'s prevs is ${nxt}\n")
-      dom(head) = Set(head) union (nxt reduce (_ intersect _))
+      dom(head) = Set(head) union (prev reduce (_ intersect _))
       if (oldHead != dom(head)) {
         modified ++= graph(head)
-        //System.err.println(s"put ${head} into queue again")
+        // System.err.println(s"put ${head} into queue again")
       }
     }
 
@@ -63,7 +64,7 @@ object LoopConstruction {
         val stmts = Set[StmtId](key)
         val inBetween = Queue() ++= backNodes
 
-        //System.err.println(s"we have a header node here ${header}, first backnode is ${backNodes.head}")
+        // System.err.println(s"we have a header node here ${header}, first backnode is ${backNodes.head}")
 
         while (inBetween.nonEmpty) {
           val head = inBetween.dequeue()

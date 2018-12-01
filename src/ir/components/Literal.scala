@@ -1,7 +1,7 @@
 package ir.components
 
 
-trait Literal extends SingleExpr { self =>
+trait Literal extends SingleExpr with Use { self =>
   override def eval: Option[Expression] = Some(self)
   override def block: Option[Block] = Some(Block(0, 0, Vector(), Vector()))
 }

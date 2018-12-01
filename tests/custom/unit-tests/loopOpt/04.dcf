@@ -1,0 +1,11 @@
+import printf;
+
+void main() {
+    int a, b, i, k;
+    for (i = 0; i < 10; i++) {
+        k = 100;
+        b = i + 1;
+        a = k * 10;
+        printf("b is :%d, a is %d, k is %d\n", b, a, k);
+    }
+}

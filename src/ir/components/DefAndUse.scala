@@ -6,6 +6,8 @@ trait Def {
 
 trait Use {
   def getUse: Set[Location] = {
+    assert(this.isInstanceOf[Use])
+    //System.err.println(s"in function getUse ${this.toString}")
     def getIndexUse(location: Location): Set[Location] = {
       if (location.index.isDefined)
         location.index.get.getUse

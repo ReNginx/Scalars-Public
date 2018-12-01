@@ -1,6 +1,6 @@
 package ir.components
 
-trait Operation extends Expression{
+trait Operation extends Expression with Use{
   def line: Int
   def col: Int
   var eval: Option[Location]
