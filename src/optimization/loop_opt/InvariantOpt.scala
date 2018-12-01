@@ -48,12 +48,12 @@ object InvariantOpt extends Optimization {
           case d: Def => {
             d.getLoc.field.get match {
               case vdecl: VariableDeclaration => {
-                System.err.println(s"in isInvariant ${d}")
+               //System.err.println(s"in isInvariant ${d}")
                 val k = d.asInstanceOf[Use]
-                System.err.println(s"convert successful")
+               //System.err.println(s"convert successful")
                 assert(d.isInstanceOf[Use])
                 val uses = k.getUse
-                System.err.println(s"find use successful")
+               //System.err.println(s"find use successful")
 
                 if (d.asInstanceOf[Use].getUse.isEmpty)
                   true
@@ -134,20 +134,20 @@ object InvariantOpt extends Optimization {
     reachingDef.toVector
   }
 
-  def useHelper(pos:StmtId): immutable.Set[Location] = {
+  def useHelper(pos: StmtId): immutable.Set[Location] = {
     pos._1 match {
-      case block:CFGBlock => {
+      case block: CFGBlock => {
         if (pos._2 >= 0)
           block.statements(pos._2).asInstanceOf[Use].getUse
         else
           immutable.Set()
       }
-      case call:CFGMethodCall => {
+      case call: CFGMethodCall => {
         if (pos._2 == -1 && call.params.size > 0)
-          call.params map (_.getUse) reduce(_ ++ _)
+          call.params map (_.getUse) reduce (_ ++ _)
         else immutable.Set()
       }
-      case cond:CFGConditional => {
+      case cond: CFGConditional => {
         if (pos._2 == -1)
           cond.condition.getUse
         else immutable.Set()
@@ -160,39 +160,71 @@ object InvariantOpt extends Optimization {
                loop: LoopEntity[StmtId]): Vector[StmtId] = {
     (invariant
       filter (invar => {
-        // System.err.println(s"loops exits are ${loop.exits}")
-        // System.err.println(s"dom(invar) are ${dom(invar)}")
-        loop.exits forall (dom(_).contains(invar)) 
-        // || { // dom all exits or not used after the loop
-        //   val q = Queue[StmtId]()
-        //   val vis = Set[StmtId]()
-        //   loops.exits foreach (x => {
-        //     val out = (graph(x) - loop.stmts)
-        //     q ++= out
-        //     vis ++= out
-        //   })
-        //   while (q.nonEmpty) {
-        //     val head = getStmt(q.dequeue())
-        //     head match {
-        //       case Some(ir) => {
-        //         val use = ir.asInstanceOf[Use].getUse
-        //         val fields = use map (x => x.field)
-        //       }
-        //       case None =>
-        //     }
-        //   }
-        // }
-      }) // dom all exits
+      ////System.err.println(s"loops exits are ${loop.exits}")
+      ////System.err.println(s"dom(invar) are ${dom(invar)}")
+      (loop.exits forall (dom(_).contains(invar))) || { // dom all exits or not used after the loop
+       //System.err.println(s"try another move")
+        //PrintCFG.prtStmt(getStmt(invar).get)
+
+        val q = Queue[StmtId]()
+        val vis = Set[StmtId]()
+        val invarLoc = getStmt(invar).get.asInstanceOf[Def].getLoc.field
+
+        loop.exits foreach (x => {
+          val out = graph(x) diff loop.stmts diff vis
+          q ++= out
+          vis ++= out
+        })
+        var flag = true
+        while (q.nonEmpty && flag) {
+          val head = q.dequeue()
+         //System.err.println(s"q contains ${q}")
+
+          def stmtHelper(stmt:Option[IR]): Unit = {
+            stmt match {
+              case Some(ir) => {
+                val use = ir.asInstanceOf[Use].getUse
+                val fields = use map (x => x.field.get)
+                if (fields.contains(invarLoc.get)) {
+                  flag = false
+                }
+              }
+              case None =>
+            }
+          }
+
+          head._1 match {
+            case call: CFGMethodCall => {
+              call.params foreach (x => stmtHelper(Option(x)))
+            }
+            case block: CFGBlock => {
+              val stmt = getStmt(head)
+              stmtHelper(stmt)
+            }
+            case cond: CFGConditional => {
+              stmtHelper(Option(cond.condition))
+            }
+            case _ =>
+          }
+
+          val toAdd = graph(head) diff loop.stmts diff vis
+          q ++= toAdd
+          vis ++= toAdd
+        }
+       //System.err.println(s"flag is ${flag}")
+        flag
+      }
+    }) // dom all exits
       filter (invar => { //
-      System.err.println(s"second level ${invar}")
-      lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def]
+     //System.err.println(s"second level ${invar}")
+      lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def].getLoc.field
       loop.stmts forall (pos => {
         pos == invar || {
           val optIr = getStmt(pos)
           optIr match {
             case Some(ir) => {
               ir match {
-                case d: Def => d.getLoc.field != invarLoc.getLoc.field
+                case d: Def => d.getLoc.field != invarLoc
                 case _ => true
               }
             }
@@ -202,11 +234,11 @@ object InvariantOpt extends Optimization {
       })
     })
       filter (invar => {
-      System.err.println(s"third level ${invar}")
-      lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def]
+     //System.err.println(s"third level ${invar}")
+      lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def].getLoc.field
       loop.stmts forall (pos => {
-        val use = useHelper(pos) filter(loc => {
-          loc.field == invarLoc.getLoc.field
+        val use = useHelper(pos) filter (loc => {
+          loc.field == invarLoc
         })
         if (use.nonEmpty) {
           val reaching = reachingDef(use.head, pos)
@@ -235,29 +267,29 @@ object InvariantOpt extends Optimization {
     revGraph = LoopConstruction.revGraph
     dom = LoopConstruction.dom
 
-    System.err.println(s"loops counts ${loops.size}")
-    System.err.println("finished construction")
+   //System.err.println(s"loops counts ${loops.size}")
+   //System.err.println("finished construction")
 
     val toMove = loops map (
       loop => {
         val invariant = findInvariant(loop)
-        System.err.println(s"find potential invariant ${invariant}")
+       //System.err.println(s"find potential invariant ${invariant}")
         val movable = judgeMov(invariant, loop)
-        System.err.println(s"find movable ")
-        movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
+       //System.err.println(s"find movable ")
+        // movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
       })
 
-    System.err.println("finished tomove analysis")
+   //System.err.println("finished tomove analysis")
 
     val conds = (graph.keySet map (_._1)
-                 filter(_.isInstanceOf[CFGConditional])
-                 map (_.asInstanceOf[CFGConditional]))
+      filter (_.isInstanceOf[CFGConditional])
+      map (_.asInstanceOf[CFGConditional]))
 
     toMove foreach (pair => {
       val loopHeader = pair._1.header._1
       val invariant = pair._2
-      val preHeader = CFGBlock(loopHeader.label+"_preheader", ArrayBuffer())
+      val preHeader = CFGBlock(loopHeader.label + "_preheader", ArrayBuffer())
       (invariant flatMap (getStmt(_))) ++=: preHeader.statements
       invariant foreach (invar => {
         invar._1.asInstanceOf[CFGBlock].statements.remove(invar._2)
@@ -286,6 +318,6 @@ object InvariantOpt extends Optimization {
       (conds filter (_.end == Option(loopHeader))
         foreach (_.end = Option(preHeader)))
     })
-  System.err.println("finished all")
+   //System.err.println("finished all")
   }
 }
