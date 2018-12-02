@@ -139,9 +139,11 @@ case class Location(
   }
 
   def indexCheck: Vector[String] = {
+    val commentPrefix: String = "#"
     field.get match {
       case array: ArrayDeclaration => {
         val res: ArrayBuffer[String] = ArrayBuffer()
+        res += s"${commentPrefix} _indexCheck_${field.get.name}_start:"
         res += s"\tmovq ${index.get.rep}, %rax"
         res += s"\tmovq $$0, %r15"
         res += s"\tcmpq %r15, %rax"
@@ -149,8 +151,8 @@ case class Location(
         res += s"\tmovq $$${array.length.value}, %r15"
         res += s"\tcmpq %r15, %rax"
         res += s"\tjge outOfBound"
+        res += s"${commentPrefix} _indexCheck_${field.get.name}_finish:"
         res.toVector
-        //Vector[String]()
       }
       case _ => Vector()
     }

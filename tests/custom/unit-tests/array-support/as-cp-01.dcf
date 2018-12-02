@@ -1,0 +1,6 @@
+int i, j, k;
+int l[10];
+void main() {
+    l[0] = 1;
+    j = l[0];
+}
