@@ -20,12 +20,28 @@ object GlobalCP extends Optimization {
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
   val cfgs = ArrayBuffer[CFG]()
+  val aryBlacklist = Set[ArrayDeclaration]()
 
   override def init(): Unit = {
     resetChanged
     gen.clear
     kill.clear
     cfgs.clear
+    aryBlacklist.clear
+  }
+
+  private def aryBlacklistAdd(loc: Location): Unit = {
+    assert(loc.index.isDefined) // must be array
+    aryBlacklist += loc.field.get.asInstanceOf[ArrayDeclaration]
+  }
+
+  private def aryBlacklistNotIn(loc: Location): Boolean = {
+    assert(loc.index.isDefined)
+    if (aryBlacklist.contains(loc.field.get.asInstanceOf[ArrayDeclaration])) {
+      false
+    } else {
+      true
+    }
   }
 
   /**
@@ -71,8 +87,13 @@ object GlobalCP extends Optimization {
           lastLoc: Map[Location, DefId],
           defn: IR with Def,
           id: DefId): Unit = {
-    if (isArray(defn.getLoc)) return
     if (AssignFromReg(defn)) return
+    if (isArray(defn.getLoc)) { // if index is a Location, we add the array definition to blacklist
+      if (defn.getLoc.index.get.isInstanceOf[Location]) {
+        aryBlacklist += defn.getLoc.field.get.asInstanceOf[ArrayDeclaration]
+        return
+      }
+    }
     if (!locMap.contains(defn.getLoc)) {
       locMap(defn.getLoc) = Set[DefId]()
     }
@@ -194,14 +215,25 @@ object GlobalCP extends Optimization {
               lastDef: Map[Location, DefId],
               expr: Expression,
               pos: (CFG, Int)): Expression = {
-    expr match {
+    var retExpr: Expression = expr
+
+    // recurse first
+    retExpr match {
       case loc: Location => {
         if (isArray(loc)) {
-          loc.copy(
+          retExpr = loc.copy(
             index = Option(subExpr(in, lastDef, loc.index.get, pos))
           )
         }
-        else {
+      }
+
+      case _ =>
+    }
+
+    retExpr match {
+      case loc: Location => {
+        // only optimize if not an array or not blacklisted
+        if (!isArray(loc) || aryBlacklistNotIn(loc)) {
           val from =
             if (lastDef.contains(loc)) {
               Set(lastDef(loc))
@@ -213,13 +245,19 @@ object GlobalCP extends Optimization {
 
           val res = findCommon(from, loc)
           //System.err.println(s"try sub ${loc} with ${res}")
-          if (res != loc && !isArray(res) && JudgeSubstitution(from, pos, loc, res)) {
-            //System.err.println(s"sub ${loc} with ${res}")
+          if (
+            res != loc &&
+            !isArray(res) && // prevent code generation issues, efficiency is guaranteed by RepeatOptimization
+            JudgeSubstitution(from, pos, loc, res)
+            ) {
+            // println(s"sub ${loc} with ${res}")
             setChanged // substituted by res
             res
           }
           else
             loc
+        } else {
+          retExpr
         }
       }
 
@@ -399,6 +437,7 @@ object GlobalCP extends Optimization {
 
   private def copyProp: Unit = {
     collect()
+    // println(s"blacklist: ${aryBlacklist}")
     val (in, out) =
       WorkList[DefId](gen,
         kill,
