@@ -1,6 +1,7 @@
 int i, j, k;
 int l[10];
 void main() {
-    l[0] = 1;
-    j = l[0];
+    l[k] = 1;
+    l[1]++;
+    j = l[k];
 }

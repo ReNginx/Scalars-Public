@@ -143,15 +143,15 @@ case class Location(
     field.get match {
       case array: ArrayDeclaration => {
         val res: ArrayBuffer[String] = ArrayBuffer()
-        res += s"${commentPrefix} _indexCheck_${field.get.name}_start:"
-        res += s"\tmovq ${index.get.rep}, %rax"
-        res += s"\tmovq $$0, %r15"
-        res += s"\tcmpq %r15, %rax"
-        res += s"\tjl outOfBound"
-        res += s"\tmovq $$${array.length.value}, %r15"
-        res += s"\tcmpq %r15, %rax"
-        res += s"\tjge outOfBound"
-        res += s"${commentPrefix} _indexCheck_${field.get.name}_finish:"
+        res += s"\t${commentPrefix} _indexCheck_${field.get.name}_start:"
+        res += s"\t\tmovq ${index.get.rep}, %rax"
+        res += s"\t\tmovq $$0, %r15"
+        res += s"\t\tcmpq %r15, %rax"
+        res += s"\t\tjl outOfBound"
+        res += s"\t\tmovq $$${array.length.value}, %r15"
+        res += s"\t\tcmpq %r15, %rax"
+        res += s"\t\tjge outOfBound"
+        res += s"\t${commentPrefix} _indexCheck_${field.get.name}_finish:"
         res.toVector
       }
       case _ => Vector()
