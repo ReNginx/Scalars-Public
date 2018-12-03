@@ -2,6 +2,6 @@ int i, j, k;
 int l[10];
 void main() {
     l[k] = 1;
-    l[1]++;
+    // l[1]++;
     j = l[k];
 }

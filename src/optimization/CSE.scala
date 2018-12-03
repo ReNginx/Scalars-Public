@@ -1,10 +1,9 @@
 package optimization
 
-import scala.collection.mutable.{ArrayBuffer, Map}
+import scala.collection.mutable.{ArrayBuffer, Map, Set}
 import ir.components._
 import codegen._
 
-// CSE is not idempotoent, so setChanged is never used here.
 object CSE extends Optimization {
 
   override def toString(): String = "LocalCSE"
@@ -13,8 +12,8 @@ object CSE extends Optimization {
   val var2Val: Map[SingleExpr, SymVal] = Map[SingleExpr, SymVal]()
   // operator, operand1, Some(operand2)
   val exp2ValTmp: Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]] = Map[Tuple3[String, SymVal, Option[SymVal]], Tuple2[SymVal, Location]]()
-  // idx2Ary maps an index to a set of arrays indexed by such index
-  val idx2Ary: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]()
+  // ary2Idx maps array to viable constant indicies
+  val ary2Idx: Map[ArrayDeclaration, Set[Long]] = Map[ArrayDeclaration, Set[Long]]()
   var nextVacantVal: SymVal = SymVal(0)
   var nextVacantTmp: Int = 0
 
@@ -104,29 +103,43 @@ object CSE extends Optimization {
     }
   }
 
-  private def idx2AryAdd(idx: SingleExpr, ary: Location): Set[Location] = {
-    if (idx2Ary.contains(idx)) {
-      idx2Ary(idx) += ary
-    } else {
-      idx2Ary += (idx -> Set[Location](ary))
-    }
-    idx2Ary(idx)
-  }
-
-  private def idx2AryRemove(idx: SingleExpr): Unit = {
-    // println(s"Query: ${idx}")
-    // println(s"Result: ${idx2Ary.get(idx)}")
-    if (idx2Ary.contains(idx)) {
-      idx2Ary.remove(idx)
+  private def ary2IdxAdd(ary: Location): Unit = {
+    assert(ary.index.isDefined)
+    ary.index.get match {
+      case intLit: IntLiteral => {
+        if (ary2Idx.contains(ary.field.get.asInstanceOf[ArrayDeclaration])) {
+          ary2Idx(ary.field.get.asInstanceOf[ArrayDeclaration]) += intLit.value
+        } else {
+          ary2Idx += (ary.field.get.asInstanceOf[ArrayDeclaration] -> Set[Long](intLit.value))
+        }
+      }
+      case _ =>
     }
   }
 
-  // Returns idx2Ary(idx) or empty set
-  private def idx2AryGet(idx: SingleExpr): Set[Location] = {
-    if (idx2Ary.contains(idx)) {
-      idx2Ary(idx)
+  private def ary2IdxClear(ary: Location): Unit = {
+    assert(ary.index.isDefined)
+    if (ary2Idx.contains(ary.field.get.asInstanceOf[ArrayDeclaration])) {
+      ary2Idx.remove(ary.field.get.asInstanceOf[ArrayDeclaration])
+    }
+  }
+
+  private def ary2IdxGet(ary: Location): Set[Long] = {
+    assert(ary.index.isDefined)
+    if (ary2Idx.contains(ary.field.get.asInstanceOf[ArrayDeclaration])) {
+      ary2Idx(ary.field.get.asInstanceOf[ArrayDeclaration])
     } else {
-      Set[Location]()
+      Set[Long]()
+    }
+  }
+
+  private def ary2IdxVerify(ary: Location): Boolean = {
+    assert(ary.index.isDefined)
+    val idxSet: Set[Long] = ary2IdxGet(ary)
+    if (ary.index.get.isInstanceOf[IntLiteral] && idxSet.contains(ary.index.get.asInstanceOf[IntLiteral].value)) {
+      true
+    } else {
+      false
     }
   }
 
@@ -134,7 +147,7 @@ object CSE extends Optimization {
     if (isInit) { init }
     var2Val.clear()
     exp2ValTmp.clear()
-    idx2Ary.clear()
+    ary2Idx.clear()
     nextVacantVal = SymVal(0)
     nextVacantTmp = 0
 
@@ -162,26 +175,32 @@ object CSE extends Optimization {
                     } else {
                       operVal = var2ValUpdate(operand)
                     }
-                    // if operand is an array, add it to idx2Ary
-                    operand match {
-                      case loc: Location => {
-                        if (!loc.index.isEmpty) {
-                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
-                        }
-                      }
-                      case _ =>
-                    }
+                    val elimFlag: Boolean = (
+                      !unary.expression.isInstanceOf[Location] || // not a location
+                      unary.expression.asInstanceOf[Location].index.isEmpty || // not an array
+                      ary2IdxVerify(unary.expression.asInstanceOf[Location]) // verified array
+                    )
                     // query exp2ValTmp
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(unary, operVal, None)
-                    if (!exp2ValTmpRet.isEmpty) {
+                    if (!exp2ValTmpRet.isEmpty && elimFlag) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
                       // perform elimination
                       newStatements += AssignStatement(0, 0, unary.eval.get, retLoc)
+                      setChanged
                     } else {
                       val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(block, unary, operVal, None)
                       newStatements += statement
                       newStatements += AssignStatement(0, 0, newLoc, unary.eval.get)
                       var2ValUpdate(unary.eval.get)
+                    }
+                    // if operand is an array, add it to ary2Idx
+                    operand match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          ary2IdxAdd(loc)
+                        }
+                      }
+                      case _ =>
                     }
                   }
                   case binary: BinaryOperation => {
@@ -191,40 +210,23 @@ object CSE extends Optimization {
                     var rhsVal: SymVal = SymVal(-1)
                     if (!var2ValGet(lhs).isEmpty) {
                       lhsVal = var2ValGet(lhs).get
-                      // println(s"Retrieve ${lhs}: ${lhsVal}")
                     } else {
                       lhsVal = var2ValUpdate(lhs)
-                      // println(s"Update ${lhs}: ${lhsVal}")
                     }
                     if (!var2ValGet(rhs).isEmpty) {
                       rhsVal = var2ValGet(rhs).get
-                      // println(s"Retrieve ${rhs}: ${rhsVal}")
                     } else {
                       rhsVal = var2ValUpdate(rhs)
-                      // println(s"Update ${rhs}: ${rhsVal}")
                     }
-                    // if operand is an array, add it to idx2Ary
-                    lhs match {
-                      case loc: Location => {
-                        if (!loc.index.isEmpty) {
-                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
-                        }
-                      }
-                      case _ =>
-                    }
-                    rhs match {
-                      case loc: Location => {
-                        if (!loc.index.isEmpty) {
-                          idx2AryAdd(loc.index.get.asInstanceOf[SingleExpr], loc)
-                        }
-                      }
-                      case _ =>
-                    }
+                    val elimFlag: Boolean = (
+                      (!binary.lhs.isInstanceOf[Location] || binary.lhs.asInstanceOf[Location].index.isEmpty || ary2IdxVerify(binary.lhs.asInstanceOf[Location])) &&
+                      (!binary.rhs.isInstanceOf[Location] || binary.rhs.asInstanceOf[Location].index.isEmpty || ary2IdxVerify(binary.rhs.asInstanceOf[Location]))
+                    )
                     val exp2ValTmpRet: Option[(SymVal, Location)] = exp2ValTmpGet(binary, lhsVal, Some(rhsVal))
-                    if (!exp2ValTmpRet.isEmpty) {
+                    if (!exp2ValTmpRet.isEmpty && elimFlag) {
                       val (retVal: SymVal, retLoc: Location) = exp2ValTmpRet.get
                       // perform elimination
-                      // println(s"Binary hit: ${binary}, ${retVal}, ${retLoc}")
+                      setChanged
                       newStatements += AssignStatement(0, 0, binary.eval.get, retLoc)
                     } else {
                       val (newVal: SymVal, newLoc: Location) = exp2ValTmpUpdate(block, binary, lhsVal, Some(rhsVal))
@@ -232,27 +234,44 @@ object CSE extends Optimization {
                       newStatements += AssignStatement(0, 0, newLoc, binary.eval.get)
                       var2ValUpdate(binary.eval.get)
                     }
+                    // if operand is an array, add it to ary2Idx
+                    lhs match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          ary2IdxAdd(loc)
+                        }
+                      }
+                      case _ =>
+                    }
+                    rhs match {
+                      case loc: Location => {
+                        if (!loc.index.isEmpty) {
+                          ary2IdxAdd(loc)
+                        }
+                      }
+                      case _ =>
+                    }
                   }
                 }
               }
               case assign: AssignmentStatements => { // create new val for variable
-                val arySet: Set[Location] = idx2AryGet(assign.loc) // array fix
-                arySet foreach { var2ValRemove(_) }
-                idx2AryRemove(assign.loc)
+                if (assign.loc.index.isDefined && assign.loc.index.get.isInstanceOf[Location]) {
+                  ary2IdxClear(assign.loc)
+                }
                 var2ValUpdate(assign.loc)
                 newStatements += statement
               }
               case inc: Increment => {
-                val arySet: Set[Location] = idx2AryGet(inc.loc) // array fix
-                arySet foreach { var2ValRemove(_) }
-                idx2AryRemove(inc.loc)
+                if (inc.loc.index.isDefined && inc.loc.index.get.isInstanceOf[Location]) {
+                  ary2IdxClear(inc.loc)
+                }
                 var2ValUpdate(inc.loc)
                 newStatements += statement
               }
               case dec: Decrement => {
-                val arySet: Set[Location] = idx2AryGet(dec.loc) // array fix
-                arySet foreach { var2ValRemove(_) }
-                idx2AryRemove(dec.loc)
+                if (dec.loc.index.isDefined && dec.loc.index.get.isInstanceOf[Location]) {
+                  ary2IdxClear(dec.loc)
+                }
                 var2ValUpdate(dec.loc)
                 newStatements += statement
               }

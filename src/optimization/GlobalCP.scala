@@ -19,14 +19,12 @@ object GlobalCP extends Optimization {
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
   val cfgs = ArrayBuffer[CFG]()
-  val idx2Ary: Map[SingleExpr, Set[Location]] = Map[SingleExpr, Set[Location]]() // array support
 
   override def init(): Unit = {
     resetChanged
     gen.clear
     kill.clear
     cfgs.clear
-    idx2Ary.clear
   }
 
   /**
@@ -72,7 +70,7 @@ object GlobalCP extends Optimization {
           lastLoc: Map[Location, DefId],
           defn: IR with Def,
           id: DefId): Unit = {
-    println(s"add: ${defn}")
+    if (isArray(defn.getLoc)) return
     if (AssignFromReg(defn)) return
     if (!locMap.contains(defn.getLoc)) {
       locMap(defn.getLoc) = Set[DefId]()
@@ -243,9 +241,14 @@ object GlobalCP extends Optimization {
               stmt: IR,
               id: DefId): IR = {
     var replacedStmt = stmt
+    //PrintCFG.prtStmt(stmt)
+    stmt match {
+      case asgStmt: AssignStatement => {
+        replacedStmt = asgStmt.copy(
+          value = subExpr(in, lastDef, asgStmt.value, id)
+        )
+      }
 
-    // replace compound statements with operations
-    replacedStmt match {
       case casgStmt: CompoundAssignStatement => {
         setChanged // should be replaced in the first iteration
         val expr = subExpr(in, lastDef, casgStmt.loc, id)
@@ -288,10 +291,43 @@ object GlobalCP extends Optimization {
         )
       }
 
-      case _ =>
+      case not: Not => {
+        replacedStmt = not.copy(
+          expression = subExpr(in, lastDef, not.expression, id)
+        )
+      }
+
+      case negate: Negate => {
+        replacedStmt = negate.copy(
+          expression = subExpr(in, lastDef, negate.expression, id)
+        )
+      }
+
+      case arith: ArithmeticOperation => {
+        replacedStmt = arith.copy(
+          lhs = subExpr(in, lastDef, arith.lhs, id),
+          rhs = subExpr(in, lastDef, arith.rhs, id)
+        )
+      }
+
+      case logic: LogicalOperation => {
+        replacedStmt = logic.copy(
+          lhs = subExpr(in, lastDef, logic.lhs, id),
+          rhs = subExpr(in, lastDef, logic.rhs, id)
+        )
+      }
+
+      case ret: Return => {
+        if (ret.value.isDefined) {
+          replacedStmt = ret.copy(
+            value = Option(subExpr(in, lastDef, ret.value.get, id))
+          )
+        }
+      }
+
+      case _ => throw new NotImplementedError()
     }
 
-    // recurse first
     replacedStmt match {
       case asgStmt: AssignmentStatements => {
         if (isArray(asgStmt.loc))
@@ -306,72 +342,6 @@ object GlobalCP extends Optimization {
       case _ =>
     }
 
-    // call subExpr, use subExpr to decide whether to repeat
-    replacedStmt match {
-      case asgStmt: AssignStatement => {
-        replacedStmt = asgStmt.copy(
-          value = subExpr(in, lastDef, asgStmt.value, id)
-        )
-        idx2AryRemove(asgStmt.loc) // purge asgStmt.loc as an index
-        if (isArray(asgStmt.loc)) { // if is array, add index -> array
-          idx2AryAdd(asgStmt.loc.index.get.asInstanceOf[SingleExpr], asgStmt.loc)
-        }
-      }
-
-      case not: Not => {
-        replacedStmt = not.copy(
-          expression = subExpr(in, lastDef, not.expression, id)
-        )
-        idx2AryRemove(not.eval.get)
-        if (isArray(not.eval.get)) {
-          idx2AryAdd(not.eval.get.index.get.asInstanceOf[SingleExpr], not.eval.get)
-        }
-      }
-
-      case negate: Negate => {
-        replacedStmt = negate.copy(
-          expression = subExpr(in, lastDef, negate.expression, id)
-        )
-        idx2AryRemove(negate.eval.get)
-        if (isArray(negate.eval.get)) {
-          idx2AryAdd(negate.eval.get.index.get.asInstanceOf[SingleExpr], negate.eval.get)
-        }
-      }
-
-      case arith: ArithmeticOperation => {
-        replacedStmt = arith.copy(
-          lhs = subExpr(in, lastDef, arith.lhs, id),
-          rhs = subExpr(in, lastDef, arith.rhs, id)
-        )
-        idx2AryRemove(arith.eval.get)
-        if (isArray(arith.eval.get)) {
-          idx2AryAdd(arith.eval.get.index.get.asInstanceOf[SingleExpr], arith.eval.get)
-        }
-      }
-
-      case logic: LogicalOperation => {
-        replacedStmt = logic.copy(
-          lhs = subExpr(in, lastDef, logic.lhs, id),
-          rhs = subExpr(in, lastDef, logic.rhs, id)
-        )
-        idx2AryRemove(logic.eval.get)
-        if (isArray(logic.eval.get)) {
-          idx2AryAdd(logic.eval.get.index.get.asInstanceOf[SingleExpr], logic.eval.get)
-        }
-      }
-
-      case ret: Return => {
-        if (ret.value.isDefined) {
-          replacedStmt = ret.copy(
-            value = Option(subExpr(in, lastDef, ret.value.get, id))
-          )
-        }
-      }
-
-      case _ => throw new NotImplementedError()
-    }
-
-    // update lastDef
     stmt match {
       case defn: Def => {
         if (!AssignFromReg(defn)) {
@@ -429,32 +399,6 @@ object GlobalCP extends Optimization {
         "union")
     JudgeSubstitution.init(cfgs.toVector)
     subBlocks(in)
-  }
-
-  private def idx2AryAdd(idx: SingleExpr, ary: Location): Set[Location] = {
-    if (idx2Ary.contains(idx)) {
-      idx2Ary(idx) += ary
-    } else {
-      idx2Ary += (idx -> Set[Location](ary))
-    }
-    idx2Ary(idx)
-  }
-
-  private def idx2AryRemove(idx: SingleExpr): Unit = {
-    // println(s"Query: ${idx}")
-    // println(s"Result: ${idx2Ary.get(idx)}")
-    if (idx2Ary.contains(idx)) {
-      idx2Ary.remove(idx)
-    }
-  }
-
-  // Returns idx2Ary(idx) or empty set
-  private def idx2AryGet(idx: SingleExpr): Set[Location] = {
-    if (idx2Ary.contains(idx)) {
-      idx2Ary(idx)
-    } else {
-      Set[Location]()
-    }
   }
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {

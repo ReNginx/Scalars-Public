@@ -1,0 +1,12 @@
+import printf;
+
+int a, i, j, k;
+int l[10];
+void main() {
+    a = 9;
+    j = l[9] + i;
+    // l[a] = 10;
+    // l[9] = 7;
+    k = l[9] + i;
+    printf("k should be 10, is %d", k);
+}
