@@ -241,14 +241,9 @@ object GlobalCP extends Optimization {
               stmt: IR,
               id: DefId): IR = {
     var replacedStmt = stmt
-    //PrintCFG.prtStmt(stmt)
-    stmt match {
-      case asgStmt: AssignStatement => {
-        replacedStmt = asgStmt.copy(
-          value = subExpr(in, lastDef, asgStmt.value, id)
-        )
-      }
-
+    
+    // replace compound statements with operations
+    replacedStmt match {
       case casgStmt: CompoundAssignStatement => {
         setChanged // should be replaced in the first iteration
         val expr = subExpr(in, lastDef, casgStmt.loc, id)
@@ -291,6 +286,32 @@ object GlobalCP extends Optimization {
         )
       }
 
+      case _ =>
+    }
+
+    // recurse first
+    replacedStmt match {
+      case asgStmt: AssignmentStatements => {
+        if (isArray(asgStmt.loc))
+          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get, id))
+      }
+
+      case oper: Operation => {
+        if (isArray(oper.eval.get))
+          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get, id))
+      }
+
+      case _ =>
+    }
+
+    // call subExpr, use subExpr to decide whether to repeat
+    replacedStmt match {
+      case asgStmt: AssignStatement => {
+        replacedStmt = asgStmt.copy(
+          value = subExpr(in, lastDef, asgStmt.value, id)
+        )
+      }
+
       case not: Not => {
         replacedStmt = not.copy(
           expression = subExpr(in, lastDef, not.expression, id)
@@ -328,20 +349,7 @@ object GlobalCP extends Optimization {
       case _ => throw new NotImplementedError()
     }
 
-    replacedStmt match {
-      case asgStmt: AssignmentStatements => {
-        if (isArray(asgStmt.loc))
-          asgStmt.loc.index = Option(subExpr(in, lastDef, asgStmt.loc.index.get, id))
-      }
-
-      case oper: Operation => {
-        if (isArray(oper.eval.get))
-          oper.eval.get.index = Option(subExpr(in, lastDef, oper.eval.get.index.get, id))
-      }
-
-      case _ =>
-    }
-
+    // update lastDef
     stmt match {
       case defn: Def => {
         if (!AssignFromReg(defn)) {
