@@ -9,6 +9,7 @@ import scala.collection.mutable.{ArrayBuffer, HashMap, Map, MultiMap, Set}
 
 /**
   * Note we only deal with ordinary variables. not arrays.
+  * Update: limited array support for constant indices.
   */
 
 object GlobalCP extends Optimization {
