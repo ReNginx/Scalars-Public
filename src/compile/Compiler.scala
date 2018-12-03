@@ -225,8 +225,8 @@ object Compiler {
 
     val optCFG = PeepHole(start, preserveCritical=true).get
 
-    val localOptPreq = GenerateOptVec(str2Opts, optFlagMap, Vector("cse"), "local")
-    val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp"), "local")
+    val localOptPreq = Vector[Optimization]()
+    val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
     val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
 
     val localOptIter = RepeatOptimization(optCFG, Option(localOptPreq), localOptCond, Option(localOptSeq))

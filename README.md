@@ -32,15 +32,15 @@ Nov. 28, 2018 23:10 PM
 
 ### Current Progress
 
-|              Name              | Implemented | Tested | Array Support  |   RepeatOptimization Support    |
-| :----------------------------: | :---------: | :----: | :------------: | :-----------------------------: |
-|           Local CSE            |     Yes     |  Yes   |      Yes       | Not Applicable (not idempotent) |
-|            Local CP            |     Yes     |  Yes   | Not Applicable |               Yes               |
-|           Local DCE            |     Yes     |  Yes   | Not Applicable |               Yes               |
-|           Global CSE           |     Yes     |  Yes   |      WIP       |               WIP               |
-|           Global CP            |     Yes     |  Yes   | Not Applicable |               Yes               |
-|           Global DCE           |     Yes     |  Yes   | Not Applicable |               Yes               |
-|        Constant Folding        |     Yes     |  Yes   | Not Applicable |               Yes               |
-|       Invariant Hoisting       |     Yes     |  Yes   | Not Applicable |               Yes               |
-| Induction Variable Elimination |     WIP     |        |                |                                 |
+|              Name              | Implemented | Tested | Array Support  | RepeatOptimization Support |
+| :----------------------------: | :---------: | :----: | :------------: | :------------------------: |
+|           Local CSE            |     Yes     |  Yes   |      Yes       |            Yes             |
+|            Local CP            |     Yes     |  Yes   | Not Applicable |            Yes             |
+|           Local DCE            |     Yes     |  Yes   | Not Applicable |            Yes             |
+|           Global CSE           |     Yes     |  Yes   |      WIP       |            WIP             |
+|           Global CP            |     Yes     |  Yes   | Not Applicable |            Yes             |
+|           Global DCE           |     Yes     |  Yes   | Not Applicable |            Yes             |
+|        Constant Folding        |     Yes     |  Yes   | Not Applicable |            Yes             |
+|       Invariant Hoisting       |     Yes     |  Yes   | Not Applicable |            Yes             |
+| Induction Variable Elimination |     WIP     |        |                |                            |
 
