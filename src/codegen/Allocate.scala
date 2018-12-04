@@ -27,7 +27,7 @@ object Allocate {
         }
       }
 
-      case regs: Registers =>
+      case reg: Register =>
 
       case _ => throw new NotImplementedError()
     }

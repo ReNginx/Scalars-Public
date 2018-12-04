@@ -59,7 +59,7 @@ case class ArrayDeclaration(
   * @param name a valid register name, without '%' mark
   * @param typ no use
   */
-case class Registers(
+case class Register(
      name: String,
      line: Int = 0,
      col: Int = 0,
