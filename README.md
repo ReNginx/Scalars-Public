@@ -37,10 +37,11 @@ Nov. 28, 2018 23:10 PM
 |           Local CSE            |     Yes     |  Yes   |      Yes       |            Yes             |
 |            Local CP            |     Yes     |  Yes   | Not Applicable |            Yes             |
 |           Local DCE            |     Yes     |  Yes   | Not Applicable |            Yes             |
-|           Global CSE           |     Yes     |  Yes   |      WIP       |            WIP             |
-|           Global CP            |     Yes     |  Yes   | Not Applicable |            Yes             |
+|           Global CSE           |     Yes     |  Yes   |      Yes       |            Yes             |
+|           Global CP            |     Yes     |  Yes   |      Yes       |            Yes             |
 |           Global DCE           |     Yes     |  Yes   | Not Applicable |            Yes             |
 |        Constant Folding        |     Yes     |  Yes   | Not Applicable |            Yes             |
 |       Invariant Hoisting       |     Yes     |  Yes   | Not Applicable |            Yes             |
 | Induction Variable Elimination |     WIP     |        |                |                            |
+|      Register Allocation       |     WIP     |        |                |                            |
 
