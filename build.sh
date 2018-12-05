@@ -1,4 +1,12 @@
 #!/bin/bash
-eval $(attach -Padd -b -f scala)
-export SCALA_HOME=/usr/local/opt/scala/idea
+
+## Build script for Scalars Decaf Compiler
+
+if [[ $(dnsdomainname) = mit.edu ]]; then
+  eval $(attach -Padd -b -f scala)
+fi
+
+gitroot=$(git rev-parse --show-toplevel)
+. $gitroot/setenv.sh
+
 ant "$@"
