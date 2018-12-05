@@ -8,6 +8,12 @@ import optimization.Labeling.{StmtId, getStmt}
 
 import scala.collection.mutable.{Queue, Set}
 
+/**
+  * apply this function to a CFGProgram.
+  * would find all DU chains in the program, and store them in duChains.
+  * note that this function does not take function calls into account.
+  * and also, this function only find du chains in vaiables, not arrays.
+  */
 object DUChainConstruct {
   val cfgs = Set[CFG]()
   val duChains = Set[DefUseChain]()
@@ -111,6 +117,7 @@ object DUChainConstruct {
       case program: CFGProgram => {
         duChains.clear()
         program.methods foreach (DUChainConstruct(_))
+        cfgs.clear()
       }
 
       // we collect all blocks of a function.
