@@ -6,7 +6,8 @@ import optimization.Labeling.StmtId
 /**
   * StmtId is a tuple of (CFG, Int)
   * if CFG is CFGBLOCK, Int is the index of statement in block.statement
-  * otherwise, Int is always -1.
+  * otherwise, Int is always -1. representing the condition of CFGConditional
+  * or params of CFGMethodCall.
   * @param DefPos
   * @param UsePos
   * @param DefLoc
