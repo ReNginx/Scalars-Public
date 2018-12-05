@@ -1,6 +1,7 @@
 package optimization
 
 import codegen.{CFG, CFGBlock, CFGMethodCall}
+import ir.components.IR
 
 import scala.collection.mutable
 import scala.collection.mutable.Map
@@ -17,6 +18,19 @@ object Labeling {
     * @param cfgLst
     * @return
     */
+  def getStmt(pos: StmtId): Option[IR] = {
+    if (pos._2 >= 0) {
+      // if (pos._2 >= pos._1.asInstanceOf[CFGBlock].statements.size) {
+      //   System.err.println("start")
+      //   pos._1.asInstanceOf[CFGBlock].statements foreach (PrintCFG.prtStmt(_))
+      //   System.err.println("over")
+      //   assert(false)
+      // }
+      Option(pos._1.asInstanceOf[CFGBlock].statements(pos._2))
+    }
+    else
+      None
+  }
 
   def link(cfgLst: Vector[CFG]): (Set[CFG], Graph, Graph) = {
     val map = Set[StmtId]()

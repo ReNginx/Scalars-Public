@@ -7,6 +7,7 @@ import optimization.Optimization
 
 import scala.collection.immutable
 import scala.collection.mutable.{ArrayBuffer, Map, Queue, Set, SortedSet}
+import optimization.Labeling.getStmt
 
 /**
   * this function won't mark any node.
@@ -22,19 +23,7 @@ object InvariantOpt extends Optimization {
   var dom = Map[StmtId, Set[StmtId]]()
   var cnt = 0
 
-  def getStmt(pos: StmtId): Option[IR] = {
-    if (pos._2 >= 0) {
-      // if (pos._2 >= pos._1.asInstanceOf[CFGBlock].statements.size) {
-      //   System.err.println("start")
-      //   pos._1.asInstanceOf[CFGBlock].statements foreach (PrintCFG.prtStmt(_))
-      //   System.err.println("over")
-      //   assert(false)
-      // }
-      Option(pos._1.asInstanceOf[CFGBlock].statements(pos._2))
-    }
-    else
-      None
-  }
+
 
   def findInvariant(loop: LoopEntity[StmtId]): Vector[StmtId] = {
     val invariant = ArrayBuffer[StmtId]()

@@ -1,0 +1,23 @@
+import printf;
+
+int read_int() {
+    return 1;
+}
+
+void main() {
+    int a, b, c, d;
+    a = read_int();
+    b = read_int();
+    while (a > b) {
+        c = a - 5;
+        if (c > b) {
+            d = c - 1;
+            a = d + a;
+        }  else {
+            d = c + 1;
+            a = d + a;
+        }
+        b = a - c;
+    }
+    printf("%d\n", a);
+}

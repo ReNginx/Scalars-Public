@@ -50,14 +50,14 @@ object GlobalCP extends Optimization {
     * @param ir
     * @return
     */
-  private def isArray(ir: IR): Boolean = {
+  def isArray(ir: IR): Boolean = {
     ir match {
       case loc: Location => loc.index.isDefined
       case _ => false
     }
   }
 
-  private def isReg(ir: IR): Boolean = {
+  def isReg(ir: IR): Boolean = {
     ir match {
       case loc: Location => loc.field.get.isReg
       case _ => false
