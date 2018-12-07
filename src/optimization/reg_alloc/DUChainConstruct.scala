@@ -5,8 +5,11 @@ import ir.components.{Def, Location, Use}
 import optimization.GlobalCP.isArray
 import optimization.Labeling
 import optimization.Labeling.{StmtId, getStmt}
+import optimization.loop_opt.LoopConstruction
 
-import scala.collection.mutable.{Queue, Set}
+import scala.collection.mutable
+import scala.collection.mutable.{Queue, Set, Map}
+import math.max
 
 /**
   * apply this function to a CFGProgram.
@@ -102,11 +105,68 @@ object DUChainConstruct {
   def testOutput(): Unit = {
     System.err.println(s"Duchain Count ${duChains.size}")
     duChains foreach( chain => {
-      System.err.println(s"defPos:${(chain.DefPos,chain.DefLoc.line, chain.DefLoc.col)}, " +
-        s"usePos:${(chain.UsePos,chain.UseLoc.line, chain.UseLoc.col)}")
+//      System.err.println(s"defPos:${(chain.DefPos,chain.DefLoc.line, chain.DefLoc.col)}, " +
+//        s"usePos:${(chain.UsePos,chain.UseLoc.line, chain.UseLoc.col)}")
+      System.err.println(chain.toString)
 //      System.err.println(s"defPos:${()}, " +
 //              s"usePos:${()}")
     })
+  }
+
+  /**
+    * this function collect following info for each du chain
+    * 1. depth in loops. which is defined by the deepest position in the convex set of du chain.
+    * 2. set of function calls in the chain's convex set.
+    */
+  def collectInfo(): Unit = {
+    // at the beginning of the function, cfgs are not cleared.
+    LoopConstruction.construct(cfgs.toVector)
+    val dom = LoopConstruction.dom
+    val loops = LoopConstruction.loops
+    val graph = LoopConstruction.graph
+    val revGraph = LoopConstruction.revGraph
+    val calls = LoopConstruction.calls
+    val depth = Map[StmtId, Int]()
+
+    graph.keySet foreach (depth(_) = 0)
+    loops foreach (_.stmts foreach (depth(_) += 1))
+
+    def calcConvexSet(defUseChain: DefUseChain): Set[StmtId] = {
+      val forwardReach = reachable(defUseChain.DefPos, defUseChain.UsePos, graph)
+      val backwardReach = reachable(defUseChain.UsePos, defUseChain.DefPos, revGraph)
+      forwardReach intersect backwardReach
+    }
+
+    duChains foreach (duChain => {
+      val convexSet = calcConvexSet(duChain)
+      duChain.convexSet = convexSet
+      duChain.functionCalls = (Set() ++ (convexSet map (_._1))) intersect calls
+      duChain.depth = (convexSet map (depth(_))).max
+    })
+
+  }
+
+
+  /**
+    * reachable stmt id. include itself only incase of loop
+    * @param Def
+    * @param graph
+    * @return
+    */
+  def reachable(Def:StmtId, Use:StmtId, graph: Map[StmtId, Set[StmtId]]): Set[StmtId] = {
+    val q = mutable.Queue(Def)
+    val vis = Set(Def)
+
+    while (q.nonEmpty) {
+      val head = q.dequeue()
+      if (head != Use) {
+        val nxt = graph(head) diff vis
+        q ++= nxt
+        vis ++= nxt
+      }
+    }
+
+    vis
   }
 
   def apply(cfg: CFG): Unit = {
@@ -126,6 +186,7 @@ object DUChainConstruct {
           cfgs.clear
           DUChainConstruct(method.block.get)
           findDuChain()
+          collectInfo()
         }
       }
 

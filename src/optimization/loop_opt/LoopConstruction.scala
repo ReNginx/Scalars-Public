@@ -17,10 +17,11 @@ object LoopConstruction {
   var graph = Map[StmtId, Set[StmtId]]()
   var dom = Map[StmtId, Set[StmtId]]()
   var revGraph = Map[StmtId, Set[StmtId]]()
+  var calls = Set[CFG]()
 
-  def construct(): Unit = {
+  def construct(cfgs: Vector[CFG]): Unit = {
     //System.err.println(s"total cfgs is ${cfgs.size}")
-    val (_, graph, revGraph) = Labeling(cfgs.toVector)
+    val (calls, graph, revGraph) = Labeling(cfgs.toVector)
     val keySet = Set() ++= revGraph.keySet
     dom = Map[StmtId, Set[StmtId]]()
     val modified = Queue[StmtId]()
@@ -84,6 +85,7 @@ object LoopConstruction {
     this.loops = loops.toVector
     this.graph = graph
     this.revGraph = revGraph
+    this.calls = calls
   }
 
 
@@ -97,7 +99,7 @@ object LoopConstruction {
       case program: CFGProgram => {
         cfgs.clear()
         program.methods foreach (LoopConstruction(_))
-        construct()
+        construct(cfgs.toVector)
         visited.clear()
       }
 
