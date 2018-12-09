@@ -132,8 +132,8 @@ object DUChainConstruct {
     loops foreach (_.stmts foreach (depth(_) += 1))
 
     def calcConvexSet(defUseChain: DefUseChain): Set[StmtId] = {
-      val forwardReach = reachable(defUseChain.DefPos, defUseChain.UsePos, graph)
-      val backwardReach = reachable(defUseChain.UsePos, defUseChain.DefPos, revGraph)
+      val forwardReach = reachable(defUseChain.defPos, defUseChain.usePos, graph)
+      val backwardReach = reachable(defUseChain.usePos, defUseChain.defPos, revGraph)
       forwardReach intersect backwardReach
     }
 
@@ -141,7 +141,8 @@ object DUChainConstruct {
       val convexSet = calcConvexSet(duChain)
       duChain.convexSet = convexSet
       duChain.functionCalls = (Set() ++ (convexSet map (_._1))) intersect calls
-      duChain.depth = (convexSet map (depth(_))).max
+      duChain.defDepth = depth(duChain.defPos)
+      duChain.useDepth = depth(duChain.usePos)
     })
 
   }
