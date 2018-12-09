@@ -36,7 +36,7 @@ object DUChainConstruct {
       val q = Queue() ++ graph(id)
       val vis = Set[StmtId]() ++ graph(id)
 
-      System.err.println(s"\n\ntrying to find defs for ${defLoc}")
+      //System.err.println(s"\n\ntrying to find defs for ${defLoc}")
 
       while (q.nonEmpty) {
         val h = q.dequeue()
@@ -58,7 +58,7 @@ object DUChainConstruct {
             if (h._2 >= 0) {
               val uses = getStmt(h).get.asInstanceOf[Use].getUse
               PrintCFG.prtStmt(getStmt(h).get)
-              System.err.println(s"trying to find uses ${uses}")
+              //System.err.println(s"trying to find uses ${uses}")
               uses filter (defLoc.field == _.field) foreach (useLoc => {
                 duChains += DefUseChain(id, h, defLoc, useLoc)
               })
@@ -137,7 +137,8 @@ object DUChainConstruct {
       forwardReach intersect backwardReach
     }
 
-    duChains foreach (duChain => {
+    //only those du inside the function are considered.
+    duChains filter (du => graph.keySet.contains(du.defPos)) foreach (duChain => {
       val convexSet = calcConvexSet(duChain)
       duChain.convexSet = convexSet
       duChain.functionCalls = (Set() ++ (convexSet map (_._1))) intersect calls
@@ -157,7 +158,7 @@ object DUChainConstruct {
   def reachable(Def:StmtId, Use:StmtId, graph: Map[StmtId, Set[StmtId]]): Set[StmtId] = {
     val q = mutable.Queue(Def)
     val vis = Set(Def)
-
+    //System.err.println(graph.keySet)
     while (q.nonEmpty) {
       val head = q.dequeue()
       if (head != Use) {
@@ -166,7 +167,7 @@ object DUChainConstruct {
         vis ++= nxt
       }
     }
-
+    //System.err.println("finish")
     vis
   }
 

@@ -44,7 +44,7 @@ case class DefUseChain(defPos:StmtId,
     val Loc = f"defloc:${DefLoc}, useloc:${UseLoc}"
     val calls = if (functionCalls.nonEmpty) functionCalls map (_.toString) reduce (_ + "\n" + _) else ""
     val convex = if (convexSet.nonEmpty) convexSet map (_.toString) reduce (_ + "\n" + _) else ""
-    val dep = defDepth.toString
+    val dep = "defDepth:" + defDepth.toString + ", useDepth:" + useDepth
     sep + "BEGIN\n" + DefUse + Loc + sep +  "CALLS\n"  + calls + sep +
       "CONVEX\n"  + convex + sep +  "DEP\n" + dep + sep +  "END\n"
   }
