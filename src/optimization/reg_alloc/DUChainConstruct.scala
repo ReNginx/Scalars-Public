@@ -13,13 +13,13 @@ import math.max
 
 /**
   * apply this function to a CFGProgram.
-  * would find all DU chains in the program, and store them in duChains.
+  * would find all DU chains in the program, and store them in duChainSet.
   * note that this function does not take function calls into account.
   * and also, this function only find du chains in vaiables, not arrays.
   */
 object DUChainConstruct {
   val cfgs = Set[CFG]()
-  val duChains = Set[DefUseChain]()
+  val duChainSet = Set[DefUseChain]()
 
   def findDuChain(): Unit = {
     val (calls, graph, revGraph) = Labeling(cfgs.toVector)
@@ -46,7 +46,7 @@ object DUChainConstruct {
               call.params foreach ({
                 case useLoc: Location => {
                   if (useLoc.field == defLoc.field) {
-                    duChains += DefUseChain(id, h, defLoc, useLoc)
+                    duChainSet += DefUseChain(id, h, defLoc, useLoc)
                   }
                 }
                 case _ =>
@@ -57,10 +57,10 @@ object DUChainConstruct {
           case block: CFGBlock => {
             if (h._2 >= 0) {
               val uses = getStmt(h).get.asInstanceOf[Use].getUse
-              PrintCFG.prtStmt(getStmt(h).get)
+              // PrintCFG.prtStmt(getStmt(h).get)
               //System.err.println(s"trying to find uses ${uses}")
               uses filter (defLoc.field == _.field) foreach (useLoc => {
-                duChains += DefUseChain(id, h, defLoc, useLoc)
+                duChainSet += DefUseChain(id, h, defLoc, useLoc)
               })
             }
           }
@@ -70,7 +70,7 @@ object DUChainConstruct {
               cond.condition match {
                 case useLoc: Location => {
                   if (useLoc.field == defLoc.field) {
-                    duChains += DefUseChain(id, h, defLoc, useLoc)
+                    duChainSet += DefUseChain(id, h, defLoc, useLoc)
                   }
                 }
                 case _ =>
@@ -103,8 +103,8 @@ object DUChainConstruct {
   }
 
   def testOutput(): Unit = {
-    System.err.println(s"Duchain Count ${duChains.size}")
-    duChains foreach( chain => {
+    System.err.println(s"Duchain Count ${duChainSet.size}")
+    duChainSet foreach( chain => {
 //      System.err.println(s"defPos:${(chain.DefPos,chain.DefLoc.line, chain.DefLoc.col)}, " +
 //        s"usePos:${(chain.UsePos,chain.UseLoc.line, chain.UseLoc.col)}")
       System.err.println(chain.toString)
@@ -138,7 +138,7 @@ object DUChainConstruct {
     }
 
     //only those du inside the function are considered.
-    duChains filter (du => graph.keySet.contains(du.defPos)) foreach (duChain => {
+    duChainSet filter (du => graph.keySet.contains(du.defPos)) foreach (duChain => {
       val convexSet = calcConvexSet(duChain)
       duChain.convexSet = convexSet
       duChain.functionCalls = (Set() ++ (convexSet map (_._1))) intersect calls
@@ -177,7 +177,7 @@ object DUChainConstruct {
 
     cfg match {
       case program: CFGProgram => {
-        duChains.clear()
+        duChainSet.clear()
         program.methods foreach (DUChainConstruct(_))
         cfgs.clear()
       }

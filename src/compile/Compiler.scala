@@ -7,6 +7,7 @@ import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTy
 import ir.components._
 import ir._
 import optimization._
+import optimization.reg_alloc._
 import util.CLI
 
 import scala.Console
@@ -275,6 +276,10 @@ object Compiler {
       PrintCFG.close()
     }
     */
+
+    DUChainConstruct(optCFGFinal)
+    // DUChainConstruct.testOutput()
+    DUWebConstruct(DUChainConstruct.duChainSet)
 
     Allocate(optCFGFinal)
 

@@ -11,17 +11,20 @@ import scala.collection.mutable.Set
   * or params of CFGMethodCall.
   * @param defPos
   * @param usePos
-  * @param DefLoc
-  * @param UseLoc
+  * @param defLoc
+  * @param useLoc
   */
 case class DefUseChain(defPos:StmtId,
                        usePos:StmtId,
-                       DefLoc:Location,
-                       UseLoc:Location) {
+                       defLoc:Location,
+                       useLoc:Location) {
+  assert(defLoc.field.get == useLoc.field.get) // must be the same variable
   var convexSet = Set[StmtId]()
   var functionCalls = Set[CFG]()
   var defDepth = 0
   var useDepth = 0
+
+  def getVarDec() = defLoc.field.get
 
   def getCalls() = functionCalls
 
@@ -41,7 +44,7 @@ case class DefUseChain(defPos:StmtId,
   override def toString: String = {
     val sep = "\n===================================="
     val DefUse = f"defpos:${defPos}, usepos:${usePos}\n"
-    val Loc = f"defloc:${DefLoc}, useloc:${UseLoc}"
+    val Loc = f"defloc:${defLoc}, useloc:${useLoc}"
     val calls = if (functionCalls.nonEmpty) functionCalls map (_.toString) reduce (_ + "\n" + _) else ""
     val convex = if (convexSet.nonEmpty) convexSet map (_.toString) reduce (_ + "\n" + _) else ""
     val dep = "defDepth:" + defDepth.toString + ", useDepth:" + useDepth

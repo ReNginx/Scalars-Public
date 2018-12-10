@@ -1,20 +1,68 @@
 package optimization.reg_alloc
 
 import ir.components._
+import optimization.Labeling.StmtId
 
 import scala.collection.mutable.Set
 
 case class DefUseWeb(
-      var register: Option[Register] = None,
-      var isSpill: Boolean = false
+      varDec: FieldDeclaration,
+      duChainSet: Set[DefUseChain]
     ) {
-  // An instance of DefUseWeb should be identified by its defs and uses, rather by register or isSpill (TODO: Implement new hash)
+
+  val loopSpillMultiplier: Int = 10
+  var convexSet: Option[Set[StmtId]] = None
+
+  // Constructed via WebGraphColoring
+  var register: Option[Register] = None
+  var isSpill: Boolean = false
+
+  // Constructed via DUWebConstruct
+  var interfereSet =  Set[DefUseWeb]()
+
+  // An instance of DefUseWeb should be identified by its defs and uses, rather by register or isSpill
+  override def hashCode: Int = duChainSet.hashCode
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[DefUseWeb] && obj.hashCode == this.hashCode
+  }
+
+  def getVarDec() = varDec
+
+  // convexSet is initialized when getConvex is called for the first time.
+  def getConvex(): Set[StmtId] = {
+    if (convexSet.isDefined) {
+      convexSet.get
+    } else {
+      var workSet = Set[StmtId]()
+      for (du <- duChainSet) {
+        workSet = workSet.union(du.getConvex())
+      }
+      convexSet = Option(workSet)
+      convexSet.get
+    }
+  }
+
   def spillCost(): Int = {
-    0
+    val defSet = Set.empty ++ duChainSet map (du => (du.defPos, du.defDepth))
+    val useSet = Set.empty ++ duChainSet map (du => (du.usePos, du.useDepth))
+
+    (defSet map (d => Math.pow(loopSpillMultiplier, d._2))).sum.toInt +
+      (useSet map (u => Math.pow(loopSpillMultiplier, u._2))).sum.toInt
   }
-  def interfereWith(): Set[DefUseWeb] = {
-    Set[DefUseWeb]()
+
+  def isOverlap(web: DefUseWeb): Boolean = {
+    for (local <- this.duChainSet) {
+      for (remote <- web.duChainSet) {
+        if (local.isOverlap(remote)) {
+          return true
+        }
+      }
+    }
+    false
   }
+
+  def interfereWith() = interfereSet
+
   def degree(): Int = {
     interfereWith.size
   }
