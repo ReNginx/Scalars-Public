@@ -70,7 +70,6 @@ object DUWebConstruct {
   def testOutput(): Unit = {
     for (web <- duWebSet) {
       println(web)
-      println()
     }
   }
 }

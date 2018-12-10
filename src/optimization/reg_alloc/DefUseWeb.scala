@@ -1,6 +1,7 @@
 package optimization.reg_alloc
 
 import ir.components._
+import codegen._
 import optimization.Labeling.StmtId
 
 import scala.collection.mutable.Set
@@ -42,6 +43,14 @@ case class DefUseWeb(
     }
   }
 
+  def getCalls(): Set[CFG] = {
+    var retSet = Set[CFG]()
+    for (chain <- duChainSet) {
+      retSet = retSet.union(chain.getCalls)
+    }
+    retSet
+  }
+
   def spillCost(): Int = {
     val defSet = Set.empty ++ duChainSet map (du => (du.defPos, du.defDepth))
     val useSet = Set.empty ++ duChainSet map (du => (du.usePos, du.useDepth))
@@ -73,7 +82,8 @@ case class DefUseWeb(
     val spillCostStr = "- Spill Cost: " + spillCost + "\n"
     val isSpillStr = "- Spilled?: " + isSpill + "\n"
     val regStr = if (!isSpill) "- Register: " + register.get + "\n" else ""
-    val convexStr = if (getConvex.nonEmpty) "- Convex Hull:\n" + (getConvex map (_.toString) reduce (_ + "\n" + _)) else ""
-    hdrStr + decSrt + spillCostStr + isSpillStr + regStr + convexStr
+    val callsStr = if (getCalls.nonEmpty) "- Method Calls:\n" + (getCalls map (_.toString) reduce (_ + "\n" + _)) + "\n" else ""
+    val convexStr = if (getConvex.nonEmpty) "- Convex Hull:\n" + (getConvex map (_.toString) reduce (_ + "\n" + _)) + "\n" else ""
+    hdrStr + decSrt + spillCostStr + isSpillStr + regStr + callsStr + convexStr
   }
 }
