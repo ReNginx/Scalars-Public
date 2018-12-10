@@ -277,9 +277,17 @@ object Compiler {
     }
     */
 
+    val regVector = Vector[Register](
+      Register("r12"),
+      Register("r13"),
+      Register("r14"),
+      Register("rbx")
+    )
     DUChainConstruct(optCFGFinal)
     // DUChainConstruct.testOutput()
     DUWebConstruct(DUChainConstruct.duChainSet)
+    WebGraphColoring(DUWebConstruct.duWebSet, regVector)
+    DUWebConstruct.testOutput
 
     Allocate(optCFGFinal)
 

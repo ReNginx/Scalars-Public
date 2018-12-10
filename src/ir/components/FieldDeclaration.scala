@@ -68,4 +68,6 @@ case class Register(
   override val isReg: Boolean = true
 
   override def rep = s"%${name}"
+
+  override def toString = rep
 }

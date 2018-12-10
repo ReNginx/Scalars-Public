@@ -66,4 +66,11 @@ object DUWebConstruct {
     genWeb()
     genInterfereSet()
   }
+
+  def testOutput(): Unit = {
+    for (web <- duWebSet) {
+      println(web)
+      println()
+    }
+  }
 }

@@ -66,4 +66,14 @@ case class DefUseWeb(
   def degree(): Int = {
     interfereWith.size
   }
+
+  override def toString: String = {
+    val hdrStr = "DefUseWeb\n"
+    val decSrt = "- Declaration: " + varDec + "\n"
+    val spillCostStr = "- Spill Cost: " + spillCost + "\n"
+    val isSpillStr = "- Spilled?: " + isSpill + "\n"
+    val regStr = if (!isSpill) "- Register: " + register.get + "\n" else ""
+    val convexStr = if (getConvex.nonEmpty) "- Convex Hull:\n" + (getConvex map (_.toString) reduce (_ + "\n" + _)) else ""
+    hdrStr + decSrt + spillCostStr + isSpillStr + regStr + convexStr
+  }
 }
