@@ -72,4 +72,9 @@ object DUWebConstruct {
       System.err.println(web)
     }
   }
+
+  def assignRegs(): Unit = {
+    duWebSet foreach(_.assignRegs())
+  }
+
 }
