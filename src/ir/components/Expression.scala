@@ -46,6 +46,7 @@ case class Location(
 
   var evalLoc: Option[Expression] = None // might be deprecated.
   var blockLoc: Option[Block] = None
+  var reg:Option[Register] = None
 
   override def eval: Option[Expression] = Some(self)
   override def block: Option[Block] = if (!blockLoc.isEmpty) blockLoc else None
@@ -81,7 +82,10 @@ case class Location(
     field.get match {
       case variable: VariableDeclaration => {
         assert(variable.isGlobal || variable.isReg || variable.offset != 0)
-        variable.rep
+        if (reg.isDefined)
+          reg.get.rep
+        else
+          variable.rep
       }
       case ary: ArrayDeclaration => {
         assert(ary.isGlobal || ary.offset != 0)
