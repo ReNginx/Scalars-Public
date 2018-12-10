@@ -1,0 +1,23 @@
+import printf;
+
+/*
+bool test_short_circuit ( bool andy, bool okay ) {
+  if ( okay != true ) {
+    if ( andy != true ) {
+      printf ( "short circuit failed in and\n" );
+    }
+    else {
+      printf ( "short circuit failed in or\n" );
+    }
+  }
+  return true;
+}
+*/
+bool a;
+void main ( ) {
+  a = true;
+  // if ( a != true && test_short_circuit ( true, false ) ) {
+  if ( a != true ) {
+    printf ( "fail 2\n" );
+  }
+}

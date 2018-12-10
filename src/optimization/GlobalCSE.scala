@@ -118,7 +118,7 @@ private object GlobalCSE_GenKill extends GenericOptimization {
 
 object GlobalCSE extends Optimization {
 
-  override def toString(): String = "Global CSE"
+  override def toString(): String = "GlobalCSE"
 
   val globalTmpSuffix = "_cse_global_tmp"
   private val genMap: Map[CFG, Set[Operation]] = Map[CFG, Set[Operation]]()
@@ -142,7 +142,7 @@ object GlobalCSE extends Optimization {
   private def makeExprSet(cfg: CFG): Unit = {
     if (!exprSetDefined) {
       GlobalCSE_ExprSet(cfg, exprSet, var2Expr)
-      println(exprSet)
+      // println(exprSet)
       exprSetDefined = true
     }
   }

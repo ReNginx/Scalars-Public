@@ -27,7 +27,7 @@ object Compiler {
   )
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
-  val optAry: Array[String] = Array[String]("cse", "cp", "dce")
+  val optAry: Array[String] = Array[String]("cse", "cp", "dce", "cf")
 
   def main(args: Array[String]): Unit = {
     CLI.parse(args, optAry)
@@ -178,16 +178,19 @@ object Compiler {
     val str2Opts = Map[String, Map[String, Option[Optimization]]](
       "cse" -> Map[String, Option[Optimization]](
         "local" -> Option(CSE),
-        "global" -> None
-        ),
+        "global" -> Option(GlobalCSE)
+      ),
       "cp" -> Map[String, Option[Optimization]](
         "local" -> Option(CP),
         "global" -> Option(GlobalCP)
-        ),
+      ),
       "dce" -> Map[String, Option[Optimization]](
         "local" -> Option(DCE),
         "global" -> Option(GlobalDCE)
-        )
+      ),
+      "cf" -> Map[String, Option[Optimization]](
+        "local" -> Option(ConstantFolding)
+      )
     )
 
     // parsing failed
@@ -226,13 +229,33 @@ object Compiler {
 
     val optCFG = PeepHole(start, preserveCritical=true).get
 
+    // Run pre-optimizations
+    val preOptPreq = Vector[Optimization]()
+    val preOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cf"), "local")
+    val preOptSeq = Vector[Optimization]()
+
+    val preOptIter = RepeatOptimization(optCFG, Option(preOptPreq), preOptCond, Option(preOptSeq))
+
+    if (debugSwitch) {
+      println("Pre-Optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- preOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- preOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- preOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of pre-optimization iterations before fixed point: ${preOptIter}")
+      println()
+    }
+
+    // Run local optimizations
     val localOptPreq = Vector[Optimization]()
     val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
     val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
 
     val localOptIter = RepeatOptimization(optCFG, Option(localOptPreq), localOptCond, Option(localOptSeq))
 
-    assert(RepeatOptimization(optCFG, None, localOptSeq, None) == 1) // an extra run of DCE should not change anything
+    assert(RepeatOptimization(optCFG, None, localOptSeq, None) == 1) // an extra run of DCE/CF should not change anything
 
     if (debugSwitch) {
       println("Local optimizations:")
@@ -252,6 +275,7 @@ object Compiler {
 
     val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
     
+    // Run global optimizations
     if (debugSwitch) {
       println("Global optimizations:")
       printf("- Prequels:\n  ")
