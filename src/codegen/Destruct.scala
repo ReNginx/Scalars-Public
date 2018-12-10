@@ -122,15 +122,15 @@ object Destruct {
     * * block1.next = cond1
     * * cond1.condtion = lhs.eval
     * * cond1.next = block2
-    * * cond1.ifFalse = block{ assign false to %rdi}
+    * * cond1.ifFalse = block{ assign false to %rsi}
     * * block2.content = desstructrhs
     * * block2.next = cond2
     * * cond2.condition = rhs.eval
-    * * cond2.next = { assign true to %rdi}
-    * * cond2.ifFalse = {assign false to %rdi}
-    * * finally { assign %rdi to expr.eval } before the end node.
+    * * cond2.next = { assign true to %rsi}
+    * * cond2.ifFalse = {assign false to %rsi}
+    * * finally { assign %rsi to expr.eval } before the end node.
     *
-    * so the final result can be found in %rdi
+    * so the final result can be found in %rsi
     *
     * || operator likewise, for other bool operator, it follows the usual start->left->right->self->end convention.
     *
@@ -251,7 +251,7 @@ object Destruct {
 
   /**
     * this function first destruct its condition expression.
-    * and then tests %rdi, and determine which branch to goto.
+    * and then tests %rsi, and determine which branch to goto.
     *
     * @param ifstmt
     * @return
