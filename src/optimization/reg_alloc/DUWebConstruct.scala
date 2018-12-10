@@ -69,7 +69,12 @@ object DUWebConstruct {
 
   def testOutput(): Unit = {
     for (web <- duWebSet) {
-      println(web)
+      System.err.println(web)
     }
   }
+
+  def assignRegs(): Unit = {
+    duWebSet foreach(_.assignRegs())
+  }
+
 }

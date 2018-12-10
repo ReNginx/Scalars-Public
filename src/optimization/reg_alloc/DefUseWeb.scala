@@ -70,6 +70,14 @@ case class DefUseWeb(
     false
   }
 
+  def assignRegs(): Unit = {
+    if (register.isEmpty) return
+    duChainSet foreach(duc => {
+      duc.defLoc.reg = register
+      duc.useLoc.reg = register
+    })
+  }
+
   def interfereWith() = interfereSet
 
   def degree(): Int = {

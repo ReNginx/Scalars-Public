@@ -307,13 +307,13 @@ object Compiler {
       Register("r14"),
       Register("rbx")
     )
-    /*
+
     DUChainConstruct(optCFGFinal)
     // DUChainConstruct.testOutput()
     DUWebConstruct(DUChainConstruct.duChainSet)
     WebGraphColoring(DUWebConstruct.duWebSet, regVector)
     DUWebConstruct.testOutput
-    */
+    DUWebConstruct.assignRegs
 
     Allocate(optCFGFinal)
 
