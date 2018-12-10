@@ -41,10 +41,18 @@ object TranslateCFG {
   //params stores locations
   private def paramCopy(params: ArrayBuffer[Expression]): Int = { // could either be a literal or a location
     val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
-    for ((param, reg) <- params zip regs) { // first six go to regs
+    for (param <- params) {
       param match {
         case loc: Location => {
           outputVec(loc.indexCheck)
+        }
+        case _ =>
+      }
+    }
+
+    for ((param, reg) <- params zip regs) { // first six go to regs
+      param match {
+        case loc: Location => {
           val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
           outputVec(repVec)
           outputVec(Helper.outputMov(repStr, reg))
@@ -68,7 +76,7 @@ object TranslateCFG {
       val param = params(i)
       param match {
         case loc: Location => {
-          outputVec(loc.indexCheck)
+          //outputVec(loc.indexCheck)
           val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
           outputVec(repVec)
           output(s"\tmovq ${repStr}, %rax")
