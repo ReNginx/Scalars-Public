@@ -247,7 +247,7 @@ object Compiler {
     }
 
     val globalOptPreq = Vector[Optimization]()
-    val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp", "dce"), "global")
+    val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse, cp", "dce"), "global")
     val globalOptSeq = Vector[Optimization]()
 
     val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
