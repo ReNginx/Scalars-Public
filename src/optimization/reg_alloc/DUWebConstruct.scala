@@ -1,11 +1,11 @@
 package optimization.reg_alloc
 
 import ir.components._
-import scala.collection.mutable.{Map, Set}
+import scala.collection.mutable.{Map, Set, ArrayBuffer}
 
 object DUWebConstruct {
   val duWebSet = Set[DefUseWeb]()
-  val webCandMap = Map[FieldDeclaration, Set[Set[DefUseChain]]]()
+  val webCandMap = Map[FieldDeclaration, ArrayBuffer[Set[DefUseChain]]]()
 
   /**
    * Add chain to an existing Set in webCandSet.
@@ -28,14 +28,14 @@ object DUWebConstruct {
       }
       webCandMap(chain.getVarDec) += Set[DefUseChain](chain)
     } else {
-      webCandMap += (chain.getVarDec -> Set[Set[DefUseChain]](Set[DefUseChain](chain)))
+      webCandMap += (chain.getVarDec -> ArrayBuffer[Set[DefUseChain]](Set[DefUseChain](chain)))
     }
   }
 
   private def genWeb(): Unit = {
     for (dec <- webCandMap.keys) {
-      for (set <- webCandMap(dec)) {
-        duWebSet += DefUseWeb(dec, set)
+      for (i <- 0 to webCandMap(dec).length - 1) {
+        duWebSet += DefUseWeb(dec, webCandMap(dec)(i), i)
       }
     }
   }

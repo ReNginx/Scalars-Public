@@ -8,7 +8,8 @@ import scala.collection.mutable.Set
 
 case class DefUseWeb(
       varDec: FieldDeclaration,
-      duChainSet: Set[DefUseChain]
+      duChainSet: Set[DefUseChain],
+      sig: Int
     ) {
 
   val loopSpillMultiplier: Int = 10
@@ -22,12 +23,14 @@ case class DefUseWeb(
   var interfereSet =  Set[DefUseWeb]()
 
   // An instance of DefUseWeb should be identified by its defs and uses, rather by register or isSpill
-  override def hashCode: Int = duChainSet.hashCode
+  override def hashCode: Int = varDec.hashCode + duChainSet.hashCode + sig.hashCode
   override def equals(obj: Any): Boolean = {
     obj.isInstanceOf[DefUseWeb] && obj.hashCode == this.hashCode
   }
 
   def getVarDec() = varDec
+
+  def getSignature(): String = getVarDec.toString + " - " + sig.toString
 
   // convexSet is initialized when getConvex is called for the first time.
   def getConvex(): Set[StmtId] = {
@@ -85,13 +88,14 @@ case class DefUseWeb(
   }
 
   override def toString: String = {
-    val hdrStr = "DefUseWeb\n"
+    val hdrStr = "DefUseWeb: " + getSignature + "\n"
     val decSrt = "- Declaration: " + varDec + "\n"
     val spillCostStr = "- Spill Cost: " + spillCost + "\n"
     val isSpillStr = "- Spilled?: " + isSpill + "\n"
     val regStr = if (!isSpill) "- Register: " + register.get + "\n" else ""
     val callsStr = if (getCalls.nonEmpty) "- Method Calls:\n" + (getCalls map (_.toString) reduce (_ + "\n" + _)) + "\n" else ""
     val convexStr = if (getConvex.nonEmpty) "- Convex Hull:\n" + (getConvex map (_.toString) reduce (_ + "\n" + _)) + "\n" else ""
-    hdrStr + decSrt + spillCostStr + isSpillStr + regStr + callsStr + convexStr
+    val confStr = if (interfereWith.nonEmpty) "- Interferes With:\n" + (interfereWith map (_.getSignature) reduce (_ + "\n" + _)) + "\n" else ""
+    hdrStr + decSrt + spillCostStr + isSpillStr + regStr + callsStr + convexStr + confStr
   }
 }
