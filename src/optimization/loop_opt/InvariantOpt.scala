@@ -156,6 +156,7 @@ object InvariantOpt extends Optimization {
 
   def judgeMov(invariant: Vector[StmtId],
                loop: LoopEntity[StmtId]): Vector[StmtId] = {
+    val ret = Set[StmtId]()
     (invariant
       filter (invar => {
       //System.err.println(s"loops exits are ${loop.exits}")
@@ -231,20 +232,22 @@ object InvariantOpt extends Optimization {
         }
       })
     })
-      filter (invar => {
+      foreach (invar => {
      //System.err.println(s"third level ${invar}")
       lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def].getLoc.field
-      loop.stmts forall (pos => {
+      val test = loop.stmts forall (pos => {
         val use = useHelper(pos) filter (loc => {
           loc.field == invarLoc
         })
         if (use.nonEmpty) {
           val reaching = reachingDef(use.head, pos)
-          reaching.size == 1 && reaching.contains(invar)
+          reaching.size == 1 && reaching.contains(invar) && ret.contains(reaching.head)
         }
         else true
       })
+      if (test) ret += invar
     }))
+    ret.toVector
   }
 
   def apply(cfg: CFG, isInit: Boolean = true): Unit = {
