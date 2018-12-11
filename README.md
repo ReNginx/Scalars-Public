@@ -1,6 +1,6 @@
 # Scalars Decaf Compiler
 
-Nov. 28, 2018 23:10 PM
+Dec. 11, 2018 06:30 AM
 
 ## Scanner
 
@@ -24,7 +24,6 @@ Nov. 28, 2018 23:10 PM
 
 ## Dataflow Analysis
 
-- Implemented: local CSE. local CP, local DCE, global CSE, global CP, global DCE (see Optimization section)
 - 100% pass on public tests
 - 100% pass on private tests
 
@@ -32,16 +31,18 @@ Nov. 28, 2018 23:10 PM
 
 ### Current Progress
 
-|              Name              | Implemented | Tested | Array Support  | RepeatOptimization Support |
-| :----------------------------: | :---------: | :----: | :------------: | :------------------------: |
-|           Local CSE            |     Yes     |  Yes   |      Yes       |            Yes             |
-|            Local CP            |     Yes     |  Yes   | Not Applicable |            Yes             |
-|           Local DCE            |     Yes     |  Yes   | Not Applicable |            Yes             |
-|           Global CSE           |     Yes     |  Yes   |      Yes       |            Yes             |
-|           Global CP            |     Yes     |  Yes   |      Yes       |            Yes             |
-|           Global DCE           |     Yes     |  Yes   | Not Applicable |            Yes             |
-|        Constant Folding        |     Yes     |  Yes   | Not Applicable |            Yes             |
-|       Invariant Hoisting       |     Yes     |  Yes   | Not Applicable |            Yes             |
-| Induction Variable Elimination |     WIP     |        |                |                            |
-|      Register Allocation       |     WIP     |        |                |                            |
+|        Name         | Implemented | Tested | Array Support  | RepeatOptimization Support |
+| :-----------------: | :---------: | :----: | :------------: | :------------------------: |
+|      Local CSE      |     Yes     |  Yes   |      Yes       |            Yes             |
+|      Local CP       |     Yes     |  Yes   | Not Applicable |            Yes             |
+|      Local DCE      |     Yes     |  Yes   | Not Applicable |            Yes             |
+|     Global CSE      |     Yes     |  Yes   |      Yes       |            Yes             |
+|      Global CP      |     Yes     |  Yes   |      Yes       |            Yes             |
+|     Global DCE      |     Yes     |  Yes   | Not Applicable |            Yes             |
+|  Constant Folding   |     Yes     |  Yes   | Not Applicable |            Yes             |
+| Invariant Hoisting  |     Yes     |  Yes   |       No       |            Yes             |
+| Register Allocation |     Yes     |  Yes   |       No       |            Yes             |
+
+- 100% pass on optimizer tests
+- 100% pass on derby tests
 
