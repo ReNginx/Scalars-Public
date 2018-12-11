@@ -1,0 +1,75 @@
+        .bss
+        .text
+        .globl read_int
+        read_int:
+            enter $0, $0
+        _3_r0_c0_Block_Init:
+            movq $1, %rax
+            leave
+            ret
+        _2_r3_c5_Method_ed:
+            jmp noReturn
+        .globl main
+        main:
+            enter $-24, $0
+        _6_r0_c0_Block_Init:
+        _9_r9_c9_call_call:
+            xor %rax, %rax
+            call read_int
+            addq $0, %rsp
+        _9_r9_c9_call_block:
+            movq %rax, -8(%rbp)
+        _12_r10_c9_call_call:
+            xor %rax, %rax
+            call read_int
+            addq $0, %rsp
+        _12_r10_c9_call_block:
+            movq %rax, -16(%rbp)
+            movq -8(%rbp), %rdx
+            movq -16(%rbp), %rsi
+            xor %rax, %rax
+            cmpq %rsi, %rdx
+            setg %al
+            movzbl %al, %eax
+            movq %rax, -24(%rbp)
+        _13_r11_c5_If_cond:
+            movq -24(%rbp), %rax
+            test %rax, %rax
+            je _25_r0_c0_Block_Init
+        _18_r0_c0_Block_Init:
+        _23_r12_c17_call_call:
+            xor %rax, %rax
+            call read_int
+            addq $0, %rsp
+        _23_r12_c17_call_block:
+            jmp _32_r17_c5_call_call
+        _25_r0_c0_Block_Init:
+        _30_r15_c17_call_call:
+            xor %rax, %rax
+            call read_int
+            addq $0, %rsp
+        _30_r15_c17_call_block:
+            jmp _32_r17_c5_call_call
+        _32_r17_c5_call_call:
+            movq $str_r17_c12, %rdi
+            movq -8(%rbp), %rsi
+            xor %rax, %rax
+            call printf
+            addq $0, %rsp
+        _32_r17_c5_call_block:
+        _5_r7_c6_Method_ed:
+            movq $0, %rax
+            leave
+            ret
+        .globl noReturn
+        noReturn:
+            movq $-2, %rdi
+            call exit
+        .globl outOfBound
+        outOfBound:
+            movq $-1, %rdi
+            call exit
+        .section .rodata
+            str_r17_c12:
+                .string "%d\n"
+

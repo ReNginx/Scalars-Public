@@ -1,0 +1,41 @@
+\documentclass[letterpaper, 11pt]{article}
+\usepackage{geometry}
+\geometry{letterpaper, portrait, margin=1.2in}
+
+\makeatletter
+
+\usepackage{fullpage}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+\setcounter{secnumdepth}{4}
+
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\lstset{
+    frameround=fttt,
+    language=scala,
+    numbers=left,
+    breaklines=true,
+    keywordstyle=\color{black}\bfseries, 
+    basicstyle=\ttfamily\color{black},
+    numberstyle=\color{black}
+}
+\lstMakeShortInline|
+
+\newcommand{\docinitiated}{\@date}
+\newcommand{\doctitle}{\@title}
+\newcommand{\docauthors}{\@author}
