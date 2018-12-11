@@ -1,0 +1,13 @@
+import printf;
+
+void foo(int b) {
+  int x;
+  for (x = 0; x < 10; x++) {
+    printf("%d\n", b);
+    b = 10;
+  }
+}
+void main() {
+  int b;
+  foo(b);
+}

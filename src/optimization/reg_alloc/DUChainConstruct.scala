@@ -163,11 +163,11 @@ object DUChainConstruct {
     //System.err.println(graph.keySet)
     while (q.nonEmpty) {
       val head = q.dequeue()
-      if (head != Use) {
+      //if (head != Use) {
         val nxt = graph(head) diff vis
         q ++= nxt
         vis ++= nxt
-      }
+      //}
     }
     //System.err.println("finish")
     vis
