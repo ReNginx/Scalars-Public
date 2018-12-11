@@ -165,8 +165,8 @@ object GlobalDCE extends Optimization {
               newStmt += block.statements(i)
             } else {
               setChanged // statement is removed
-              PrintCFG.prtStmt(block.statements(i))
-              PrettyPrint(block.statements(i), 0)
+              // PrintCFG.prtStmt(block.statements(i))
+              // PrettyPrint(block.statements(i), 0)
             }
           }
 
