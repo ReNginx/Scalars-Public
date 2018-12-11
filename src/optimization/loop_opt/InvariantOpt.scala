@@ -18,12 +18,13 @@ import optimization.Labeling.getStmt
   */
 
 object InvariantOpt extends Optimization {
+
+  override def toString(): String = "LoopInvariant"
+
   var graph = Map[StmtId, Set[StmtId]]()
   var revGraph = Map[StmtId, Set[StmtId]]()
   var dom = Map[StmtId, Set[StmtId]]()
   var cnt = 0
-
-
 
   def findInvariant(loop: LoopEntity[StmtId]): Vector[StmtId] = {
     val invariant = ArrayBuffer[StmtId]()
@@ -274,7 +275,6 @@ object InvariantOpt extends Optimization {
         val movable = judgeMov(invariant, loop)
        //System.err.println(s"find movable ")
         // movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
-        setChanged()
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
       }) filter (pair => {
         pair._2.size > 0
@@ -342,6 +342,7 @@ object InvariantOpt extends Optimization {
         toRemove(invar._1) += -invar._2 // note here uses negative number
       })
     })
+    if (toRemove.nonEmpty) setChanged
     toRemove foreach (x => {
       x._2 foreach (idx => x._1.asInstanceOf[CFGBlock].statements.remove(-idx)) // note here also uses nagative
     })
