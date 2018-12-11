@@ -465,6 +465,7 @@ object GlobalCP extends Optimization {
       // we collect all blocks of a function.
       case method: CFGMethod => {
         if (method.block.isDefined) {
+          cfgs foreach (cfg => cfg.resetOptimized(GlobalCP))
           gen.clear
           kill.clear
           cfgs.clear
