@@ -82,7 +82,7 @@ case class Location(
     field.get match {
       case variable: VariableDeclaration => {
         assert(variable.isGlobal || variable.isReg || variable.offset != 0)
-        System.err.println(f"line:${line},col:${col},name:${name},reg:${reg},")
+        //System.err.println(f"line:${line},col:${col},name:${name},reg:${reg},")
         if (reg.isDefined)
           reg.get.rep
         else

@@ -111,13 +111,14 @@ object DUWebConstruct {
   def assignRegs(): Unit = {
     duWebSet foreach(_.assignRegs())
     duWebSet foreach(duw => {
-      if (duw.register.isEmpty) return
-      duw.getCalls foreach (call => {
-        if (!regSaveAtCall.contains(call)) {
-          regSaveAtCall(call) = Set()
-        }
-        regSaveAtCall(call) += duw.register.get
-      })
+      if (duw.register.nonEmpty) {
+        duw.getCalls foreach (call => {
+          if (!regSaveAtCall.contains(call)) {
+            regSaveAtCall(call) = Set()
+          }
+          regSaveAtCall(call) += duw.register.get
+        })
+      }
     })
   }
 }
