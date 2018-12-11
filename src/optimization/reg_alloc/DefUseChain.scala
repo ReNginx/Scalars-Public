@@ -34,10 +34,6 @@ case class DefUseChain(defPos:StmtId,
 
   def isOverlap(defUseChain: DefUseChain): Boolean = {
     val overlapSet = convexSet intersect defUseChain.getConvex()
-    if (overlapSet.nonEmpty) {
-      println(defLoc)
-      println(overlapSet)
-    }
     val defAndUse = Set(defPos, usePos, defUseChain.defPos, defUseChain.usePos)
     if ((overlapSet intersect defAndUse).nonEmpty) return true
     if (defPos == defUseChain.usePos) return true

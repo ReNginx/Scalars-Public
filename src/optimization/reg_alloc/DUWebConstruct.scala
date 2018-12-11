@@ -2,6 +2,7 @@ package optimization.reg_alloc
 
 import ir.components._
 import scala.collection.mutable.{Map, Set, ArrayBuffer}
+import scala.util.control.Breaks._
 
 object DUWebConstruct {
   val duWebSet = Set[DefUseWeb]()
@@ -32,6 +33,31 @@ object DUWebConstruct {
     }
   }
 
+  private def consolidate(): Unit = {
+    for (dec <- webCandMap.keys) {
+      val newBuffer = ArrayBuffer[Set[DefUseChain]]()
+      var isChanged: Boolean = true
+      while (isChanged) {
+        isChanged = false
+        newBuffer.clear
+        for (web <- webCandMap(dec)) { // web is Set[DefUseChain]
+          breakable {
+            for (comp <- newBuffer) {
+              if (isSetSetOverlap(web, comp)) { // if can be merged into comp
+                comp ++= web
+                isChanged = true
+                break
+              }
+            }
+            newBuffer += web
+          }
+        }
+        webCandMap(dec).clear
+        webCandMap(dec) ++= newBuffer
+      }
+    }
+  }
+
   private def genWeb(): Unit = {
     for (dec <- webCandMap.keys) {
       for (i <- 0 to webCandMap(dec).length - 1) {
@@ -59,10 +85,18 @@ object DUWebConstruct {
     false
   }
 
+  private def isSetSetOverlap(set1: Set[DefUseChain], set2: Set[DefUseChain]): Boolean = {
+    for (c <- set1) {
+      if (isSetChainOverlap(set2, c)) { return true }
+    }
+    false
+  }
+
   def apply(duChainSet: Set[DefUseChain]): Unit = {
     for (chain <- duChainSet) {
       addChain2Web(chain)
     }
+    consolidate()
     genWeb()
     genInterfereSet()
   }
