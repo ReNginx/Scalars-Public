@@ -73,11 +73,87 @@ case class DefUseWeb(
     false
   }
 
+  def getUseLst(ir: IR): Vector[Location] = {
+    def getIndexUse1(location: Location): Vector[Location] = {
+      if (location.index.isDefined)
+        getUseLst(location.index.get)
+      else
+        Vector()
+    }
+
+    ir match {
+      case loc: Location => {
+        Vector(loc) ++ getIndexUse1(loc)
+      }
+
+      case asgStmt: AssignmentStatements => {
+        getIndexUse1(asgStmt.loc) ++ getUseLst(asgStmt.value)
+      }
+
+      case inc: Increment => {
+        getIndexUse1(inc.loc)
+      }
+
+      case dec: Decrement => {
+        getIndexUse1(dec.loc)
+      }
+
+      case unary: UnaryOperation => {
+        getIndexUse1(unary.eval.get) ++ getUseLst(unary.expression)
+      }
+
+      case bin: BinaryOperation => {
+        getIndexUse1(bin.eval.get) ++ getUseLst(bin.lhs) ++ getUseLst(bin.rhs)
+      }
+
+      case ret: Return => {
+        if (ret.value.isDefined)
+          getUseLst(ret.value.get)
+        else
+          Vector()
+      }
+
+      case _ => Vector()
+    }
+  }
+
   def assignRegs(): Unit = {
-    if (register.isEmpty) return
+    if (register.isEmpty || varDec.isGlobal) return
     duChainSet foreach(duc => {
       duc.defLoc.reg = register
       duc.useLoc.reg = register
+      duc.usePos._1 match {
+        case block: CFGBlock => {
+          val lst = getUseLst(block.statements(duc.usePos._2))
+          lst foreach(use => {
+              if (use == duc.useLoc) {
+                use.reg = register
+              }
+          })
+        }
+
+        case call: CFGMethodCall => {
+          call.params foreach (param => {
+            val lst = getUseLst(param)
+            lst foreach(use => {
+                if (use == duc.useLoc) {
+                  use.reg = register
+                }
+            })
+          })
+        }
+
+        case cond: CFGConditional => {
+            val lst = getUseLst(cond.condition)
+            lst foreach(use => {
+                if (use == duc.useLoc) {
+                  use.reg = register
+                }
+            })
+        }
+
+        case _ =>
+      }
     })
   }
 

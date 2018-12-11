@@ -3,11 +3,12 @@ package optimization.reg_alloc
 import ir.components._
 import scala.collection.mutable.{Map, Set, ArrayBuffer}
 import scala.util.control.Breaks._
+import codegen._
 
 object DUWebConstruct {
   val duWebSet = Set[DefUseWeb]()
   val webCandMap = Map[FieldDeclaration, ArrayBuffer[Set[DefUseChain]]]()
-
+  val regSaveAtCall = Map[CFG, Set[Register]]()
   /**
    * Add chain to an existing Set in webCandSet.
    * If no suitable Set is found, create a new Set
@@ -109,6 +110,14 @@ object DUWebConstruct {
 
   def assignRegs(): Unit = {
     duWebSet foreach(_.assignRegs())
+    duWebSet foreach(duw => {
+      if (duw.register.isEmpty) return
+      duw.getCalls foreach (call => {
+        if (!regSaveAtCall.contains(call)) {
+          regSaveAtCall(call) = Set()
+        }
+        regSaveAtCall(call) += duw.register.get
+      })
+    })
   }
-
 }

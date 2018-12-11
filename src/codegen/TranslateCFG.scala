@@ -5,6 +5,7 @@ import scala.collection.immutable.Map
 import ir.components._
 import ir.PrettyPrint
 import java.io._
+import optimization.reg_alloc.DUWebConstruct
 
 
 object TranslateCFG {
@@ -166,13 +167,21 @@ object TranslateCFG {
 
       case CFGMethodCall(label, params, declaration, next, _) => {
         output(label + ":")
+        val call = cfg.asInstanceOf[CFGMethodCall]
+        if (DUWebConstruct.regSaveAtCall.contains(call)) {
+          val regs = DUWebConstruct.regSaveAtCall(call)
+          regs.toVector foreach (reg => output(s"\t push ${reg.rep}"))
+        }
         val sizePushedToStack = paramCopy(params)
         //we call this function
         output(s"\txor %rax, %rax")
         output(s"\tcall ${declaration}")
         // destroy used params
         output(s"\taddq $$${sizePushedToStack}, %rsp")
-
+        if (DUWebConstruct.regSaveAtCall.contains(call)) {
+          val regs = DUWebConstruct.regSaveAtCall(call)
+          regs.toVector.reverse foreach (reg => output(s"\t pop ${reg.rep}"))
+        }
         if (next.isDefined)
           TranslateCFG(next.get, fileName, debug, untilBlock)
         // for now we don't restore regs, rather we copy them to stack at beginning of a method..

@@ -45,9 +45,11 @@ object DUChainConstruct {
             if (h._2 == -1) {
               call.params foreach ({
                 case useLoc: Location => {
-                  if (useLoc.field == defLoc.field) {
-                    duChainSet += DefUseChain(id, h, defLoc, useLoc)
-                  }
+                  useLoc.getUse foreach (loc => {
+                    if (loc.field == defLoc.field) {
+                      duChainSet += DefUseChain(id, h, defLoc, loc)
+                    }
+                  })
                 }
                 case _ =>
               })
