@@ -23,6 +23,7 @@ object GlobalDCE extends Optimization {
   val unused = Set[(CFGBlock, Int)]()
   var globalVars = Vector[FieldDeclaration]()
   val dumbDecl = VariableDeclaration(0,0,"__dumb__",None)
+  val vis = Set[CFG]()
 
   private def addHelper(iter: Growable[Place], cfg: CFG): (Expression, Int) => Unit = {
     def addExpr(expr: Expression, pos: Int): Unit = {
@@ -179,16 +180,17 @@ object GlobalDCE extends Optimization {
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (isInit) { init() }
-    if (cfg.isOptimized(GlobalDCE)) {
+    if (vis.contains(cfg)) {
       return
     }
-    cfg.setOptimized(GlobalDCE)
+    vis += cfg
     cfgs += cfg
 
     cfg match {
       case program: CFGProgram => {
         globalVars = program.fields
         program.methods foreach (GlobalDCE(_, isInit = false))
+        vis.clear
       }
 
       // we collect all blocks of a function.

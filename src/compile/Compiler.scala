@@ -278,7 +278,7 @@ object Compiler {
     val globalOptSeq = Vector[Optimization]()
 
     val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
-    
+
     // Run global optimizations
     if (debugSwitch) {
       println("Global optimizations:")
@@ -334,27 +334,32 @@ object Compiler {
       println()
     }
 
-    /*
-    if (debugSwitch) {
-      PrintCFG.init()
-      PrintCFG(optCFGFinal)
-      PrintCFG.close()
-    }
-    */
+    // if (debugSwitch) {
+    //   PrintCFG.init()
+    //   PrintCFG(optCFGFinal)
+    //   PrintCFG.close()
+    // }
+
+    PeepHole(optCFGFinal, preserveCritical=false).get
 
     val regVector = Vector[Register](
+      Register("rbx"),
       Register("r12"),
       Register("r13"),
       Register("r14"),
-      Register("rbx")
+      Register("r15")
+      // Register("r8"),
+      // Register("r9"),
+      // Register("rdi"),
+      // Register("rcx")
     )
 
     DUChainConstruct(optCFGFinal)
-    // DUChainConstruct.testOutput()
+    //DUChainConstruct.testOutput()
     DUWebConstruct(DUChainConstruct.duChainSet)
     WebGraphColoring(DUWebConstruct.duWebSet, regVector)
-    // DUWebConstruct.testOutput
-    // DUWebConstruct.assignRegs
+    //DUWebConstruct.testOutput
+    DUWebConstruct.assignRegs
 
     Allocate(optCFGFinal)
 
