@@ -28,7 +28,7 @@ object Compiler {
   )
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
-  val optAry: Array[String] = Array[String]("cse", "cp", "dce", "cf", "li")
+  val optAry: Array[String] = Array[String]("cse", "cp", "dce", "cf", "li", "regalloc")
 
   def main(args: Array[String]): Unit = {
     CLI.parse(args, optAry)
@@ -342,35 +342,27 @@ object Compiler {
 
     PeepHole(optCFGFinal, preserveCritical=false).get
 
-    val regVector = Vector[Register](
-      Register("rbx"),
-      Register("r12"),
-      Register("r13"),
-      Register("r14"),
-      Register("r15")
-      // Register("r8"),
-      // Register("r9"),
-      // Register("rdi"),
-      // Register("rcx")
-    )
-
-    DUChainConstruct(optCFGFinal)
-    //DUChainConstruct.testOutput()
-    DUWebConstruct(DUChainConstruct.duChainSet)
-    WebGraphColoring(DUWebConstruct.duWebSet, regVector)
-    //DUWebConstruct.testOutput
-    DUWebConstruct.assignRegs
+    if (optFlagMap("regalloc")) {
+      val regVector = Vector[Register](
+        Register("rbx"),
+        Register("r12"),
+        Register("r13"),
+        Register("r14"),
+        Register("r15")
+        // Register("r8"),
+        // Register("r9"),
+        // Register("rdi"),
+        // Register("rcx")
+      )
+      DUChainConstruct(optCFGFinal)
+      //DUChainConstruct.testOutput()
+      DUWebConstruct(DUChainConstruct.duChainSet)
+      WebGraphColoring(DUWebConstruct.duWebSet, regVector)
+      //DUWebConstruct.testOutput
+      DUWebConstruct.assignRegs
+    }
 
     Allocate(optCFGFinal)
-
-    // Deprecated
-    /*
-    if (debugSwitch) {
-      println("Low-level IR tree after destruct, peephole and allocate:")
-      PrettyPrint(irModified, 2)
-      println()
-    }
-    */
 
     if (debugSwitch) {
       println("x86-64 assembly:")
