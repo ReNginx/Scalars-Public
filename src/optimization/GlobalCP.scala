@@ -469,6 +469,7 @@ object GlobalCP extends Optimization {
           kill.clear
           cfgs.clear
           GlobalCP(method.block.get, false)
+          JudgeSubstitution.method = Option(method)
           copyProp
         }
       }
