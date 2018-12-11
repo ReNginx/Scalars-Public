@@ -1,0 +1,18 @@
+import printf;
+
+int read_int() {
+    return 1;
+}
+
+void main() {
+    int a, b, c, d;
+    a = read_int();
+    b = read_int();
+    if (a > b) {
+        c = a + read_int();
+    }
+    else {
+        d = a + read_int();
+    }
+    printf("%d\n", a);
+}

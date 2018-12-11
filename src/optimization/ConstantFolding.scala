@@ -5,15 +5,14 @@ import ir.components._
 
 object ConstantFolding extends Optimization {
 
- def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+  override def toString(): String = "ConstantFolding"
+
+  def apply(cfg: CFG, isInit: Boolean=true): Unit = {
+   if (isInit) { init }
    if (cfg.isOptimized(ConstantFolding)) {
      return
    }
-   if (isInit) {
-     init()
-   }
    cfg.setOptimized(ConstantFolding)
-
 
    cfg match {
      case program: CFGProgram => {
@@ -23,7 +22,7 @@ object ConstantFolding extends Optimization {
      // we collect all blocks of a function.
      case method: CFGMethod => {
        if (method.block.isDefined) {
-         ConstantFolding(method.block.get, isInit=false)
+         ConstantFolding(method.block.get, isInit = false)
        }
      }
 

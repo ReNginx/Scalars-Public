@@ -59,6 +59,7 @@ object WorkList {
     val list = Set[CFG]()
     val allCfgs = Set[CFG]()
 
+    assert(optGen.keySet == optKill.keySet)
     for ((node, value) <- optGen) {
       optOut(node) = initialization.clone
       list += node

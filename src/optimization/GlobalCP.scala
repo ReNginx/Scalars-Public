@@ -20,6 +20,7 @@ object GlobalCP extends Optimization {
   val gen = Map[CFG, Set[DefId]]()
   val kill = Map[CFG, Set[DefId]]()
   val cfgs = ArrayBuffer[CFG]()
+  val vis = Set[CFG]()
   val aryBlacklist = Set[ArrayDeclaration]()
 
   override def init(): Unit = {
@@ -28,6 +29,7 @@ object GlobalCP extends Optimization {
     kill.clear
     cfgs.clear
     aryBlacklist.clear
+    vis.clear
   }
 
   private def aryBlacklistAdd(loc: Location): Unit = {
@@ -280,7 +282,7 @@ object GlobalCP extends Optimization {
               stmt: IR,
               id: DefId): IR = {
     var replacedStmt = stmt
-    
+
     // replace compound statements with operations
     replacedStmt match {
       case casgStmt: CompoundAssignStatement => {
@@ -451,10 +453,10 @@ object GlobalCP extends Optimization {
 
   def apply(cfg: CFG, isInit: Boolean=true): Unit = {
     if (isInit) { init }
-    if (cfg.isOptimized(GlobalCP)) {
+    if (vis.contains(cfg)) {
       return
     }
-    cfg.setOptimized(GlobalCP)
+    vis += cfg
     cfgs += cfg
 
     cfg match {
@@ -469,6 +471,7 @@ object GlobalCP extends Optimization {
           kill.clear
           cfgs.clear
           GlobalCP(method.block.get, false)
+          JudgeSubstitution.method = Option(method)
           copyProp
         }
       }

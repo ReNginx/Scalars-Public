@@ -46,6 +46,7 @@ case class Location(
 
   var evalLoc: Option[Expression] = None // might be deprecated.
   var blockLoc: Option[Block] = None
+  var reg:Option[Register] = None
 
   override def eval: Option[Expression] = Some(self)
   override def block: Option[Block] = if (!blockLoc.isEmpty) blockLoc else None
@@ -81,7 +82,11 @@ case class Location(
     field.get match {
       case variable: VariableDeclaration => {
         assert(variable.isGlobal || variable.isReg || variable.offset != 0)
-        variable.rep
+        //System.err.println(f"line:${line},col:${col},name:${name},reg:${reg},")
+        if (reg.isDefined)
+          reg.get.rep
+        else
+          variable.rep
       }
       case ary: ArrayDeclaration => {
         assert(ary.isGlobal || ary.offset != 0)
@@ -145,11 +150,11 @@ case class Location(
         val res: ArrayBuffer[String] = ArrayBuffer()
         res += s"\t${commentPrefix}_indexCheck_${array.name}_r${array.line}_c${array.col}_start:"
         res += s"\t\tmovq ${index.get.rep}, %rax"
-        res += s"\t\tmovq $$0, %r15"
-        res += s"\t\tcmpq %r15, %rax"
+        res += s"\t\tmovq $$0, %rsi"
+        res += s"\t\tcmpq %rsi, %rax"
         res += s"\t\tjl outOfBound"
-        res += s"\t\tmovq $$${array.length.value}, %r15"
-        res += s"\t\tcmpq %r15, %rax"
+        res += s"\t\tmovq $$${array.length.value}, %rsi"
+        res += s"\t\tcmpq %rsi, %rax"
         res += s"\t\tjge outOfBound"
         res += s"\t${commentPrefix}_indexCheck_${array.name}_r${array.line}_c${array.col}_finish:"
         res.toVector

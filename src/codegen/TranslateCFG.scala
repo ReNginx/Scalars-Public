@@ -5,6 +5,7 @@ import scala.collection.immutable.Map
 import ir.components._
 import ir.PrettyPrint
 import java.io._
+import optimization.reg_alloc.DUWebConstruct
 
 
 object TranslateCFG {
@@ -41,10 +42,18 @@ object TranslateCFG {
   //params stores locations
   private def paramCopy(params: ArrayBuffer[Expression]): Int = { // could either be a literal or a location
     val regs = Vector("%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9")
-    for ((param, reg) <- params zip regs) { // first six go to regs
+    for (param <- params) {
       param match {
         case loc: Location => {
           outputVec(loc.indexCheck)
+        }
+        case _ =>
+      }
+    }
+
+    for ((param, reg) <- params zip regs) { // first six go to regs
+      param match {
+        case loc: Location => {
           val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
           outputVec(repVec)
           outputVec(Helper.outputMov(repStr, reg))
@@ -68,7 +77,7 @@ object TranslateCFG {
       val param = params(i)
       param match {
         case loc: Location => {
-          outputVec(loc.indexCheck)
+          //outputVec(loc.indexCheck)
           val (repVec: Vector[String], repStr: String) = loc.getRep(aryIdxReg1)
           outputVec(repVec)
           output(s"\tmovq ${repStr}, %rax")
@@ -158,13 +167,21 @@ object TranslateCFG {
 
       case CFGMethodCall(label, params, declaration, next, _) => {
         output(label + ":")
+        val call = cfg.asInstanceOf[CFGMethodCall]
+        if (DUWebConstruct.regSaveAtCall.contains(call)) {
+          val regs = DUWebConstruct.regSaveAtCall(call)
+          regs.toVector foreach (reg => output(s"\t push ${reg.rep}"))
+        }
         val sizePushedToStack = paramCopy(params)
         //we call this function
         output(s"\txor %rax, %rax")
         output(s"\tcall ${declaration}")
         // destroy used params
         output(s"\taddq $$${sizePushedToStack}, %rsp")
-
+        if (DUWebConstruct.regSaveAtCall.contains(call)) {
+          val regs = DUWebConstruct.regSaveAtCall(call)
+          regs.toVector.reverse foreach (reg => output(s"\t pop ${reg.rep}"))
+        }
         if (next.isDefined)
           TranslateCFG(next.get, fileName, debug, untilBlock)
         // for now we don't restore regs, rather we copy them to stack at beginning of a method..

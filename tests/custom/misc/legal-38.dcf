@@ -1,0 +1,9 @@
+import printf;
+int a, b, c, d;
+
+void main() {
+  for (b = 0; b < 10; b++) {
+    printf("%d\n", a);
+    a = 10;
+  }
+}

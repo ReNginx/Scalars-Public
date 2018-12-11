@@ -50,6 +50,7 @@ object WebGraphColoring {
   // private def 
 
   // Assigns the registers to the DefUseWebs by setting register and isSpill for each DefUseWeb
+  // Using Lavrov-Chaitin heuristic
   def apply(webSet: Set[DefUseWeb], regVector: Vector[Register], isInit: Boolean = true): Unit = {
     validWebSet.clear
     validWebMap.clear

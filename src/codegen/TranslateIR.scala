@@ -183,37 +183,32 @@ object TranslateIR {
             res ++= repVecLHS
             res ++= repVecRHS
             res ++= Helper.outputMov(repStrLHS, "%rdx")
-            res ++= Helper.outputMov(repStrRHS, "%rdi")
+            res ++= Helper.outputMov(repStrRHS, "%rsi")
             res += s"\txor %rax, %rax"
+            res += s"\tcmpq %rsi, %rdx"
 
             log.operator match {
               case Equal => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsete %al"
               }
 
               case NotEqual => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetne %al"
               }
 
               case GreaterThan => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetg %al"
               }
 
               case GreaterThanOrEqual => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetge %al"
               }
 
               case LessThan => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetl %al"
               }
 
               case LessThanOrEqual => {
-                res += s"\tcmpq %rdi, %rdx"
                 res += s"\tsetle %al"
               }
 

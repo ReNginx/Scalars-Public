@@ -1,0 +1,9 @@
+import printf;
+void main ( ) {
+  int e;
+  int g, h;
+  e = 2600;
+  g = 20;
+  h = e / 100;
+  printf ( "%d\n", g);
+}

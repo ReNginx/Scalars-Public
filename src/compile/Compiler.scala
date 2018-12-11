@@ -7,6 +7,8 @@ import edu.mit.compilers.grammar.{DecafParser, DecafScanner, DecafScannerTokenTy
 import ir.components._
 import ir._
 import optimization._
+import optimization.loop_opt._
+import optimization.reg_alloc._
 import util.CLI
 
 import scala.Console
@@ -26,7 +28,7 @@ object Compiler {
   )
   val outFile = if (CLI.outfile == null) Console.out else new PrintStream(new FileOutputStream(CLI.outfile))
 
-  val optAry: Array[String] = Array[String]("cse", "cp", "dce")
+  val optAry: Array[String] = Array[String]("cse", "cp", "dce", "cf", "li")
 
   def main(args: Array[String]): Unit = {
     CLI.parse(args, optAry)
@@ -177,16 +179,22 @@ object Compiler {
     val str2Opts = Map[String, Map[String, Option[Optimization]]](
       "cse" -> Map[String, Option[Optimization]](
         "local" -> Option(CSE),
-        "global" -> None
-        ),
+        "global" -> Option(GlobalCSE)
+      ),
       "cp" -> Map[String, Option[Optimization]](
         "local" -> Option(CP),
         "global" -> Option(GlobalCP)
-        ),
+      ),
       "dce" -> Map[String, Option[Optimization]](
         "local" -> Option(DCE),
         "global" -> Option(GlobalDCE)
-        )
+      ),
+      "cf" -> Map[String, Option[Optimization]](
+        "local" -> Option(ConstantFolding)
+      ),
+      "li" -> Map[String, Option[Optimization]](
+        "global" -> Option(InvariantOpt)
+      )
     )
 
     // parsing failed
@@ -225,13 +233,33 @@ object Compiler {
 
     val optCFG = PeepHole(start, preserveCritical=true).get
 
+    // Run pre-optimizations
+    val preOptPreq = Vector[Optimization]()
+    val preOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cf"), "local")
+    val preOptSeq = Vector[Optimization]()
+
+    val preOptIter = RepeatOptimization(optCFG, Option(preOptPreq), preOptCond, Option(preOptSeq))
+
+    if (debugSwitch) {
+      println("Pre-Optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- preOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- preOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- preOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of pre-optimization iterations before fixed point: ${preOptIter}")
+      println()
+    }
+
+    // Run local optimizations
     val localOptPreq = Vector[Optimization]()
     val localOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp"), "local")
     val localOptSeq = GenerateOptVec(str2Opts, optFlagMap, Vector("dce"), "local")
 
     val localOptIter = RepeatOptimization(optCFG, Option(localOptPreq), localOptCond, Option(localOptSeq))
 
-    assert(RepeatOptimization(optCFG, None, localOptSeq, None) == 1) // an extra run of DCE should not change anything
+    assert(RepeatOptimization(optCFG, None, localOptSeq, None) == 1) // an extra run of DCE/CF should not change anything
 
     if (debugSwitch) {
       println("Local optimizations:")
@@ -246,11 +274,12 @@ object Compiler {
     }
 
     val globalOptPreq = Vector[Optimization]()
-    val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cp", "dce"), "global")
+    val globalOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp", "dce"), "global")
     val globalOptSeq = Vector[Optimization]()
 
     val globalOptIter = RepeatOptimization(optCFG, None, globalOptCond, None)
-    
+
+    // Run global optimizations
     if (debugSwitch) {
       println("Global optimizations:")
       printf("- Prequels:\n  ")
@@ -263,18 +292,74 @@ object Compiler {
       println()
     }
 
-    // End Optimization
     Destruct.reconstruct() // reconstruct logical shortcuts
 
     val optCFGFinal = PeepHole(optCFG, preserveCritical=false).get
 
-    /*
+    // Run loop optimizations
+    val loopOptPreq = Vector[Optimization]()
+    val loopOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("li"), "global")
+    val loopOptSeq = Vector[Optimization]()
+
+    val loopOptIter = RepeatOptimization(optCFGFinal, Option(loopOptPreq), loopOptCond, Option(loopOptSeq))
+
     if (debugSwitch) {
-      PrintCFG.init()
-      PrintCFG(optCFGFinal)
-      PrintCFG.close()
+      println("Loop Optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- loopOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- loopOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- loopOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of loop optimization iterations before fixed point: ${loopOptIter}")
+      println()
     }
-    */
+
+    // Run post-optimizations
+    val postOptPreq = Vector[Optimization]()
+    val postOptCond = GenerateOptVec(str2Opts, optFlagMap, Vector("cse", "cp", "dce"), "global")
+    val postOptSeq = Vector[Optimization]()
+
+    val postOptIter = RepeatOptimization(optCFGFinal, Option(postOptPreq), postOptCond, Option(postOptSeq))
+
+    if (debugSwitch) {
+      println("Post-Optimizations:")
+      printf("- Prequels:\n  ")
+      for (opt <- postOptPreq) { printf(s"${opt} ") }
+      printf("\n- Conditions:\n  ")
+      for (opt <- postOptCond) { printf(s"${opt} ") }
+      printf("\n- Sequels:\n  ")
+      for (opt <- postOptSeq) { printf(s"${opt} ") }
+      println(s"\nNumber of post-optimization iterations before fixed point: ${postOptIter}")
+      println()
+    }
+
+    // if (debugSwitch) {
+    //   PrintCFG.init()
+    //   PrintCFG(optCFGFinal)
+    //   PrintCFG.close()
+    // }
+
+    PeepHole(optCFGFinal, preserveCritical=false).get
+
+    val regVector = Vector[Register](
+      Register("rbx"),
+      Register("r12"),
+      Register("r13"),
+      Register("r14"),
+      Register("r15")
+      // Register("r8"),
+      // Register("r9"),
+      // Register("rdi"),
+      // Register("rcx")
+    )
+
+    DUChainConstruct(optCFGFinal)
+    //DUChainConstruct.testOutput()
+    DUWebConstruct(DUChainConstruct.duChainSet)
+    WebGraphColoring(DUWebConstruct.duWebSet, regVector)
+    //DUWebConstruct.testOutput
+    DUWebConstruct.assignRegs
 
     Allocate(optCFGFinal)
 

@@ -18,12 +18,13 @@ import optimization.Labeling.getStmt
   */
 
 object InvariantOpt extends Optimization {
+
+  override def toString(): String = "LoopInvariant"
+
   var graph = Map[StmtId, Set[StmtId]]()
   var revGraph = Map[StmtId, Set[StmtId]]()
   var dom = Map[StmtId, Set[StmtId]]()
   var cnt = 0
-
-
 
   def findInvariant(loop: LoopEntity[StmtId]): Vector[StmtId] = {
     val invariant = ArrayBuffer[StmtId]()
@@ -155,6 +156,7 @@ object InvariantOpt extends Optimization {
 
   def judgeMov(invariant: Vector[StmtId],
                loop: LoopEntity[StmtId]): Vector[StmtId] = {
+    val ret = Set[StmtId]()
     (invariant
       filter (invar => {
       //System.err.println(s"loops exits are ${loop.exits}")
@@ -230,20 +232,22 @@ object InvariantOpt extends Optimization {
         }
       })
     })
-      filter (invar => {
+      foreach (invar => {
      //System.err.println(s"third level ${invar}")
       lazy val invarLoc = getStmt(invar).get.asInstanceOf[Def].getLoc.field
-      loop.stmts forall (pos => {
+      val test = loop.stmts forall (pos => {
         val use = useHelper(pos) filter (loc => {
           loc.field == invarLoc
         })
         if (use.nonEmpty) {
           val reaching = reachingDef(use.head, pos)
-          reaching.size == 1 && reaching.contains(invar)
+          reaching.size == 1 && reaching.contains(invar) && ret.contains(reaching.head)
         }
         else true
       })
+      if (test) ret += invar
     }))
+    ret.toVector
   }
 
   def apply(cfg: CFG, isInit: Boolean = true): Unit = {
@@ -274,7 +278,6 @@ object InvariantOpt extends Optimization {
         val movable = judgeMov(invariant, loop)
        //System.err.println(s"find movable ")
         // movable foreach (x => PrintCFG.prtStmt(getStmt(x).get))
-        setChanged()
         (loop, movable.sortBy(x => (x._1.label, -x._2)))
       }) filter (pair => {
         pair._2.size > 0
@@ -342,6 +345,7 @@ object InvariantOpt extends Optimization {
         toRemove(invar._1) += -invar._2 // note here uses negative number
       })
     })
+    if (toRemove.nonEmpty) setChanged
     toRemove foreach (x => {
       x._2 foreach (idx => x._1.asInstanceOf[CFGBlock].statements.remove(-idx)) // note here also uses nagative
     })

@@ -9,6 +9,8 @@ import scala.collection.mutable.{Map, Queue, Set}
 import scala.util.control.Breaks._
 
 object JudgeSubstitution {
+  var method:Option[CFGMethod] = None
+
   var graph: Map[StmtId, Set[StmtId]] = Map()
 
   /**
@@ -33,6 +35,8 @@ object JudgeSubstitution {
             loc: Location,
             res: Expression): Boolean = {
     if (loc.field.get.isReg)
+      return false
+    if (method.isDefined && method.get.params.contains(loc.field.get))
       return false
 
     val map = Map[StmtId, Boolean]()
