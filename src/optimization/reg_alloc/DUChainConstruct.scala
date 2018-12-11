@@ -19,7 +19,7 @@ import math.max
   */
 object DUChainConstruct {
   val cfgs = Set[CFG]()
-  val duChainSet = Set[DefUseChain]()
+  var duChainSet = Set[DefUseChain]()
 
   def findDuChain(): Unit = {
     val (calls, graph, revGraph) = Labeling(cfgs.toVector)
@@ -190,6 +190,10 @@ object DUChainConstruct {
           cfgs.clear
           DUChainConstruct(method.block.get)
           findDuChain()
+          duChainSet = duChainSet filter (duc => {
+            !method.params.contains(duc.defLoc.field.get) &&
+            !duc.defLoc.field.get.isGlobal
+          })
           collectInfo()
         }
       }
